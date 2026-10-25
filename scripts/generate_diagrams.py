@@ -129,12 +129,13 @@ def _load_cache(cache_file: Path) -> dict[str, dict[str, Any]]:
         return {}
     try:
         data = json.loads(cache_file.read_text(encoding="utf8"))
+    except (json.JSONDecodeError, OSError, ValueError):
+        return {}
+    else:
         if isinstance(data, dict):
             # JSON deserialization returns 'Any' — cast to the expected cache
             # shape so static type checkers understand the return value.
             return cast("dict[str, dict[str, Any]]", data)
-        return {}
-    except (json.JSONDecodeError, OSError, ValueError):
         return {}
 
 
@@ -231,19 +232,21 @@ def generate_pydeps_svg(package: str, out_svg: Path, max_bacon: int = 2) -> bool
     ]
     try:
         subprocess.run(cmd_module, check=True, capture_output=True, text=True, env=env, cwd=str(src_dir))
-        return True
     except subprocess.CalledProcessError:
         # python -m pydeps failed (module missing or errored); try CLI
         pass
+    else:
+        return True
 
     if shutil.which("pydeps"):
         cmd = ["pydeps", package, "-T", "svg", "-o", str(out_svg), "--max-bacon", str(max_bacon), "--noshow"]
         try:
             subprocess.run(cmd, check=True, capture_output=True, text=True, env=env, cwd=str(src_dir))
-            return True
         except subprocess.CalledProcessError as ex:
             print(f"Warning: pydeps CLI failed for {package}: {ex}")
             return False
+        else:
+            return True
 
     print("Warning: pydeps not found on PATH and module import failed")
     return False

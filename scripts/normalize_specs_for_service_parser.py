@@ -20,6 +20,9 @@ import msgspec
 _project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_project_root / "src"))
 
+_MIN_TABLE_CELLS = 2
+_PROPERTIES_CELL_INDEX = 2
+_MIN_CELLS_WITH_SECURITY = 4
 _REQ_RE = re.compile(r"^(M|O|X|N/A|N\\A|C\.\d+)$", re.IGNORECASE)
 _NON_ALNUM_RE = re.compile(r"[^a-z0-9]+")
 _PARENS_RE = re.compile(r"\([^)]*\)")
@@ -70,7 +73,7 @@ def _extract_rows_from_tables(text: str) -> list[NormalizedRow]:
             continue
 
         parts = [p.strip() for p in line.split("|") if p.strip()]
-        if len(parts) < 2:
+        if len(parts) < _MIN_TABLE_CELLS:
             continue
 
         first = parts[0]
@@ -92,8 +95,8 @@ def _extract_rows_from_tables(text: str) -> list[NormalizedRow]:
         if not _REQ_RE.match(req):
             continue
 
-        properties = parts[2] if len(parts) >= 3 else "N/A"
-        security = parts[-1] if len(parts) >= 4 else "N/A"
+        properties = parts[_PROPERTIES_CELL_INDEX] if len(parts) > _PROPERTIES_CELL_INDEX else "N/A"
+        security = parts[-1] if len(parts) >= _MIN_CELLS_WITH_SECURITY else "N/A"
 
         key = _normalize_name(first)
         if not key or key in seen:

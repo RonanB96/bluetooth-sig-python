@@ -16,14 +16,14 @@ typedef enum btsig_status {
 } btsig_status;
 
 typedef enum btsig_value_kind {
-    BTSIG_VALUE_UINT8,
-    BTSIG_VALUE_UINT16,
-    BTSIG_VALUE_UINT32,
-    BTSIG_VALUE_UINT64,
-    BTSIG_VALUE_SINT8,
-    BTSIG_VALUE_SINT16,
-    BTSIG_VALUE_SINT32,
-    BTSIG_VALUE_DOUBLE
+    BTSIG_VALUE_UINT8 = 0,
+    BTSIG_VALUE_UINT16 = 1,
+    BTSIG_VALUE_UINT32 = 2,
+    BTSIG_VALUE_UINT64 = 3,
+    BTSIG_VALUE_SINT8 = 4,
+    BTSIG_VALUE_SINT16 = 5,
+    BTSIG_VALUE_SINT32 = 6,
+    BTSIG_VALUE_DOUBLE = 7
 } btsig_value_kind;
 
 typedef struct btsig_bytes {

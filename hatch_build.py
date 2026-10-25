@@ -10,6 +10,7 @@ Per Hatchling documentation: https://hatch.pypa.io/latest/plugins/build-hook/cus
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
@@ -17,12 +18,14 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 class SubmoduleBuildHook(BuildHookInterface):
     """Build hook that initializes git submodules before building."""
 
-    def initialize(self, version: str, build_data: dict[str, any]) -> None:
+    def initialize(self, _version: str, _build_data: dict[str, Any]) -> None:
         """Initialize git submodule before build if in a git repository.
 
         Args:
-            version: The version of the project being built
-            build_data: Build configuration data
+            _version: Hatch build version. Unused. The interface name is
+                ``version`` (BuildHookInterface.initialize).
+            _build_data: Hatch build data. Unused. The interface name is
+                ``build_data``.
         """
         submodule_path = Path(self.root) / "bluetooth_sig"
 

@@ -5,6 +5,8 @@ This script tests BLE device connections and demonstrates bluetooth_sig parsing
 with real hardware devices.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import sys
@@ -29,6 +31,41 @@ except ImportError as e:
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+_SCAN_TIMEOUT_ARGC = 3
+
+
+def _report_discovered_values(translator: BluetoothSIGTranslator, values: dict[str, bytes | bytearray]) -> None:
+    """Print SIG metadata and validation for values already read from the device."""
+    print("\n🔍 Enhanced SIG Analysis...")
+
+    if not values:
+        return
+
+    discovered_uuids = list(values.keys())
+    print(f"📊 Analyzing {len(discovered_uuids)} discovered characteristics:")
+
+    char_info = translator.get_characteristics_info_by_uuids(discovered_uuids)
+    for uuid, info in char_info.items():
+        if info:
+            name = info.name
+            data_type = info.value_type.value if hasattr(info, "value_type") else "unknown"
+            print(f"  📋 {uuid}: {name} [{data_type}]")
+        else:
+            print(f"  ❓ {uuid}: Unknown characteristic")
+
+    print("\n🔍 Data validation:")
+    valid_count = 0
+    for uuid, data in values.items():
+        if isinstance(data, (bytes, bytearray)):
+            validation = translator.validate_characteristic_data(uuid, bytes(data))
+            status = "✅" if validation.is_valid else "⚠️"
+            validity = "Valid" if validation.is_valid else "Unknown format"
+            print(f"  {status} {uuid}: {validity}")
+            if validation.is_valid:
+                valid_count += 1
+
+    print(f"\n📈 Validation: {valid_count}/{len(values)} characteristics have known format")
 
 
 async def test_device_connection(mac_address: str) -> bool | None:
@@ -132,36 +169,7 @@ async def test_device_connection(mac_address: str) -> bool | None:
             else:
                 print("\nNote: No characteristics were parsed (may need raw data re-reading)")
 
-            # Enhanced SIG translator analysis
-            print("\n🔍 Enhanced SIG Analysis...")
-
-            if values:
-                discovered_uuids = list(values.keys())
-                print(f"📊 Analyzing {len(discovered_uuids)} discovered characteristics:")
-
-                # Batch analysis
-                char_info = translator.get_characteristics_info_by_uuids(discovered_uuids)
-                for uuid, info in char_info.items():
-                    if info:
-                        name = info.name
-                        data_type = info.value_type.value if hasattr(info, "value_type") else "unknown"
-                        print(f"  📋 {uuid}: {name} [{data_type}]")
-                    else:
-                        print(f"  ❓ {uuid}: Unknown characteristic")
-
-                # Validation analysis
-                print("\n🔍 Data validation:")
-                valid_count = 0
-                for uuid, data in values.items():
-                    if isinstance(data, (bytes, bytearray)):
-                        validation = translator.validate_characteristic_data(uuid, data)
-                        status = "✅" if validation.is_valid else "⚠️"
-                        validity = "Valid" if validation.is_valid else "Unknown format"
-                        print(f"  {status} {uuid}: {validity}")
-                        if validation.is_valid:
-                            valid_count += 1
-
-                print(f"\n📈 Validation: {valid_count}/{len(values)} characteristics have known format")
+            _report_discovered_values(translator, values)
 
             print("\n✅ Test completed successfully")
             return True
@@ -210,7 +218,7 @@ async def main() -> None:
         if sys.argv[1] == "scan":
             # Check for timeout argument
             timeout = 10.0
-            if len(sys.argv) > 2:
+            if len(sys.argv) >= _SCAN_TIMEOUT_ARGC:
                 try:
                     timeout = float(sys.argv[2])
                 except ValueError:

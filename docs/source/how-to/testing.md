@@ -110,4 +110,3 @@ See `.github/workflows/` for the full CI configuration.
 
 - [Contributing Guide](contributing.md)
 - [API Reference](../api/index.md)
-

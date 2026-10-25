@@ -6,14 +6,12 @@ raising on unrelated example imports. Import specific adapters
 where needed instead (e.g. ``from examples.connection_managers.bleak_retry import ...``).
 """
 
+# Connection managers used by example code.
+# These modules intentionally import optional third-party backends at
+# module import time so that importing the connection-manager module
+# fails fast when the backend is absent. Tests assert this behaviour by
+# importing these modules under simulated missing-backend conditions.
 __all__: list[str] = []
-"""Connection managers used by example code.
-
-These modules intentionally import optional third-party backends at
-module import time so that importing the connection-manager module
-fails fast when the backend is absent. Tests assert this behaviour by
-importing these modules under simulated missing-backend conditions.
-"""
 
 # Connection managers package.
 #

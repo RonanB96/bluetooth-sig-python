@@ -31,7 +31,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Folders to format
-RUFF_FOLDERS="src/ tests/ examples/"
+RUFF_FOLDERS="."
 
 # Helper functions
 print_header() {

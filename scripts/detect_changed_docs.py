@@ -28,6 +28,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+_VERBOSE_PREVIEW_LIMIT = 10
+
 
 def run_git_command(cmd: list[str]) -> str:
     """Execute git command and return stdout.
@@ -185,10 +187,10 @@ def main() -> None:
 
     if args.verbose:
         print(f"📋 Found {len(changed_files)} changed files:", file=sys.stderr)
-        for file in changed_files[:10]:
+        for file in changed_files[:_VERBOSE_PREVIEW_LIMIT]:
             print(f"   - {file}", file=sys.stderr)
-        if len(changed_files) > 10:
-            print(f"   ... and {len(changed_files) - 10} more", file=sys.stderr)
+        if len(changed_files) > _VERBOSE_PREVIEW_LIMIT:
+            print(f"   ... and {len(changed_files) - _VERBOSE_PREVIEW_LIMIT} more", file=sys.stderr)
 
     # Check if comprehensive testing needed
     if should_test_all(changed_files):
@@ -216,10 +218,10 @@ def main() -> None:
     if args.verbose:
         print("\n📊 Testing strategy:", file=sys.stderr)
         print(f"   → {len(result)} specific pages:", file=sys.stderr)
-        for file in result[:10]:
+        for file in result[:_VERBOSE_PREVIEW_LIMIT]:
             print(f"      - {file}", file=sys.stderr)
-        if len(result) > 10:
-            print(f"      ... and {len(result) - 10} more", file=sys.stderr)
+        if len(result) > _VERBOSE_PREVIEW_LIMIT:
+            print(f"      ... and {len(result) - _VERBOSE_PREVIEW_LIMIT} more", file=sys.stderr)
 
     print(json.dumps(result))
 

@@ -26,6 +26,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -83,6 +85,31 @@ class _Characteristic:
     size: int
     unit: str | None
     members: tuple[_Member, ...]
+
+
+def _format_sources(paths: list[Path], style_file: Path) -> None:
+    """Format generated sources with the btsig clang-format configuration.
+
+    Raises:
+        EmitError: If ``clang-format-18`` is missing or exits with an error.
+    """
+    formatter = shutil.which("clang-format-18")
+    if formatter is None:
+        raise EmitError("clang-format-18 is required to format generated sources")
+    if not style_file.is_file():
+        raise EmitError(f"clang-format style is missing: {style_file}")
+    try:
+        subprocess.run(
+            [formatter, f"--style=file:{style_file}", "-i", *[str(path) for path in paths]],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        detail = str(error)
+        if isinstance(error, subprocess.CalledProcessError) and error.stderr:
+            detail = error.stderr.strip()
+        raise EmitError(f"clang-format failed: {detail}") from error
 
 
 def repository_root() -> Path:
@@ -241,18 +268,18 @@ def _field_lines(item: _Characteristic) -> list[str]:
             [
                 "    {",
                 f"        {_c_string(member.name)},",
-                f"        {member.value_kind},",
                 f"        {unit},",
-                f"        {unit_uuid},",
                 f"        offsetof({item.c_struct}, {member.name}),",
-                f"        btsig::wire_type::{member.wire.value},",
-                f"        {member.coefficient},",
-                f"        {member.decimal_exponent},",
-                f"        {member.binary_exponent},",
                 f"        {member.minimum},",
                 f"        {member.maximum},",
                 f"        {sentinels},",
                 f"        {count},",
+                f"        {member.value_kind},",
+                f"        {unit_uuid},",
+                f"        btsig::wire_type::{member.wire.value},",
+                f"        {member.coefficient},",
+                f"        {member.decimal_exponent},",
+                f"        {member.binary_exponent},",
                 "    },",
             ]
         )
@@ -456,9 +483,10 @@ def emit_characteristics(
 
     Returns:
         Output path relative to ``output_root`` mapped to file bytes.
+        Each source is formatted with ``clang-format-18`` and ``btsig/.clang-format``.
 
     Raises:
-        EmitError: If IR is missing, or two characteristics share a UUID.
+        EmitError: If IR is missing, two characteristics share a UUID, or formatting fails.
     """
     repo = repository_root() if root is None else root
     destination = repo if output_root is None else output_root
@@ -479,11 +507,14 @@ def emit_characteristics(
         files[f"{root_dir}/include/btsig/{item.name}.hpp"] = _hpp(item, command)
         files[f"{root_dir}/src/{item.name}.cpp"] = _translation_unit(item, command)
     encoded = {path: text.encode("utf-8") for path, text in files.items()}
+    written: list[Path] = []
     for relative, payload in encoded.items():
         output = destination / relative
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_bytes(payload)
-    return encoded
+        written.append(output)
+    _format_sources(written, repo / "btsig" / ".clang-format")
+    return {relative: path.read_bytes() for relative, path in zip(encoded, written, strict=True)}
 
 
 def main(argv: list[str] | None = None) -> int:

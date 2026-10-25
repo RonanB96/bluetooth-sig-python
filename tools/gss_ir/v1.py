@@ -1,7 +1,5 @@
 """IR schema version 1: the fixed-field document in ADR-0003."""
 
-# mypy: disable-error-code="misc"
-
 from __future__ import annotations
 
 import re
@@ -82,7 +80,7 @@ class SentinelMeaning(str, Enum):
     NOT_VALID = "not_valid"
 
 
-class Transform(ContractStruct):
+class Transform(ContractStruct, frozen=True):
     """Exact transform: decoded = raw * coefficient * 10^decimal_exponent * 2^binary_exponent."""
 
     coefficient: int = 1
@@ -90,21 +88,21 @@ class Transform(ContractStruct):
     binary_exponent: int = 0
 
 
-class UnitRef(ContractStruct):
+class UnitRef(ContractStruct, frozen=True):
     """Assigned unit joined onto a field."""
 
     identifier: str
     uuid: int
 
 
-class Sentinel(ContractStruct):
+class Sentinel(ContractStruct, frozen=True):
     """One raw sentinel and its meaning."""
 
     raw_value: int
     meaning: SentinelMeaning
 
 
-class ScalarField(ContractStruct):
+class ScalarField(ContractStruct, frozen=True):
     """One resolved integer scalar in wire order."""
 
     name: str
@@ -116,14 +114,14 @@ class ScalarField(ContractStruct):
     sentinels: tuple[Sentinel, ...] = ()
 
 
-class Provenance(ContractStruct):
+class Provenance(ContractStruct, frozen=True):
     """Trace from the document back to the SIG YAML file."""
 
     source_path: str
     source_identifier: str
 
 
-class IrDocument(ContractStruct):
+class IrDocument(ContractStruct, frozen=True):
     """One self-contained characteristic document."""
 
     schema_version: int

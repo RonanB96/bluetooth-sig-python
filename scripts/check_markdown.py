@@ -10,6 +10,7 @@ from pathlib import Path
 # Get repository root
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DOCS_DIR = ROOT_DIR / "docs"
+_MAX_MARKDOWN_HEADING_LEVEL = 6
 
 
 def check_broken_links(file_path: Path, content: str) -> list[tuple[int, str]]:
@@ -105,12 +106,12 @@ def check_heading_hierarchy(content: str) -> list[tuple[int, str]]:
         ):
             # Count heading level
             level = len(line) - len(line.lstrip("#"))
-            if level > 6:
+            if level > _MAX_MARKDOWN_HEADING_LEVEL:
                 issues.append((i, f"Invalid heading level (H{level}): {line[:50]}"))
             elif prev_level > 0 and level > prev_level + 1:
                 issues.append((i, f"Heading hierarchy skip (H{prev_level} -> H{level}): {line[:50]}"))
 
-            if level > 0 and level <= 6:
+            if level > 0 and level <= _MAX_MARKDOWN_HEADING_LEVEL:
                 prev_level = level
 
     return issues
@@ -157,11 +158,9 @@ def check_list_formatting(content: str) -> list[tuple[int, str]]:
     lines = content.split("\n")
 
     for i, line in enumerate(lines, 1):
-        # Check for inconsistent list markers
-        if re.match(r"^\s*[\*\-\+]\s+", line):
-            # Check if there's a space after marker
-            if not re.match(r"^\s*[\*\-\+]\s\s+", line) and re.match(r"^\s*[\*\-\+]\S", line):
-                issues.append((i, f"list item missing space after marker: {line[:50]}"))
+        # A list marker glued to the following text has no separating space.
+        if re.match(r"^\s*[*+-]\S", line):
+            issues.append((i, f"list item missing space after marker: {line[:50]}"))
 
     return issues
 

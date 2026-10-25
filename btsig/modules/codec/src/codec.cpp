@@ -94,28 +94,28 @@ bool total_wire_size(const CharacteristicDescriptor& descriptor, std::size_t* si
     return true;
 }
 
-double apply_decimal(double value, int exponent) {
+double apply_decimal(double value, std::int8_t exponent) {
     double decade = 1.0;
     if (exponent >= 0) {
-        for (int step = 0; step < exponent; ++step) {
+        for (std::int8_t step = 0; step < exponent; ++step) {
             decade *= 10.0;
         }
         return value * decade;
     }
-    for (int step = exponent; step < 0; ++step) {
+    for (std::int8_t step = exponent; step < 0; ++step) {
         decade *= 10.0;
     }
     return value / decade;
 }
 
-double apply_binary(double value, int exponent) {
+double apply_binary(double value, std::int8_t exponent) {
     if (exponent >= 0) {
-        for (int step = 0; step < exponent; ++step) {
+        for (std::int8_t step = 0; step < exponent; ++step) {
             value *= 2.0;
         }
         return value;
     }
-    for (int step = exponent; step < 0; ++step) {
+    for (std::int8_t step = exponent; step < 0; ++step) {
         value /= 2.0;
     }
     return value;
@@ -134,9 +134,16 @@ double scale_factor(const FieldDescriptor& field) {
 
 bool read_raw(const std::uint8_t* data, wire_type wire, std::int64_t* raw) {
     const std::size_t width = wire_width(wire);
+    // wire_width returns 0 for an unknown enumerator. bits_in_wire is uint32_t,
+    // so a zero width wraps bits_in_wire - 1 before the sign-bit shift. A width
+    // above 8 shifts a byte out of uint64_t.
+    if (width == 0 || width > sizeof(std::uint64_t)) {
+        return false;
+    }
     std::uint64_t bits = 0;
     for (std::size_t index = 0; index < width; ++index) {
-        bits |= static_cast<std::uint64_t>(data[index]) << static_cast<unsigned>(index * 8);
+        const std::uint32_t shift = static_cast<std::uint32_t>(index) * 8;
+        bits |= static_cast<std::uint64_t>(data[index]) << shift;
     }
     if (!is_signed(wire)) {
         if (bits > static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max())) {
@@ -145,7 +152,7 @@ bool read_raw(const std::uint8_t* data, wire_type wire, std::int64_t* raw) {
         *raw = static_cast<std::int64_t>(bits);
         return true;
     }
-    const unsigned bits_in_wire = static_cast<unsigned>(width * 8);
+    const std::uint32_t bits_in_wire = static_cast<std::uint32_t>(width * 8);
     if (bits_in_wire < 64 && (bits & (std::uint64_t{1} << (bits_in_wire - 1))) != 0) {
         bits |= ~((std::uint64_t{1} << bits_in_wire) - 1);
     }
@@ -154,9 +161,10 @@ bool read_raw(const std::uint8_t* data, wire_type wire, std::int64_t* raw) {
 }
 
 void write_raw(std::uint8_t* out, std::size_t width, std::int64_t raw) {
-    const auto bits = static_cast<std::uint64_t>(raw);
+    const std::uint64_t bits = static_cast<std::uint64_t>(raw);
     for (std::size_t index = 0; index < width; ++index) {
-        out[index] = static_cast<std::uint8_t>(bits >> static_cast<unsigned>(index * 8));
+        const std::uint32_t shift = static_cast<std::uint32_t>(index) * 8;
+        out[index] = static_cast<std::uint8_t>(bits >> shift);
     }
 }
 
@@ -188,41 +196,41 @@ bool member_fits(const FieldDescriptor& field, std::size_t struct_size) {
     return size != 0 && field.offset <= struct_size && size <= struct_size - field.offset;
 }
 
-bool store_decoded(unsigned char* base, const FieldDescriptor& field, std::int64_t raw) {
-    unsigned char* address = base + field.offset;
+bool store_decoded(std::uint8_t* base, const FieldDescriptor& field, std::int64_t raw) {
+    std::uint8_t* address = base + field.offset;
     switch (field.value_kind) {
     case BTSIG_VALUE_UINT8: {
-        const auto stored = static_cast<std::uint8_t>(raw);
+        const std::uint8_t stored = static_cast<std::uint8_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
     case BTSIG_VALUE_UINT16: {
-        const auto stored = static_cast<std::uint16_t>(raw);
+        const std::uint16_t stored = static_cast<std::uint16_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
     case BTSIG_VALUE_UINT32: {
-        const auto stored = static_cast<std::uint32_t>(raw);
+        const std::uint32_t stored = static_cast<std::uint32_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
     case BTSIG_VALUE_UINT64: {
-        const auto stored = static_cast<std::uint64_t>(raw);
+        const std::uint64_t stored = static_cast<std::uint64_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
     case BTSIG_VALUE_SINT8: {
-        const auto stored = static_cast<std::int8_t>(raw);
+        const std::int8_t stored = static_cast<std::int8_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
     case BTSIG_VALUE_SINT16: {
-        const auto stored = static_cast<std::int16_t>(raw);
+        const std::int16_t stored = static_cast<std::int16_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
     case BTSIG_VALUE_SINT32: {
-        const auto stored = static_cast<std::int32_t>(raw);
+        const std::int32_t stored = static_cast<std::int32_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
@@ -235,7 +243,7 @@ bool store_decoded(unsigned char* base, const FieldDescriptor& field, std::int64
     return false;
 }
 
-bool load_integer(const unsigned char* address, btsig_value_kind kind, std::int64_t* raw) {
+bool load_integer(const std::uint8_t* address, btsig_value_kind kind, std::int64_t* raw) {
     switch (kind) {
     case BTSIG_VALUE_UINT8: {
         std::uint8_t stored = 0;
@@ -303,7 +311,7 @@ bool raw_from_double(double member, const FieldDescriptor& field, std::int64_t* 
         return false;
     }
     // std::llround rounds halfway cases away from zero (cppreference, std::round).
-    *raw = std::llround(quotient);
+    *raw = static_cast<std::int64_t>(std::llround(quotient));
     return true;
 }
 
@@ -329,7 +337,7 @@ btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input
     }
 
     // A failed field leaves the caller struct unchanged (ADR-0010).
-    unsigned char scratch[kStructScratchBytes]{};
+    std::uint8_t scratch[kStructScratchBytes]{};
     std::size_t cursor = 0;
     for (std::size_t index = 0; index < descriptor.field_count; ++index) {
         const FieldDescriptor& field = descriptor.fields[index];
@@ -374,8 +382,8 @@ btsig_error encode(const CharacteristicDescriptor& descriptor, const void* value
         return make_error(BTSIG_BUFFER_TOO_SMALL, nullptr, buffer);
     }
 
-    unsigned char scratch[kWireScratchBytes]{};
-    const auto* base = static_cast<const unsigned char*>(value);
+    std::uint8_t scratch[kWireScratchBytes]{};
+    const std::uint8_t* base = static_cast<const std::uint8_t*>(value);
     std::size_t cursor = 0;
     for (std::size_t index = 0; index < descriptor.field_count; ++index) {
         const FieldDescriptor& field = descriptor.fields[index];

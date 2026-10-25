@@ -33,7 +33,9 @@ from scripts.docs_html_postprocess import apply_external_link_security  # noqa: 
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "Bluetooth SIG Standards Library"
-copyright = "2025, RonanB96"
+# Sphinx reads this name. `project_copyright` is the alias added in Sphinx 3.5
+# (configuration.html#confval-copyright). This project requires Sphinx >= 7.2.
+project_copyright = "2025, RonanB96"
 author = "RonanB96"
 
 # Get version from git describe (single source of truth)
@@ -54,7 +56,7 @@ build_date = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 extensions = [
     # Core documentation generation
     "sphinx.ext.autodoc",  # Required by autoapi
-    # "sphinx.ext.viewcode",  # DISABLED: Generates _modules/ source pages (slow)
+    # viewcode is omitted: it generates _modules/ source pages and slows the build.
     "sphinx.ext.intersphinx",  # Cross-reference external docs
     "sphinx.ext.napoleon",  # Support Google-style docstrings
     # API documentation
@@ -132,22 +134,22 @@ autoapi_member_order = "groupwise"  # Group by type (classes, functions, etc.)
 
 # Override AutoAPI's module name extraction to remove 'src' prefix
 def autoapi_skip_member(
-    app: Sphinx,
-    what: str,
+    _app: Sphinx,
+    _what: str,
     name: str,
-    obj: object,
+    _obj: object,
     skip: bool,
-    options: dict[str, object],
+    _options: dict[str, object],
 ) -> bool:
     """Skip certain members during API documentation generation.
 
     Args:
-        app: Sphinx application object
-        what: Type of the object (e.g., 'function', 'class')
+        _app: Sphinx application object. Unused; AutoAPI passes it positionally.
+        _what: Type of the object (e.g., 'function', 'class'). Unused.
         name: Fully qualified name of the object
-        obj: The object itself
+        _obj: The object itself. Unused.
         skip: Whether AutoAPI will skip this member
-        options: Options given to the directive
+        _options: Options given to the directive. Unused.
 
     Returns:
         True to skip the member, False to include it
@@ -445,7 +447,7 @@ def fix_autoapi_anchors(
             print(f"Warning: Failed to fix anchors in {html_file}: {e}")
 
 
-def run_pre_build_scripts(app: Sphinx, config: object) -> None:
+def run_pre_build_scripts(_app: Sphinx, _config: object) -> None:
     """Run generation scripts before building documentation.
 
     This replicates the behaviour from docs_hooks.py
@@ -456,8 +458,8 @@ def run_pre_build_scripts(app: Sphinx, config: object) -> None:
        → docs/diagrams/*.svg (C4 model, package structure, etc.)
 
     Args:
-        app: Sphinx application object
-        config: Sphinx config object (unused but required by event signature)
+        _app: Sphinx application object. Unused; the event passes it positionally.
+        _config: Sphinx config object. Unused; the event passes it positionally.
 
     Raises:
         subprocess.CalledProcessError: If any generation script fails.
@@ -493,7 +495,7 @@ def run_pre_build_scripts(app: Sphinx, config: object) -> None:
     changelog_output = repo_root / "docs" / "source" / "community" / "changelog.md"
     try:
         print("Generating changelog from git history via git-changelog...")
-        result = subprocess.run(
+        subprocess.run(
             [
                 "git-changelog",
                 "--output",
@@ -527,7 +529,7 @@ def run_pre_build_scripts(app: Sphinx, config: object) -> None:
     # =========================================================================
     # Skip if SKIP_DIAGRAMS environment variable is set or diagrams deps missing
     if os.getenv("SKIP_DIAGRAMS"):
-        print("ℹ Skipping diagram generation (SKIP_DIAGRAMS=1)")
+        print("Info: Skipping diagram generation (SKIP_DIAGRAMS=1)")
     else:
         diag_script = repo_root / "scripts" / "generate_diagrams.py"
         if not diag_script.exists():

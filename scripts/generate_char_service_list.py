@@ -101,11 +101,11 @@ def get_characteristic_info(char_class: type[BaseCharacteristic[Any]]) -> tuple[
             base_name = NameNormalizer.remove_suffix(char_class.__name__, "Characteristic")
             name = NameNormalizer.camel_case_to_display_name(base_name)
             description = ""
-
-        return uuid, name, description
     except Exception as e:
         print(f"Warning: Error processing {char_class.__name__}: {e}", file=sys.stderr)
         return "N/A", char_class.__name__, ""
+    else:
+        return uuid, name, description
 
 
 def get_service_info(service_class: type[BaseGattService]) -> tuple[str, str, str]:
@@ -136,11 +136,11 @@ def get_service_info(service_class: type[BaseGattService]) -> tuple[str, str, st
             base_name = NameNormalizer.remove_suffix(service_class.__name__, "Service")
             name = NameNormalizer.camel_case_to_display_name(base_name)
             description = ""
-
-        return uuid, name, description
     except Exception as e:
         print(f"Warning: Error processing {service_class.__name__}: {e}", file=sys.stderr)
         return "N/A", service_class.__name__, ""
+    else:
+        return uuid, name, description
 
 
 def discover_characteristics() -> list[tuple[str, str, str, str]]:

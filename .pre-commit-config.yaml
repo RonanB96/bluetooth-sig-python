@@ -1,0 +1,78 @@
+repos:
+  # https://github.com/pre-commit/pre-commit-hooks v6.0.0
+  # Quote and JSON rewriters are omitted: Ruff owns Python style, and JSON
+  # key order is data. forbid-submodules is omitted because bluetooth_sig is
+  # a submodule.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: fix-byte-order-marker
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-illegal-windows-names
+      - id: check-symlinks
+      - id: destroyed-symlinks
+      - id: check-added-large-files
+      - id: detect-private-key
+      - id: detect-aws-credentials
+        args: [--allow-missing-credentials]
+      - id: check-ast
+      - id: check-builtin-literals
+      - id: check-docstring-first
+      - id: debug-statements
+      - id: check-json
+      - id: check-toml
+      - id: check-xml
+      - id: check-yaml
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: requirements-txt-fixer
+      - id: name-tests-test
+        args: [--pytest-test-first]
+      - id: check-vcs-permalinks
+      - id: no-commit-to-branch
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.22
+    hooks:
+      - id: ruff-check
+      - id: ruff-format
+
+  # Same clang-format-18 and btsig/.clang-format as btsig.yml.
+  # shellcheck, pydocstyle, and mypy match scripts/lint.sh. mypy stays on the
+  # packages that lint treats as strict: bluetooth_sig and tools.
+  - repo: local
+    hooks:
+      - id: clang-format
+        name: clang-format-18
+        entry: clang-format-18
+        language: system
+        types_or: [c, c++]
+        args: ["--style=file:btsig/.clang-format", "-i"]
+      - id: shellcheck
+        name: shellcheck
+        entry: shellcheck
+        language: system
+        types: [shell]
+      - id: pydocstyle
+        name: pydocstyle
+        entry: .venv/bin/pydocstyle
+        language: system
+        types: [python]
+        args: ["--convention=google", "--add-ignore=D202"]
+      - id: mypy
+        name: mypy
+        entry: bash
+        language: system
+        pass_filenames: false
+        args:
+          - -c
+          - >-
+            MYPYPATH=src .venv/bin/python -m mypy --config-file pyproject.toml
+            -p bluetooth_sig && MYPYPATH=src .venv/bin/python -m mypy
+            --config-file pyproject.toml tools

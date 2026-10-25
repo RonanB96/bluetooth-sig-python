@@ -1,0 +1,23 @@
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  performance-*,
+  -performance-enum-size,
+  portability-*,
+  misc-*,
+  -misc-include-cleaner,
+  -misc-const-correctness,
+  readability-braces-around-statements,
+  readability-redundant-control-flow,
+  readability-isolate-declaration,
+  readability-simplify-boolean-expr
+
+WarningsAsErrors: '*'
+
+HeaderFilterRegex: '.*/(btsig/modules/(codec|schema|types)|btsig/generated|examples/characteristic_api)/.*'
+
+CheckOptions:
+  - key: bugprone-signed-char-misuse.CharTypdefsToIgnore
+    value: 'int8_t;std::int8_t'

@@ -32,9 +32,10 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Folders to lint/format
-RUFF_FOLDERS="src/ tests/ examples/"
+RUFF_FOLDERS="."
 EXAMPLES_FOLDERS="examples"
 TEST_FOLDERS="tests"
+TOOLS_FOLDERS="tools"
 
 # Print functions
 print_header() {
@@ -180,7 +181,7 @@ run_mypy() {
     fi
     local PROD_MYPY_OUTPUT
     # Use cache for better performance and -p flag to check specific package
-    run_capture "MYPYPATH=src python -m mypy --cache-dir=.mypy_cache --explicit-package-bases --config-file pyproject.toml -p bluetooth_sig"
+    run_capture "MYPYPATH=src python -m mypy --cache-dir=.mypy_cache --explicit-package-bases --config-file pyproject.toml -p bluetooth_sig && MYPYPATH=src python -m mypy --cache-dir=.mypy_cache --explicit-package-bases --config-file pyproject.toml ${TOOLS_FOLDERS}"
     local PROD_MYPY_EXIT_CODE=$?
     PROD_MYPY_OUTPUT="$CAPTURE_OUTPUT"
 
@@ -319,7 +320,7 @@ run_shellcheck() {
 
     # Find all shell scripts in the project
     local shell_scripts
-    shell_scripts=$(find . -name "*.sh" -type f | grep -v ".venv" | head -20)
+    shell_scripts=$(find . -name "*.sh" -type f | grep -v ".venv")
 
     if [ -z "$shell_scripts" ]; then
         if [ "$is_parallel" != "true" ]; then
@@ -414,7 +415,7 @@ run_pydocstyle() {
     # Run pydocstyle only on source code (tests are excluded
     # because they intentionally contain many informal helpers
     # scripts that don't require exhaustive Google-style docstrings).
-    local PYDOCSTYLE_FOLDERS="src examples"
+    local PYDOCSTYLE_FOLDERS="src examples tools scripts docs hatch_build.py tests"
     local PYDOCSTYLE_OUTPUT
     # shellcheck disable=SC2086  # PYDOCSTYLE_FOLDERS is intentionally space-separated
     # D202 ignored: Black formatter requires blank line before nested functions
