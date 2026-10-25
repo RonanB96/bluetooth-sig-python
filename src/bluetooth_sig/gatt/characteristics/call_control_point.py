@@ -65,11 +65,9 @@ class CallControlPointCharacteristic(BaseCharacteristic[CallControlPointData]):
             uri = DataParser.parse_utf8_string(data[1:]) if len(data) > 1 else None
             return CallControlPointData(op_code=op_code, uri=uri)
 
-        if op_code == CallControlPointOpCode.JOIN:
-            indexes = tuple(data[i] for i in range(1, len(data)))
-            return CallControlPointData(op_code=op_code, call_indexes=indexes)
-
-        return CallControlPointData(op_code=op_code)
+        # JOIN is the only remaining opcode. A later member must get its own return above.
+        indexes = tuple(data[i] for i in range(1, len(data)))
+        return CallControlPointData(op_code=op_code, call_indexes=indexes)
 
     def _encode_value(self, data: CallControlPointData) -> bytearray:
         result = bytearray([int(data.op_code)])

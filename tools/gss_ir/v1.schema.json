@@ -1,0 +1,192 @@
+{
+  "$ref": "#/$defs/IrDocument",
+  "$defs": {
+    "IrDocument": {
+      "title": "IrDocument",
+      "description": "One self-contained characteristic document.",
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "integer"
+        },
+        "identifier": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "integer"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ScalarField"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "identifier",
+        "uuid",
+        "provenance",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "Provenance": {
+      "title": "Provenance",
+      "description": "Trace from the document back to the SIG YAML file.",
+      "type": "object",
+      "properties": {
+        "source_path": {
+          "type": "string"
+        },
+        "source_identifier": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_path",
+        "source_identifier"
+      ],
+      "additionalProperties": false
+    },
+    "ScalarField": {
+      "title": "ScalarField",
+      "description": "One resolved integer scalar in wire order.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "wire_type": {
+          "$ref": "#/$defs/WireType"
+        },
+        "minimum": {
+          "type": "integer"
+        },
+        "maximum": {
+          "type": "integer"
+        },
+        "transform": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Transform"
+            }
+          ],
+          "default": null
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/UnitRef"
+            }
+          ],
+          "default": null
+        },
+        "sentinels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Sentinel"
+          },
+          "default": []
+        }
+      },
+      "required": [
+        "name",
+        "wire_type",
+        "minimum",
+        "maximum"
+      ],
+      "additionalProperties": false
+    },
+    "WireType": {
+      "title": "WireType",
+      "description": "Integer wire types named by ADR-0003.",
+      "enum": [
+        "sint16",
+        "sint24",
+        "sint32",
+        "sint8",
+        "uint16",
+        "uint24",
+        "uint32",
+        "uint48",
+        "uint64",
+        "uint8"
+      ]
+    },
+    "Transform": {
+      "title": "Transform",
+      "description": "Exact transform: decoded = raw * coefficient * 10^decimal_exponent * 2^binary_exponent.",
+      "type": "object",
+      "properties": {
+        "coefficient": {
+          "type": "integer",
+          "default": 1
+        },
+        "decimal_exponent": {
+          "type": "integer",
+          "default": 0
+        },
+        "binary_exponent": {
+          "type": "integer",
+          "default": 0
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "UnitRef": {
+      "title": "UnitRef",
+      "description": "Assigned unit joined onto a field.",
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "identifier",
+        "uuid"
+      ],
+      "additionalProperties": false
+    },
+    "Sentinel": {
+      "title": "Sentinel",
+      "description": "One raw sentinel and its meaning.",
+      "type": "object",
+      "properties": {
+        "raw_value": {
+          "type": "integer"
+        },
+        "meaning": {
+          "$ref": "#/$defs/SentinelMeaning"
+        }
+      },
+      "required": [
+        "raw_value",
+        "meaning"
+      ],
+      "additionalProperties": false
+    },
+    "SentinelMeaning": {
+      "title": "SentinelMeaning",
+      "description": "Sentinel meanings defined for this schema version.",
+      "enum": [
+        "not_known",
+        "not_valid"
+      ]
+    }
+  }
+}

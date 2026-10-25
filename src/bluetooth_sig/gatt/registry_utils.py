@@ -10,7 +10,7 @@ import inspect
 import pkgutil
 from collections.abc import Callable
 from importlib import import_module
-from typing import Any, TypeGuard, TypeVar
+from typing import TypeGuard, TypeVar
 
 
 class TypeValidator:  # pylint: disable=too-few-public-methods
@@ -78,7 +78,7 @@ class ModuleDiscovery:
     def discover_classes(
         module_names: list[str],
         base_class: type[T],
-        validator: Callable[[Any], bool],
+        validator: Callable[[object], TypeGuard[type[T]]],
     ) -> list[type[T]]:
         """Discover all concrete classes in modules that pass validation.
 
@@ -106,7 +106,7 @@ class ModuleDiscovery:
                     continue
 
                 # Validate that the class has required methods
-                if not hasattr(obj, "get_class_uuid") or not callable(obj.get_class_uuid):
+                if not callable(getattr(obj, "get_class_uuid", None)):
                     continue  # Skip classes without proper UUID resolution
 
                 candidates.append(obj)
