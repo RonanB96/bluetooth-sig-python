@@ -1,24 +1,20 @@
 cmake_minimum_required(VERSION 3.24)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    set(CMAKE_C_STANDARD 11)
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+    set(CMAKE_C_EXTENSIONS OFF)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
     if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
         set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
     endif()
-    project(btsig_characteristics LANGUAGES C CXX)
+    project(btsig_characteristics LANGUAGES C)
 endif()
 
 add_library(btsig_warnings INTERFACE)
 add_library(btsig::warnings ALIAS btsig_warnings)
 target_compile_options(btsig_warnings INTERFACE
-    -Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef
-    "$<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>"
-    "$<$<COMPILE_LANGUAGE:CXX>:-fno-unwind-tables>"
-    "$<$<COMPILE_LANGUAGE:CXX>:-fno-asynchronous-unwind-tables>")
+    -Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef)
 
 add_library(btsig_types INTERFACE)
 add_library(btsig::types ALIAS btsig_types)
@@ -49,10 +45,9 @@ target_include_directories(btsig_codec PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/wire
 target_link_libraries(btsig_codec PUBLIC btsig::schema PRIVATE btsig::wire btsig::warnings m)
 
 file(GLOB btsig_generated_sources CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/../generated/*/src/*.cpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/../generated/*/src/*.c")
 file(GLOB btsig_override_sources CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/../override/*/src/*.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../override/*/src/*.cpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/../override/*/src/*.c")
 set(btsig_override_names "")
 foreach(source IN LISTS btsig_override_sources)
     cmake_path(GET source PARENT_PATH source_dir)

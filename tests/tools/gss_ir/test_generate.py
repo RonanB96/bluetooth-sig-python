@@ -200,26 +200,24 @@ def test_emitted_code_calls_the_handwritten_codec(tmp_path: Path) -> None:
     generated = generate_characteristics(CHARACTERISTICS, root=ROOT, output_root=tmp_path)
     emitted = emit_characteristics(CHARACTERISTICS, root=ROOT, output_root=tmp_path)
     ir_paths = [path for path in generated if path.startswith("generated/ir/")]
-    cpp_paths = [path for path in emitted if path.endswith(".cpp")]
+    c_paths = [path for path in emitted if path.endswith(".c")]
     assert len(ir_paths) >= 30
-    assert len(cpp_paths) == len(ir_paths)
-    for path in cpp_paths:
+    assert len(c_paths) == len(ir_paths)
+    assert not any(path.endswith((".cpp", ".hpp")) for path in emitted)
+    for path in c_paths:
         text = emitted[path].decode()
-        assert "btsig::decode(" in text
-        assert "btsig::encode(" in text
+        assert "btsig_codec_decode(" in text
+        assert "btsig_codec_encode(" in text
         assert "virtual " not in text
         assert all(len(line) <= 120 for line in text.splitlines())
 
-    source = emitted["btsig/generated/temperature/src/temperature.cpp"].decode()
+    source = emitted["btsig/generated/temperature/src/temperature.c"].decode()
     header = emitted["btsig/generated/temperature/include/btsig/temperature.h"].decode()
     range_header = emitted["btsig/generated/temperature_range/include/btsig/temperature_range.h"].decode()
 
-    assert "btsig::decode(" in source
-    assert "btsig::encode(" in source
+    assert "btsig_codec_decode(" in source
+    assert "btsig_codec_encode(" in source
     assert "Temperature::decode" not in source
-    header_hpp = emitted["btsig/generated/temperature/include/btsig/temperature.hpp"].decode()
-    assert "Temperature::decode" in header_hpp
-    assert "inline btsig::expected<Temperature>" in header_hpp
     assert "catalog" not in source
     assert "virtual " not in source
     assert "pow(" not in source
@@ -227,7 +225,7 @@ def test_emitted_code_calls_the_handwritten_codec(tmp_path: Path) -> None:
     assert "-32768" in source
     assert "-27315" in source
     assert "32767" in source
-    assert "static_assert" in source
+    assert "_Static_assert" in source
     assert "btsig_decode_temperature" in header
     assert "btsig_encode_temperature" in header
     assert "typedef struct btsig_temperature " in header
@@ -236,35 +234,26 @@ def test_emitted_code_calls_the_handwritten_codec(tmp_path: Path) -> None:
     assert "double minimum" in range_header
     assert "double maximum" in range_header
     last_name = emitted["btsig/generated/last_name/include/btsig/last_name.h"].decode()
-    last_name_hpp = emitted["btsig/generated/last_name/include/btsig/last_name.hpp"].decode()
     fixed_string = emitted["btsig/generated/fixed_string_16/include/btsig/fixed_string_16.h"].decode()
     object_name = emitted["btsig/generated/object_name/include/btsig/object_name.h"].decode()
     assert "uint16_t size;" in last_name
     assert "uint8_t data[512];" in last_name
     assert "last_name_length" not in last_name
-    assert "btsig::utf8_text<512> last_name;" in last_name_hpp
-    assert "struct LastName {" in last_name_hpp
     assert "uint16_t size;" in fixed_string
     assert "uint8_t data[16];" in fixed_string
     assert "uint8_t data[120];" in object_name
-    temperature_type = emitted["btsig/generated/temperature_type/include/btsig/temperature_type.hpp"].decode()
-    temperature_type_c = emitted["btsig/generated/temperature_type/include/btsig/temperature_type.h"].decode()
-    glucose = emitted["btsig/generated/glucose_feature/include/btsig/glucose_feature.hpp"].decode()
-    assert "enum class TemperatureTypeDescription : int" in temperature_type
-    assert "armpit = 1" in temperature_type
-    assert "operator|" not in temperature_type
-    assert "enum btsig_temperature_type_description {" in temperature_type_c
-    assert "typedef uint" not in temperature_type_c
-    assert "typedef enum" not in temperature_type_c
-    assert "BTSIG_TEMPERATURE_TYPE_DESCRIPTION_ARMPIT = 1" in temperature_type_c
-    assert "enum btsig_temperature_type_description temperature_type_description" in temperature_type_c
-    glucose_c = emitted["btsig/generated/glucose_feature/include/btsig/glucose_feature.h"].decode()
-    assert "enum class GlucoseFeatureValue : std::uint32_t" in glucose
-    assert "enum btsig_glucose_feature_value {" in glucose_c
-    assert "BTSIG_GLUCOSE_FEATURE_VALUE_LOW_BATTERY_DETECTION_DURING_MEASUREMENT = 1U << 0" in glucose_c
-    assert "operator|" in glucose
-    assert "operator&" in glucose
-    assert "operator~" in glucose
+    temperature_type = emitted["btsig/generated/temperature_type/include/btsig/temperature_type.h"].decode()
+    temperature_source = emitted["btsig/generated/temperature_type/src/temperature_type.c"].decode()
+    assert "enum btsig_temperature_type_description {" in temperature_type
+    assert "typedef uint" not in temperature_type
+    assert "typedef enum" not in temperature_type
+    assert "BTSIG_TEMPERATURE_TYPE_DESCRIPTION_ARMPIT = 1" in temperature_type
+    assert "enum btsig_temperature_type_description temperature_type_description" in temperature_type
+    assert "sizeof(enum btsig_temperature_type_description) == 4" in temperature_source
+    glucose = emitted["btsig/generated/glucose_feature/include/btsig/glucose_feature.h"].decode()
+    assert "enum btsig_glucose_feature_value {" in glucose
+    assert "BTSIG_GLUCOSE_FEATURE_VALUE_LOW_BATTERY_DETECTION_DURING_MEASUREMENT = 1U << 0" in glucose
+    assert "operator|" not in glucose
     assert "1U << 0" in glucose
     assert "1U << 11" not in glucose
     assert source.startswith("// Generated by `python -m tools.gss_ir.emit_cpp ")

@@ -15,7 +15,7 @@ def handwritten_override_ids(override_root: Path) -> tuple[str, ...]:
     """Return characteristic ids declared by handwritten override sources.
 
     Args:
-        override_root: Directory of ``<characteristic>/src/*.cpp`` override codecs.
+        override_root: Directory of ``<characteristic>/src/*.c`` override codecs.
 
     Returns:
         Identifiers in source order. A directory with no characteristic id is skipped.
@@ -24,7 +24,7 @@ def handwritten_override_ids(override_root: Path) -> tuple[str, ...]:
         return ()
     found: list[str] = []
     seen: set[str] = set()
-    for path in sorted(override_root.glob("*/src/*.cpp")):
+    for path in sorted(override_root.glob("*/src/*.c")):
         match = _CHARACTERISTIC_ID.search(path.read_text(encoding="utf-8"))
         if match is None or match.group(0) in seen:
             continue

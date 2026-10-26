@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   test:
-    # Python library tests are not run. btsig.yml checks the C/C++ library.
+    # Python library tests are not run. btsig.yml checks the C library.
     if: false
     runs-on: ubuntu-latest
     timeout-minutes: 30
