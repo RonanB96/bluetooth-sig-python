@@ -1,5 +1,5 @@
 #include "btsig/battery_level.hpp"
-#include "btsig/electric_current_statistics.hpp"
+#include "btsig/electric_current_specification.hpp"
 #include "btsig/temperature.hpp"
 #include "btsig/temperature_range.hpp"
 
@@ -132,40 +132,37 @@ bool temperature_range() {
            same_bytes(encoded_bytes, encoded.value(), wire, sizeof wire);
 }
 
-bool electric_current_statistics() {
-    const std::uint8_t wire[] = {0x96, 0x00, 0x32, 0x00, 0x64, 0x00, 0xC8, 0x00, 0x1E};
+bool electric_current_specification() {
+    const std::uint8_t wire[] = {0x64, 0x00, 0x96, 0x00, 0xC8, 0x00};
     const btsig_bytes input{wire, sizeof wire};
-    std::printf("ElectricCurrentStatistics::decode / encode\n");
-    const btsig::expected<btsig::ElectricCurrentStatistics> decoded =
-        btsig::ElectricCurrentStatistics::decode(input, nullptr);
+    std::printf("ElectricCurrentSpecification::decode / encode\n");
+    const btsig::expected<btsig::ElectricCurrentSpecification> decoded =
+        btsig::ElectricCurrentSpecification::decode(input, nullptr);
     if (!decoded) {
         print_failure("decode", decoded.error());
         return false;
     }
-    const btsig::ElectricCurrentStatistics value = decoded.value();
-    std::printf("  average = %.2f A, standard_deviation = %.2f A, minimum = %.2f "
-                "A, maximum = %.2f A, duration = %u s\n",
-                value.average_electric_current_value, value.standard_deviation_electric_current_value,
-                value.minimum_electric_current_value, value.maximum_electric_current_value, value.sensing_duration);
+    const btsig::ElectricCurrentSpecification value = decoded.value();
+    std::printf("  minimum = %.2f A, typical = %.2f A, maximum = %.2f A\n", value.minimum_electric_current_value,
+                value.typical_electric_current_value, value.maximum_electric_current_value);
 
     std::uint8_t encoded_bytes[16]{};
-    const btsig::expected<std::size_t> encoded =
-        btsig::ElectricCurrentStatistics::encode(value, btsig::span<std::uint8_t>(encoded_bytes, sizeof encoded_bytes));
+    const btsig::expected<std::size_t> encoded = btsig::ElectricCurrentSpecification::encode(
+        value, btsig::span<std::uint8_t>(encoded_bytes, sizeof encoded_bytes));
     if (!encoded) {
         print_failure("encode", encoded.error());
         return false;
     }
     print_bytes("encoded", encoded_bytes, encoded.value());
-    return value.average_electric_current_value == 1.5 && value.standard_deviation_electric_current_value == 0.5 &&
-           value.minimum_electric_current_value == 1.0 && value.maximum_electric_current_value == 2.0 &&
-           value.sensing_duration == 30 && same_bytes(encoded_bytes, encoded.value(), wire, sizeof wire);
+    return value.minimum_electric_current_value == 1.0 && value.typical_electric_current_value == 1.5 &&
+           value.maximum_electric_current_value == 2.0 && same_bytes(encoded_bytes, encoded.value(), wire, sizeof wire);
 }
 
 } // namespace
 
 int main() {
     const bool ok = battery_level() && temperature() && temperature_not_known() && temperature_range() &&
-                    electric_current_statistics();
+                    electric_current_specification();
     if (!ok) {
         std::printf("sample failed\n");
         return 1;
