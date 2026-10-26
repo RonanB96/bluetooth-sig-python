@@ -30,7 +30,7 @@ target_include_directories(btsig_schema INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/s
 target_link_libraries(btsig_schema INTERFACE btsig::types)
 
 add_library(btsig_wire STATIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/word.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/word.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/medfloat.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/ieee754.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/real.c"

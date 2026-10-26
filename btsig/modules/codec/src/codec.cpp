@@ -4,7 +4,7 @@
 #include "btsig/types/utf8_text.hpp"
 #include "btsig/wire/subbyte.h"
 #include "btsig/wire/utf8.h"
-#include "btsig/wire/word.hpp"
+#include "btsig/wire/word.h"
 
 #include <cmath>
 #include <cstdint>
@@ -68,7 +68,7 @@ expected<MeasuredWire> measure_wire(const CharacteristicDescriptor& descriptor) 
             measured.utf8_capacity = field.utf8_capacity;
             continue;
         }
-        const std::size_t field_width = wire::width(field.wire);
+        const std::size_t field_width = btsig_wire_width(static_cast<uint8_t>(field.wire));
         if (field_width == 0 || measured.fixed_octets > std::numeric_limits<std::size_t>::max() - field_width) {
             return unexpected_status<MeasuredWire>(BTSIG_INVALID_ARGUMENT);
         }
@@ -380,10 +380,17 @@ btsig_error accept_input(const CharacteristicDescriptor& descriptor, btsig_bytes
             continue;
         }
         const std::size_t bits = btsig_wire_bit_width(static_cast<uint8_t>(field.wire));
-        const std::size_t field_width = bits == 0 ? wire::width(field.wire) : 0;
+        const std::size_t field_width = bits == 0 ? btsig_wire_width(static_cast<uint8_t>(field.wire)) : 0;
         expected<std::int64_t> raw = unexpected_status<std::int64_t>(BTSIG_INVALID_ARGUMENT);
         if (bits == 0) {
-            raw = wire::read(span<const std::uint8_t>{input.data + cursor, field_width}, field.wire);
+            std::int64_t word = 0;
+            const btsig_error error =
+                btsig_wire_read(input.data + cursor, field_width, static_cast<uint8_t>(field.wire), &word);
+            if (error.status == BTSIG_OK) {
+                raw = word;
+            } else {
+                raw = unexpected<std::int64_t>(error);
+            }
         } else {
             std::int64_t packed = 0;
             const btsig_error error = btsig_wire_read_bits(input.data, input.size, bit_cursor, bits, &packed);
@@ -403,7 +410,7 @@ btsig_error accept_input(const CharacteristicDescriptor& descriptor, btsig_bytes
         if (!value_accepted(raw.value(), field, refs.allowed)) {
             return make_error(BTSIG_OUT_OF_RANGE, refs.name, input);
         }
-        if (wire::is_real(field.wire)) {
+        if (btsig_wire_is_real(static_cast<uint8_t>(field.wire))) {
             double decoded = 0.0;
             const btsig_error error = btsig_wire_decode_real(static_cast<uint8_t>(field.wire), raw.value(), &decoded);
             if (error.status != BTSIG_OK) {
@@ -478,10 +485,17 @@ btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input
             continue;
         }
         const std::size_t bits = btsig_wire_bit_width(static_cast<uint8_t>(field.wire));
-        const std::size_t field_width = bits == 0 ? wire::width(field.wire) : 0;
+        const std::size_t field_width = bits == 0 ? btsig_wire_width(static_cast<uint8_t>(field.wire)) : 0;
         expected<std::int64_t> raw = unexpected_status<std::int64_t>(BTSIG_INVALID_ARGUMENT);
         if (bits == 0) {
-            raw = wire::read(span<const std::uint8_t>{input.data + cursor, field_width}, field.wire);
+            std::int64_t word = 0;
+            const btsig_error error =
+                btsig_wire_read(input.data + cursor, field_width, static_cast<uint8_t>(field.wire), &word);
+            if (error.status == BTSIG_OK) {
+                raw = word;
+            } else {
+                raw = unexpected<std::int64_t>(error);
+            }
         } else {
             std::int64_t packed = 0;
             const btsig_error error = btsig_wire_read_bits(input.data, input.size, bit_cursor, bits, &packed);
@@ -501,7 +515,7 @@ btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input
         if (!value_accepted(raw.value(), field, refs.allowed)) {
             return make_error(BTSIG_OUT_OF_RANGE, refs.name, input);
         }
-        if (wire::is_real(field.wire)) {
+        if (btsig_wire_is_real(static_cast<uint8_t>(field.wire))) {
             double decoded = 0.0;
             const btsig_error error = btsig_wire_decode_real(static_cast<uint8_t>(field.wire), raw.value(), &decoded);
             if (error.status != BTSIG_OK) {
@@ -574,9 +588,9 @@ btsig_error encode(const CharacteristicDescriptor& descriptor, const void* value
             continue;
         }
         const std::size_t bits = btsig_wire_bit_width(static_cast<uint8_t>(field.wire));
-        const std::size_t field_width = bits == 0 ? wire::width(field.wire) : 0;
+        const std::size_t field_width = bits == 0 ? btsig_wire_width(static_cast<uint8_t>(field.wire)) : 0;
         const auto raw = [&]() -> expected<std::int64_t> {
-            if (wire::is_real(field.wire)) {
+            if (btsig_wire_is_real(static_cast<uint8_t>(field.wire))) {
                 double member = 0.0;
                 std::memcpy(&member, base + field.offset, sizeof member);
                 std::int64_t encoded = 0;
@@ -603,7 +617,7 @@ btsig_error encode(const CharacteristicDescriptor& descriptor, const void* value
             return make_error(BTSIG_BUFFER_TOO_SMALL, refs.name, buffer);
         }
         const btsig_error stored =
-            bits == 0 ? wire::write(span<std::uint8_t>{out + cursor, field_width}, raw.value())
+            bits == 0 ? btsig_wire_write(out + cursor, field_width, raw.value())
                       : btsig_wire_write_bits(out, measured.value().fixed_octets, bit_cursor, bits, raw.value());
         if (stored.status != BTSIG_OK) {
             return annotate(stored, refs.name, buffer);
