@@ -41,11 +41,12 @@ set_target_properties(btsig_wire PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON
 target_include_directories(btsig_wire PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/wire/include")
 target_link_libraries(btsig_wire PUBLIC btsig::schema PRIVATE btsig::warnings m)
 
-add_library(btsig_codec STATIC "${CMAKE_CURRENT_SOURCE_DIR}/codec/src/codec.cpp")
+add_library(btsig_codec STATIC "${CMAKE_CURRENT_SOURCE_DIR}/codec/src/codec.c")
 add_library(btsig::codec ALIAS btsig_codec)
+set_target_properties(btsig_codec PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
 target_include_directories(btsig_codec PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/codec/include")
 target_include_directories(btsig_codec PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/wire/src")
-target_link_libraries(btsig_codec PUBLIC btsig::schema PRIVATE btsig::wire btsig::warnings)
+target_link_libraries(btsig_codec PUBLIC btsig::schema PRIVATE btsig::wire btsig::warnings m)
 
 file(GLOB btsig_generated_sources CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/../generated/*/src/*.cpp")
