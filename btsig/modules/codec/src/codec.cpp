@@ -520,7 +520,10 @@ btsig_error encode(const CharacteristicDescriptor& descriptor, const void* value
             return make_error(BTSIG_BUFFER_TOO_SMALL, nullptr, buffer);
         }
         // write_bits only sets bits that are present, so the caller's bytes start clear.
-        std::memset(out, 0, measured.value().fixed_octets);
+        // A zero-octet value is a null output with out_size 0, and memset rejects that pointer.
+        if (measured.value().fixed_octets != 0) {
+            std::memset(out, 0, measured.value().fixed_octets);
+        }
     }
     const auto* base = static_cast<const std::uint8_t*>(value);
     std::size_t cursor = 0;
