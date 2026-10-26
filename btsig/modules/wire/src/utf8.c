@@ -25,9 +25,8 @@ static bool well_formed(const uint8_t* data, size_t size) {
         } else if (lead == 0xE0U) {
             width = 3;
             minimum = 0xA0U;
-        } else if (lead == 0xEDU) {
-            width = 3;
-        } else if ((lead >= 0xE1U && lead <= 0xECU) || (lead >= 0xEEU && lead <= 0xEFU)) {
+        } else if (lead >= 0xE1U && lead <= 0xEFU) {
+            // ED is in this range and keeps the default continuation bounds.
             width = 3;
         } else if (lead == 0xF0U) {
             width = 4;

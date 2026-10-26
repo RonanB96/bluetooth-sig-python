@@ -338,7 +338,7 @@ static btsig_error raw_from_scaled(double member, const btsig_field_descriptor* 
     if (!isfinite(quotient) || quotient >= highest || quotient < lowest) {
         return make_error(BTSIG_OUT_OF_RANGE, NULL, (btsig_bytes){0});
     }
-    // llround rounds halfway cases away from zero (C11 7.12.9.7, the same rule as std::llround).
+    // llround rounds halfway cases away from zero (C11 7.12.9.7).
     *raw = (int64_t)llround(quotient);
     return make_error(BTSIG_OK, NULL, (btsig_bytes){0});
 }

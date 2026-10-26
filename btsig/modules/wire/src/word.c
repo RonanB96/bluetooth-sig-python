@@ -10,25 +10,9 @@ static bool is_signed(uint8_t wire) {
     case BTSIG_WIRE_SINT24:
     case BTSIG_WIRE_SINT32:
         return true;
-    case BTSIG_WIRE_UINT8:
-    case BTSIG_WIRE_UINT16:
-    case BTSIG_WIRE_UINT24:
-    case BTSIG_WIRE_UINT32:
-    case BTSIG_WIRE_UINT48:
-    case BTSIG_WIRE_UINT64:
-    case BTSIG_WIRE_BOOLEAN8:
-    case BTSIG_WIRE_BOOLEAN16:
-    case BTSIG_WIRE_BOOLEAN24:
-    case BTSIG_WIRE_BOOLEAN32:
-    case BTSIG_WIRE_MEDFLOAT16:
-    case BTSIG_WIRE_MEDFLOAT32:
-    case BTSIG_WIRE_FLOAT32:
-    case BTSIG_WIRE_UTF8:
-    case BTSIG_WIRE_UINT1:
-    case BTSIG_WIRE_UINT2:
+    default:
         return false;
     }
-    return false;
 }
 
 size_t btsig_wire_width(uint8_t wire) {
@@ -56,12 +40,9 @@ size_t btsig_wire_width(uint8_t wire) {
         return 6;
     case BTSIG_WIRE_UINT64:
         return 8;
-    case BTSIG_WIRE_UTF8:
-    case BTSIG_WIRE_UINT1:
-    case BTSIG_WIRE_UINT2:
+    default:
         return 0;
     }
-    return 0;
 }
 
 bool btsig_wire_is_real(uint8_t wire) {

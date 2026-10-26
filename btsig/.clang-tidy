@@ -1,6 +1,9 @@
+# Annex K memcpy_s and memset_s are optional and this libc does not provide them.
+# The copies are sizeof a local object, or a length the caller already checked.
 Checks: >
   clang-diagnostic-*,
   clang-analyzer-*,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   bugprone-*,
   -bugprone-easily-swappable-parameters,
   performance-*,
@@ -20,4 +23,4 @@ HeaderFilterRegex: '.*/(btsig|examples/characteristic_api)/.*'
 
 CheckOptions:
   - key: bugprone-signed-char-misuse.CharTypdefsToIgnore
-    value: 'int8_t;std::int8_t'
+    value: 'int8_t'
