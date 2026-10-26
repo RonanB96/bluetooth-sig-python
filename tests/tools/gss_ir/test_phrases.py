@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+import yaml
 
 from tools.gss_ir.normalise.field_name import parse_field_name
 from tools.gss_ir.normalise.fixed_size import parse_fixed_size
@@ -10,8 +11,10 @@ from tools.gss_ir.normalise.prohibited import OutsideRange, parse_prohibited
 from tools.gss_ir.normalise.result import Unsupported
 from tools.gss_ir.normalise.sentinel import parse_sentinels
 from tools.gss_ir.normalise.struct_ref import copied_field_name, parse_struct_reference
+from tools.gss_ir.normalise.subbyte import parse_subbyte_size, parse_subbyte_type, subbyte_domain
 from tools.gss_ir.normalise.transform import parse_transform
 from tools.gss_ir.normalise.unit import parse_unit
+from tools.gss_ir.normalise.utf8 import parse_utf8_size, parse_utf8_type
 from tools.gss_ir.normalise.value_range import displayed_to_raw, parse_range
 from tools.gss_ir.normalise.wire_type import parse_wire_type
 from tools.gss_ir.v1 import SentinelMeaning, WireType
@@ -64,13 +67,106 @@ def test_wire_type_stores_gss_names_as_enumerators(type_text: str, expected: Wir
 
 @pytest.mark.parametrize(
     "type_text",
-    ["utf8s", "utf8s\\{16\\}", "gatt_uuid", "uint16[n]", "uint1", "uint2", "uint128"],
+    ["gatt_uuid", "uint16[n]", "uint128"],
 )
 def test_wire_type_rejects_other_types(type_text: str) -> None:
     result = parse_wire_type(type_text)
 
     assert isinstance(result, Unsupported)
     assert result.rule == "wire_type"
+
+
+def test_utf8s_and_utf8s_n_share_one_parser() -> None:
+    last_name = yaml.safe_load(
+        """
+        - field: Last Name
+          type: utf8s
+          size: variable
+          description: UTF-8 string
+        """
+    )[0]
+    fixed_string_8 = yaml.safe_load(
+        r"""
+        - field: Fixed String
+          type: utf8s\{8\}
+          size: "8"
+          description: UTF-8 string
+        """
+    )[0]
+    fixed_string_16 = yaml.safe_load(
+        r"""
+        - field: Fixed String
+          type: utf8s\{16\}
+          size: "16"
+          description: UTF-8 string
+        """
+    )[0]
+    variable = parse_utf8_type(last_name["type"])
+    eight = parse_utf8_type(fixed_string_8["type"])
+    sixteen = parse_utf8_type(fixed_string_16["type"])
+
+    assert variable is not None and variable.capacity is None
+    assert parse_utf8_size(str(last_name["size"]), None) is None
+    assert eight is not None and eight.capacity == 8
+    assert parse_utf8_size(str(fixed_string_8["size"]), 8) == 8
+    assert sixteen is not None and sixteen.capacity == 16
+    assert parse_utf8_size(str(fixed_string_16["size"]), 16) == 16
+
+
+def test_utf8_size_range_is_the_octet_maximum() -> None:
+    object_name = yaml.safe_load(
+        """
+        - field: Object Name
+          type: utf8s
+          size: 0\u2013120
+          description: UTF-8 string
+        """
+    )[0]
+    result = parse_utf8_size(str(object_name["size"]), None)
+
+    assert result == 120
+
+
+def test_utf8_size_variable_with_a_following_range_is_the_octet_maximum() -> None:
+    result = parse_utf8_size("variable\n0\u201318", None)
+
+    assert result == 18
+
+
+def test_utf8_size_above_the_attribute_limit_stays_unsupported() -> None:
+    result = parse_utf8_size("0\u2013513", None)
+
+    assert isinstance(result, Unsupported)
+    assert result.rule == "utf8"
+
+
+def test_uint1_and_uint2_share_one_parser() -> None:
+    contact = yaml.safe_load(
+        r"""
+        - field: Contact 0 Status
+          type: uint1
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.contact_status_8/field/contact_status}
+        """
+    )[0]
+    button = yaml.safe_load(
+        r"""
+        - field: Button 0 Status
+          type: uint2
+          size: "2"
+          description: See \autoref{sec:org.bluetooth.characteristic.pushbutton_status_8/field/button_status}
+        """
+    )[0]
+    contact_wire = parse_subbyte_type(contact["type"])
+    button_wire = parse_subbyte_type(button["type"])
+
+    assert contact_wire is WireType.UINT1
+    assert parse_subbyte_size(str(contact["size"]), contact_wire) == 1
+    assert subbyte_domain(contact_wire) == (0, 1)
+    assert button_wire is WireType.UINT2
+    assert parse_subbyte_size(str(button["size"]), button_wire) == 2
+    assert subbyte_domain(button_wire) == (0, 3)
+    assert parse_subbyte_type("uint4") is None
 
 
 def test_fixed_size_accepts_the_wire_width() -> None:

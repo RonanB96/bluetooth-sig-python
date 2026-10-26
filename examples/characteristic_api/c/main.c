@@ -1,5 +1,5 @@
 #include "btsig/battery_level.h"
-#include "btsig/electric_current_statistics.h"
+#include "btsig/electric_current_specification.h"
 #include "btsig/temperature.h"
 #include "btsig/temperature_range.h"
 
@@ -136,40 +136,37 @@ static int temperature_range(void) {
     return value.minimum == 18.0 && value.maximum == 28.0 && same_bytes(encoded_bytes, written, wire, sizeof wire);
 }
 
-static int electric_current_statistics(void) {
-    const uint8_t wire[] = {0x96, 0x00, 0x32, 0x00, 0x64, 0x00, 0xC8, 0x00, 0x1E};
+static int electric_current_specification(void) {
+    const uint8_t wire[] = {0x64, 0x00, 0x96, 0x00, 0xC8, 0x00};
     btsig_bytes input = {wire, sizeof wire};
-    btsig_electric_current_statistics value;
+    btsig_electric_current_specification value;
     btsig_error error;
     uint8_t encoded_bytes[16];
     size_t written = 0;
 
-    printf("btsig_decode_electric_current_statistics / "
-           "btsig_encode_electric_current_statistics\n");
-    error = btsig_decode_electric_current_statistics(input, NULL, &value);
+    printf("btsig_decode_electric_current_specification / "
+           "btsig_encode_electric_current_specification\n");
+    error = btsig_decode_electric_current_specification(input, NULL, &value);
     if (error.status != BTSIG_OK) {
         print_failure("decode", error);
         return 0;
     }
-    printf("  average = %.2f A, standard_deviation = %.2f A, minimum = %.2f A, "
-           "maximum = %.2f A, duration = %u s\n",
-           value.average_electric_current_value, value.standard_deviation_electric_current_value,
-           value.minimum_electric_current_value, value.maximum_electric_current_value, value.sensing_duration);
+    printf("  minimum = %.2f A, typical = %.2f A, maximum = %.2f A\n", value.minimum_electric_current_value,
+           value.typical_electric_current_value, value.maximum_electric_current_value);
 
-    error = btsig_encode_electric_current_statistics(&value, encoded_bytes, sizeof encoded_bytes, &written);
+    error = btsig_encode_electric_current_specification(&value, encoded_bytes, sizeof encoded_bytes, &written);
     if (error.status != BTSIG_OK) {
         print_failure("encode", error);
         return 0;
     }
     print_bytes("encoded", encoded_bytes, written);
-    return value.average_electric_current_value == 1.5 && value.standard_deviation_electric_current_value == 0.5 &&
-           value.minimum_electric_current_value == 1.0 && value.maximum_electric_current_value == 2.0 &&
-           value.sensing_duration == 30 && same_bytes(encoded_bytes, written, wire, sizeof wire);
+    return value.minimum_electric_current_value == 1.0 && value.typical_electric_current_value == 1.5 &&
+           value.maximum_electric_current_value == 2.0 && same_bytes(encoded_bytes, written, wire, sizeof wire);
 }
 
 int main(void) {
     const int ok = battery_level() && temperature() && temperature_not_known() && temperature_range() &&
-                   electric_current_statistics();
+                   electric_current_specification();
     if (!ok) {
         printf("sample failed\n");
         return 1;

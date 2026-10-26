@@ -24,7 +24,8 @@ typedef enum btsig_value_kind {
     BTSIG_VALUE_SINT8 = 4,
     BTSIG_VALUE_SINT16 = 5,
     BTSIG_VALUE_SINT32 = 6,
-    BTSIG_VALUE_DOUBLE = 7
+    BTSIG_VALUE_DOUBLE = 7,
+    BTSIG_VALUE_UTF8 = 8
 } btsig_value_kind;
 
 typedef struct btsig_bytes {

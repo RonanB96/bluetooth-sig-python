@@ -10,6 +10,7 @@ from .field_name import parse_field_name
 from .result import Unsupported
 
 _RULE = "struct_ref"
+UNNAMED_REFERENCE = "struct reference does not name a characteristic"
 _REFERENCE = re.compile(
     r"Refer to .+ characteristic in \\autoref\{sec:"
     r"(org\.bluetooth\.characteristic\.[A-Za-z0-9_.-]+)\}"
@@ -28,10 +29,10 @@ def parse_struct_reference(description: str) -> str | Unsupported:
     """
     match = _REFERENCE.fullmatch(description.strip())
     if match is None:
-        return Unsupported(rule=_RULE, detail="struct reference does not name a characteristic")
+        return Unsupported(rule=_RULE, detail=UNNAMED_REFERENCE)
     identifier = match.group(1)
     if not identifier.startswith(IDENTIFIER_PREFIX):
-        return Unsupported(rule=_RULE, detail="struct reference does not name a characteristic")
+        return Unsupported(rule=_RULE, detail=UNNAMED_REFERENCE)
     return identifier
 
 

@@ -23,6 +23,18 @@ def test_gss_reader_keeps_raw_temperature_strings() -> None:
     assert "M = 1, d = -2, b = 0" in field.description
 
 
+def test_gss_reader_keeps_raw_enumeration_entries() -> None:
+    path = ROOT / "bluetooth_sig/gss/org.bluetooth.characteristic.temperature_type.yaml"
+    characteristic = read_characteristic(path, source_path=path.relative_to(ROOT).as_posix())
+    table = characteristic.value_tables[0]
+    entry = table.entries[1]
+
+    assert table.name == "Temperature Type Description"
+    assert entry.kind == "value"
+    assert entry.raw == "1"
+    assert entry.description == "Armpit"
+
+
 def test_characteristic_uuid_reader_maps_the_pilot() -> None:
     table = read_characteristic_uuids(ROOT / "bluetooth_sig/assigned_numbers/uuids/characteristic_uuids.yaml")
 

@@ -20,8 +20,9 @@ The handwritten headers this output includes, which this task does not create:
 
 ``btsig_value_kind`` enumerators used here are ``BTSIG_VALUE_UINT8``, ``BTSIG_VALUE_UINT16``,
 ``BTSIG_VALUE_UINT32``, ``BTSIG_VALUE_UINT64``, ``BTSIG_VALUE_SINT8``, ``BTSIG_VALUE_SINT16``,
-``BTSIG_VALUE_SINT32``, and ``BTSIG_VALUE_DOUBLE``. A ``double`` member is the scaled quantity.
-An integer member is the raw value. The codec chooses which one from the value kind.
+``BTSIG_VALUE_SINT32``, ``BTSIG_VALUE_DOUBLE``, and ``BTSIG_VALUE_UTF8``. A ``double`` member is
+the scaled quantity. An integer member is the raw value. A UTF-8 member is one counted value,
+``uint16_t size`` followed by ``uint8_t data[capacity]``. The codec chooses which one from the value kind.
 """
 
 from __future__ import annotations
@@ -33,7 +34,19 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-from tools.gss_ir.v1 import IR_VERSION, IrContractError, IrDocument, Sentinel, UnitRef, WireType, decode_ir
+from tools.gss_ir.normalise.utf8 import ATT_MAX_VALUE_OCTETS
+from tools.gss_ir.v1 import (
+    IR_VERSION,
+    Enumerator,
+    IrContractError,
+    IrDocument,
+    ScalarField,
+    Sentinel,
+    UnitRef,
+    ValueSet,
+    WireType,
+    decode_ir,
+)
 
 _INTEGER_LAYOUT: dict[WireType, tuple[str, int, int, str]] = {
     WireType.UINT8: ("uint8_t", 1, 1, "BTSIG_VALUE_UINT8"),
@@ -50,9 +63,15 @@ _INTEGER_LAYOUT: dict[WireType, tuple[str, int, int, str]] = {
     WireType.BOOLEAN16: ("uint16_t", 2, 2, "BTSIG_VALUE_UINT16"),
     WireType.BOOLEAN24: ("uint32_t", 4, 4, "BTSIG_VALUE_UINT32"),
     WireType.BOOLEAN32: ("uint32_t", 4, 4, "BTSIG_VALUE_UINT32"),
+    WireType.UINT1: ("uint8_t", 1, 1, "BTSIG_VALUE_UINT8"),
+    WireType.UINT2: ("uint8_t", 1, 1, "BTSIG_VALUE_UINT8"),
 }
 _REAL_WIRE = frozenset({WireType.MEDFLOAT16, WireType.MEDFLOAT32, WireType.FLOAT32})
 _SCALED_LAYOUT = ("double", 8, 8, "BTSIG_VALUE_DOUBLE")
+_INT32_MIN = -(2**31)
+_INT32_MAX = 2**31 - 1
+_UINT32_MAX = 2**32 - 1
+_UNSIGNED_INT_BITS = 32
 
 
 class EmitError(RuntimeError):
@@ -80,6 +99,13 @@ class _Member:
     maximum: int
     unit: UnitRef | None
     sentinels: tuple[Sentinel, ...]
+    utf8_capacity: int = 0
+    cpp_type: str = ""
+    cpp_underlying: str = ""
+    c_enum_type: str = ""
+    c_enum_is_typedef: bool = False
+    enumerators: tuple[Enumerator, ...] = ()
+    value_set: ValueSet | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -128,14 +154,14 @@ def repository_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def _load_characteristics(path: Path) -> tuple[str, ...]:
+def _load_blacklist(path: Path) -> frozenset[str]:
     try:
         loaded = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
-        raise EmitError(f"characteristic list is not readable JSON: {error}") from error
-    if not isinstance(loaded, list) or not loaded or not all(isinstance(item, str) for item in loaded):
-        raise EmitError("characteristic list must be a non-empty JSON array of identifiers")
-    return tuple(loaded)
+        raise EmitError(f"blacklist is not readable JSON: {error}") from error
+    if not isinstance(loaded, list) or not all(isinstance(item, str) for item in loaded):
+        raise EmitError("blacklist must be a JSON array of identifiers")
+    return frozenset(loaded)
 
 
 def _pascal(name: str) -> str:
@@ -146,18 +172,125 @@ def _c_string(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
+def _stored_utf8_bytes(capacity: int) -> int:
+    raw = 2 + capacity
+    return (raw + 1) // 2 * 2
+
+
+def _c_member(member: _Member) -> str:
+    if member.utf8_capacity:
+        return (
+            "    struct {\n"
+            "        uint16_t size;\n"
+            f"        uint8_t data[{member.utf8_capacity}];\n"
+            f"    }} {member.name};"
+        )
+    return f"    {member.c_type} {member.name};"
+
+
+def _cpp_member(member: _Member) -> str:
+    if member.utf8_capacity:
+        return f"    btsig::utf8_text<{member.utf8_capacity}> {member.name};"
+    return f"    {member.cpp_type} {member.name};"
+
+
+def _snake_pascal(name: str) -> str:
+    characters: list[str] = []
+    for index, character in enumerate(name):
+        if character.isupper() and index:
+            characters.append("_")
+        characters.append(character.lower())
+    return "".join(characters)
+
+
+def _enum_type(field_name: str, class_name: str) -> str:
+    # The characteristic class already uses this PascalCase name.
+    type_name = _pascal(field_name)
+    if type_name == class_name:
+        return f"{type_name}Value"
+    return type_name
+
+
+def _enumerator_expr(member: _Member, enumerator: Enumerator) -> str:
+    if member.value_set is ValueSet.FLAGS:
+        bit = enumerator.value.bit_length() - 1
+        # `1U << 32` is undefined when unsigned int is 32 bits.
+        if bit >= _UNSIGNED_INT_BITS:
+            return f"1ULL << {bit}"
+        return f"1U << {bit}"
+    if enumerator.value >= 2**31:
+        return f"{enumerator.value}U"
+    return str(enumerator.value)
+
+
+def _enum_storage(field: ScalarField) -> tuple[str, int, int, str]:
+    """C++ underlying type, member size, alignment, and codec value kind.
+
+    A flags mask is unsigned so bit 31 stays a positive value. A closed code
+    set stays signed when every code fits in int.
+    """
+    values = [item.value for item in field.enumerators]
+    low = min(values)
+    high = max(values)
+    if field.value_set is ValueSet.FLAGS or low < _INT32_MIN or high > _INT32_MAX:
+        if low < 0:
+            raise EmitError(f"{field.name}: signed enumerators do not fit in int32")
+        if high > _UINT32_MAX:
+            return ("std::uint64_t", 8, 8, "BTSIG_VALUE_UINT64")
+        return ("std::uint32_t", 4, 4, "BTSIG_VALUE_UINT32")
+    return ("int", 4, 4, "BTSIG_VALUE_SINT32")
+
+
 def _layout(document: IrDocument) -> _Characteristic:
     short = document.identifier.removeprefix("org.bluetooth.characteristic.")
+    pascal_name = _pascal(short)
     offset = 0
     max_align = 1
     members: list[_Member] = []
     for field in document.fields:
+        if field.wire_type is WireType.UTF8:
+            # A characteristic that states no maximum still cannot exceed one attribute value.
+            capacity = ATT_MAX_VALUE_OCTETS if field.utf8_capacity is None else field.utf8_capacity
+            stored = _stored_utf8_bytes(capacity)
+            offset = (offset + 1) // 2 * 2
+            members.append(
+                _Member(
+                    name=field.name,
+                    c_type="uint16_t",
+                    size=stored,
+                    align=2,
+                    value_kind="BTSIG_VALUE_UTF8",
+                    offset=offset,
+                    wire=field.wire_type,
+                    coefficient=1,
+                    decimal_exponent=0,
+                    binary_exponent=0,
+                    minimum=0,
+                    maximum=0,
+                    unit=field.unit,
+                    sentinels=field.sentinels,
+                    utf8_capacity=capacity,
+                    cpp_type="uint16_t",
+                )
+            )
+            offset += stored
+            max_align = max(max_align, 2)
+            continue
         transform = field.transform
         scaled = field.wire_type in _REAL_WIRE or (
             transform is not None
             and not (transform.coefficient == 1 and transform.decimal_exponent == 0 and transform.binary_exponent == 0)
         )
         c_type, size, align, kind = _SCALED_LAYOUT if scaled else _INTEGER_LAYOUT[field.wire_type]
+        cpp_type = c_type if field.value_set is None else _enum_type(field.name, pascal_name)
+        c_enum_type = "" if field.value_set is None else f"btsig_{_snake_pascal(cpp_type)}"
+        cpp_underlying = ""
+        c_enum_is_typedef = False
+        # The enumeration is wider than the wire field. Flags use an unsigned width.
+        if field.value_set is not None:
+            cpp_underlying, size, align, kind = _enum_storage(field)
+            # ISO C restricts enumerator values to int. A wider mask is a typedef.
+            c_enum_is_typedef = any(item.value > _INT32_MAX for item in field.enumerators)
         offset = (offset + align - 1) // align * align
         coefficient = 1 if transform is None else transform.coefficient
         decimal_exponent = 0 if transform is None else transform.decimal_exponent
@@ -178,6 +311,13 @@ def _layout(document: IrDocument) -> _Characteristic:
                 maximum=field.maximum,
                 unit=field.unit,
                 sentinels=field.sentinels,
+                utf8_capacity=0,
+                cpp_type=cpp_type,
+                cpp_underlying=cpp_underlying,
+                c_enum_type=c_enum_type,
+                c_enum_is_typedef=c_enum_is_typedef,
+                enumerators=field.enumerators,
+                value_set=field.value_set,
             )
         )
         offset += size
@@ -187,7 +327,7 @@ def _layout(document: IrDocument) -> _Characteristic:
     unit = unit_ids.pop() if len(unit_ids) == 1 else None
     return _Characteristic(
         name=short,
-        pascal_name=_pascal(short),
+        pascal_name=pascal_name,
         identifier=document.identifier,
         uuid=document.uuid,
         c_struct=f"btsig_{short}",
@@ -205,11 +345,45 @@ def _guard(name: str, suffix: str) -> str:
     return f"BTSIG_{name.upper()}_{suffix}"
 
 
+def _c_struct_member(member: _Member) -> str:
+    if member.utf8_capacity:
+        return _c_member(member)
+    if member.c_enum_type:
+        if member.c_enum_is_typedef:
+            return f"    {member.c_enum_type} {member.name};"
+        return f"    enum {member.c_enum_type} {member.name};"
+    return f"    {member.c_type} {member.name};"
+
+
+def _c_constant(member: _Member, enumerator: Enumerator) -> str:
+    name = f"{member.c_enum_type.upper()}_{enumerator.name.upper()}"
+    if member.c_enum_is_typedef:
+        return f"static const {member.c_enum_type} {name} = {_enumerator_expr(member, enumerator)};"
+    return f"    {name} = {_enumerator_expr(member, enumerator)},"
+
+
+def _c_enumerations(item: _Characteristic) -> str:
+    blocks: list[str] = []
+    for member in item.members:
+        if not member.c_enum_type:
+            continue
+        if member.c_enum_is_typedef:
+            width = "uint64_t" if member.value_kind == "BTSIG_VALUE_UINT64" else "uint32_t"
+            constants = "\n".join(_c_constant(member, enumerator) for enumerator in member.enumerators)
+            blocks.append(f"typedef {width} {member.c_enum_type};\n{constants}\n")
+            continue
+        constants = "\n".join(_c_constant(member, enumerator) for enumerator in member.enumerators)
+        blocks.append(f"enum {member.c_enum_type} {{\n{constants}\n}};\n")
+    if not blocks:
+        return ""
+    return "\n".join(blocks) + "\n"
+
+
 def _c_header(item: _Characteristic, command: str) -> str:
     decode = f"btsig_decode_{item.name}"
     encode = f"btsig_encode_{item.name}"
     guard = _guard(item.name, "H")
-    members = "\n".join(f"    {member.c_type} {member.name};" for member in item.members)
+    members = "\n".join(_c_struct_member(member) for member in item.members)
     return (
         f"{_banner(command)}"
         f"#ifndef {guard}\n"
@@ -217,6 +391,7 @@ def _c_header(item: _Characteristic, command: str) -> str:
         '#include "btsig/types/status.h"\n\n'
         "#include <stddef.h>\n"
         "#include <stdint.h>\n\n"
+        f"{_c_enumerations(item)}"
         "#ifdef __cplusplus\n"
         'extern "C" {\n'
         "#endif\n\n"
@@ -234,20 +409,75 @@ def _c_header(item: _Characteristic, command: str) -> str:
     )
 
 
+def _flag_operators(member: _Member) -> list[str]:
+    if member.value_set is not ValueSet.FLAGS:
+        return []
+    name = member.cpp_type
+    underlying = member.cpp_underlying
+    mask = 0
+    for enumerator in member.enumerators:
+        mask |= enumerator.value
+    return [
+        f"constexpr {name} operator|({name} left, {name} right) {{",
+        f"    return static_cast<{name}>(static_cast<{underlying}>(left) | static_cast<{underlying}>(right));",
+        "}",
+        "",
+        f"constexpr {name} operator&({name} left, {name} right) {{",
+        f"    return static_cast<{name}>(static_cast<{underlying}>(left) & static_cast<{underlying}>(right));",
+        "}",
+        "",
+        f"constexpr {name} operator~({name} value) {{",
+        f"    constexpr {underlying} mask = 0x{mask:X};",
+        f"    return static_cast<{name}>(mask & static_cast<{underlying}>(~static_cast<{underlying}>(value)));",
+        "}",
+        "",
+        f"constexpr {name}& operator|=({name}& left, {name} right) {{",
+        "    left = left | right;",
+        "    return left;",
+        "}",
+        "",
+        f"constexpr {name}& operator&=({name}& left, {name} right) {{",
+        "    left = left & right;",
+        "    return left;",
+        "}",
+        "",
+    ]
+
+
+def _enum_blocks(item: _Characteristic) -> str:
+    blocks: list[str] = []
+    for member in item.members:
+        if member.value_set is None:
+            continue
+        lines = [f"enum class {member.cpp_type} : {member.cpp_underlying} {{"]
+        for enumerator in member.enumerators:
+            lines.append(f"    {enumerator.name} = {_enumerator_expr(member, enumerator)},")
+        lines.extend(["};", ""])
+        lines.extend(_flag_operators(member))
+        blocks.append("\n".join(lines))
+    return "".join(blocks)
+
+
 def _hpp(item: _Characteristic, command: str) -> str:
     guard = _guard(item.name, "HPP")
+    includes = [
+        f'#include "btsig/{item.name}.h"',
+        '#include "btsig/types/expected.hpp"',
+        '#include "btsig/types/span.hpp"',
+    ]
+    if any(member.utf8_capacity for member in item.members):
+        includes.append('#include "btsig/types/utf8_text.hpp"')
+    include_block = "\n".join(includes)
     return (
         f"{_banner(command)}"
         f"#ifndef {guard}\n"
         f"#define {guard}\n\n"
-        f'#include "btsig/{item.name}.h"\n'
-        '#include "btsig/types/expected.hpp"\n'
-        '#include "btsig/types/span.hpp"\n\n'
+        f"{include_block}\n\n"
         "#include <cstddef>\n"
         "#include <cstdint>\n\n"
         "namespace btsig {\n\n"
-        f"class {item.pascal_name} {{\n"
-        "public:\n" + "".join(f"    {member.c_type} {member.name};\n" for member in item.members) + "\n"
+        f"{_enum_blocks(item)}"
+        f"struct {item.pascal_name} {{\n" + "".join(f"{_cpp_member(member)}\n" for member in item.members) + "\n"
         f"    [[nodiscard]] static btsig::expected<{item.pascal_name}> decode(\n"
         "        btsig_bytes input, const btsig_context* context);\n\n"
         f"    [[nodiscard]] static btsig::expected<std::size_t> encode(\n"
@@ -271,6 +501,17 @@ def _sentinel_lines(item: _Characteristic) -> list[str]:
     return lines
 
 
+def _allowed_lines(item: _Characteristic) -> list[str]:
+    lines: list[str] = []
+    for member in item.members:
+        if member.value_set is not ValueSet.ENUMERATION:
+            continue
+        lines.append(f"constexpr std::int64_t {item.name}_{member.name}_allowed[] = {{")
+        lines.extend(f"    {enumerator.value}," for enumerator in member.enumerators)
+        lines.extend(["};", ""])
+    return lines
+
+
 def _field_lines(item: _Characteristic) -> list[str]:
     lines = [f"constexpr btsig::FieldDescriptor {item.name}_fields[] = {{"]
     for member in item.members:
@@ -282,6 +523,21 @@ def _field_lines(item: _Characteristic) -> list[str]:
         else:
             sentinels = "nullptr"
             count = "0"
+        if member.value_set is ValueSet.ENUMERATION:
+            allowed = f"{item.name}_{member.name}_allowed"
+            allowed_count = str(len(member.enumerators))
+            flag_mask = "0"
+        elif member.value_set is ValueSet.FLAGS:
+            allowed = "nullptr"
+            allowed_count = "0"
+            mask = 0
+            for enumerator in member.enumerators:
+                mask |= enumerator.value
+            flag_mask = f"0x{mask:X}"
+        else:
+            allowed = "nullptr"
+            allowed_count = "0"
+            flag_mask = "0"
         lines.extend(
             [
                 "    {",
@@ -298,6 +554,10 @@ def _field_lines(item: _Characteristic) -> list[str]:
                 f"        {member.coefficient},",
                 f"        {member.decimal_exponent},",
                 f"        {member.binary_exponent},",
+                f"        {member.utf8_capacity},",
+                f"        {allowed},",
+                f"        {allowed_count},",
+                f"        {flag_mask},",
                 "    },",
             ]
         )
@@ -308,13 +568,15 @@ def _field_lines(item: _Characteristic) -> list[str]:
 
 def _descriptor_lines(item: _Characteristic) -> list[str]:
     unit = "nullptr" if item.unit is None else _c_string(item.unit)
+    flags_only = bool(item.members) and all(member.value_set is ValueSet.FLAGS for member in item.members)
+    bitfield = "true" if flags_only else "false"
     return [
         f"constexpr btsig::CharacteristicDescriptor {item.name}_descriptor{{",
         f"    {_c_string(item.name)},",
         f"    {_c_string(item.identifier)},",
         f"    0x{item.uuid:04X},",
         f"    {unit},",
-        "    false,",
+        f"    {bitfield},",
         f"    sizeof({item.c_struct}),",
         f"    {item.name}_fields,",
         f"    {len(item.members)},",
@@ -335,6 +597,11 @@ def _assert_lines(item: _Characteristic) -> list[str]:
     for member in item.members:
         lines.append(f"static_assert(offsetof({item.c_struct}, {member.name}) == {member.offset});")
         lines.append(f"static_assert(offsetof({qualified}, {member.name}) == {member.offset});")
+        if member.utf8_capacity:
+            lines.append(f"static_assert(sizeof(btsig::utf8_text<{member.utf8_capacity}>) == {member.size});")
+        elif member.c_enum_type:
+            lines.append(f"static_assert(sizeof({member.c_enum_type}) == {member.size});")
+            lines.append(f"static_assert(sizeof(btsig::{member.cpp_type}) == {member.size});")
     return lines
 
 
@@ -449,6 +716,7 @@ def _translation_unit(item: _Characteristic, command: str) -> str:
         "",
     ]
     body.extend(_sentinel_lines(item))
+    body.extend(_allowed_lines(item))
     body.extend(_field_lines(item))
     body.extend(_descriptor_lines(item))
     body.extend(
@@ -468,18 +736,25 @@ def _translation_unit(item: _Characteristic, command: str) -> str:
     return "\n".join(body)
 
 
-def _read_documents(identifiers: tuple[str, ...], destination: Path) -> tuple[IrDocument, ...]:
+def _read_documents(destination: Path, blocked: frozenset[str]) -> tuple[IrDocument, ...]:
+    directory = destination / f"generated/ir/{IR_VERSION}"
     documents: list[IrDocument] = []
-    for identifier in identifiers:
-        path = destination / f"generated/ir/{IR_VERSION}/{identifier}.json"
+    for path in sorted(directory.glob("*.json")):
+        if path.stem in blocked:
+            continue
         try:
             data = path.read_bytes()
         except OSError as error:
-            raise EmitError(f"missing IR for {identifier}: {error}") from error
+            raise EmitError(f"missing IR for {path.stem}: {error}") from error
         try:
-            documents.append(decode_ir(data, require_canonical=True))
+            document = decode_ir(data, require_canonical=True)
         except IrContractError as error:
-            raise EmitError(f"IR for {identifier} is not canonical schema version {IR_VERSION}: {error}") from error
+            raise EmitError(f"IR for {path.stem} is not canonical schema version {IR_VERSION}: {error}") from error
+        if document.identifier in blocked:
+            continue
+        documents.append(document)
+    if not documents:
+        raise EmitError("no generated IR to emit")
     versions = {document.schema_version for document in documents}
     if versions != {IR_VERSION}:
         raise EmitError("IR schema version does not match this emitter")
@@ -492,10 +767,10 @@ def emit_characteristics(
     root: Path | None = None,
     output_root: Path | None = None,
 ) -> dict[str, bytes]:
-    """Emit one C and C++ characteristic API per IR document.
+    """Emit one C and C++ characteristic API per generated IR document.
 
     Args:
-        characteristics_path: JSON array of characteristic identifiers.
+        characteristics_path: JSON array of characteristic identifiers to skip.
         root: Repository root used to form the generator command.
         output_root: Directory that contains ``generated/ir`` and receives ``btsig/generated``.
 
@@ -508,8 +783,7 @@ def emit_characteristics(
     """
     repo = repository_root() if root is None else root
     destination = repo if output_root is None else output_root
-    identifiers = _load_characteristics(characteristics_path)
-    documents = _read_documents(identifiers, destination)
+    documents = _read_documents(destination, _load_blacklist(characteristics_path))
     layouts = tuple(_layout(document) for document in documents)
     seen: set[int] = set()
     for item in layouts:
@@ -536,7 +810,7 @@ def emit_characteristics(
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Emit the listed characteristics.
+    """Emit every generated characteristic outside the blacklist.
 
     Args:
         argv: Command arguments, excluding the program name.
@@ -544,8 +818,10 @@ def main(argv: list[str] | None = None) -> int:
     Returns:
         Process status, ``0`` on success and ``1`` on an emit error.
     """
-    parser = argparse.ArgumentParser(description="Emit C and C++ sources for selected GSS characteristics.")
-    parser.add_argument("characteristics", type=Path)
+    parser = argparse.ArgumentParser(
+        description="Emit C and C++ sources for every generated characteristic outside the blacklist."
+    )
+    parser.add_argument("characteristics", type=Path, help="JSON array of identifiers to skip")
     args = parser.parse_args(argv)
     try:
         emit_characteristics(args.characteristics)

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from tools.gss_ir.v1 import WIRE_SIZE_BYTES, WireType
+from tools.gss_ir.v1 import BITS_PER_OCTET, WIRE_SIZE_BYTES, WireType
 
 from .result import Unsupported
+from .subbyte import subbyte_domain
 
 _RULE = "wire_type"
 # GSS writes ``boolean[N]`` and ``int16``. The IR stores a C++ enumerator name.
@@ -17,6 +18,19 @@ _WIRE_ALIASES: dict[str, WireType] = {
 }
 _REAL_WIRE = frozenset({WireType.MEDFLOAT16, WireType.MEDFLOAT32, WireType.FLOAT32})
 _BOOLEAN_WIRE = frozenset({WireType.BOOLEAN8, WireType.BOOLEAN16, WireType.BOOLEAN24, WireType.BOOLEAN32})
+_UNSIGNED_WIRE = frozenset(
+    {
+        WireType.UINT8,
+        WireType.UINT16,
+        WireType.UINT24,
+        WireType.UINT32,
+        WireType.UINT48,
+        WireType.UINT64,
+    }
+)
+_SIGNED_WIRE = frozenset({WireType.SINT8, WireType.SINT16, WireType.SINT24, WireType.SINT32})
+_SUBBYTE_WIRE = frozenset({WireType.UINT1, WireType.UINT2})
+OUTSIDE_WIRE_PREFIX = "endpoints do not fit "
 
 
 def parse_wire_type(type_text: str) -> WireType | Unsupported:
@@ -39,6 +53,37 @@ def parse_wire_type(type_text: str) -> WireType | Unsupported:
         return Unsupported(rule=_RULE, detail=f"unsupported wire type {type_text!r}")
 
 
+def integer_domain(wire: WireType) -> tuple[int, int] | None:
+    """Return the inclusive raw domain of an integer wire.
+
+    Args:
+        wire: Wire type already accepted for a field.
+
+    Returns:
+        Inclusive minimum and maximum, or ``None`` for UTF-8, boolean, and real wires.
+    """
+    if wire in _SUBBYTE_WIRE:
+        return subbyte_domain(wire)
+    if wire not in _UNSIGNED_WIRE and wire not in _SIGNED_WIRE:
+        return None
+    bits = WIRE_SIZE_BYTES[wire] * BITS_PER_OCTET
+    if wire in _SIGNED_WIRE:
+        return (-(1 << (bits - 1)), (1 << (bits - 1)) - 1)
+    return (0, (1 << bits) - 1)
+
+
+def outside_wire_detail(wire: WireType) -> str:
+    """Describe an integer range that does not fit ``wire``.
+
+    Args:
+        wire: Integer wire whose domain rejects the stored endpoints.
+
+    Returns:
+        The stable detail stored on the unsupported result.
+    """
+    return f"{OUTSIDE_WIRE_PREFIX}{wire.value}"
+
+
 def implicit_raw_domain(wire: WireType) -> tuple[int, int] | None:
     """Return the full raw domain when a description has no numeric range.
 
@@ -55,5 +100,5 @@ def implicit_raw_domain(wire: WireType) -> tuple[int, int] | None:
     """
     if wire not in _BOOLEAN_WIRE and wire not in _REAL_WIRE:
         return None
-    bits = WIRE_SIZE_BYTES[wire] * 8
+    bits = WIRE_SIZE_BYTES[wire] * BITS_PER_OCTET
     return (0, (1 << bits) - 1)

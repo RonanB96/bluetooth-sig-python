@@ -29,7 +29,9 @@ add_library(btsig_wire STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/word.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/medfloat.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/ieee754.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/real.cpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/real.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/utf8.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/subbyte.cpp")
 add_library(btsig::wire ALIAS btsig_wire)
 target_include_directories(btsig_wire PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/wire/include")
 target_link_libraries(btsig_wire PUBLIC btsig::schema PRIVATE btsig::warnings)
@@ -45,7 +47,8 @@ if(NOT btsig_characteristic_sources)
     message(FATAL_ERROR
         "No generated characteristics in btsig/generated. "
         "Run `python -m tools.gss_ir.generate tools/gss_ir/characteristics.json` "
-        "and `python -m tools.gss_ir.emit_cpp tools/gss_ir/characteristics.json`.")
+        "and `python -m tools.gss_ir.emit_cpp tools/gss_ir/characteristics.json`. "
+        "characteristics.json is the blacklist.")
 endif()
 add_library(btsig_characteristics STATIC ${btsig_characteristic_sources})
 add_library(btsig::characteristics ALIAS btsig_characteristics)
