@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[3]
 _CONTRACT = ("tools.gss_ir", "tools.gss_ir.v1")
 _SOURCES = ("tools.gss_ir.sources",)
 _NORMALISER = ("tools.gss_ir.v1", "tools.gss_ir.sources", "tools.gss_ir.normalise")
-_GENERATOR = ("tools.gss_ir", "tools.gss_ir.v1", "tools.gss_ir.normalise")
+_GENERATOR = ("tools.gss_ir", "tools.gss_ir.v1", "tools.gss_ir.normalise", "tools.gss_ir.sources")
 _EMITTER = ("tools.gss_ir", "tools.gss_ir.v1")
 
 
