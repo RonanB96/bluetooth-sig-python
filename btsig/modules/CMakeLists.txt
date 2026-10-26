@@ -14,7 +14,9 @@ endif()
 
 add_library(btsig_warnings INTERFACE)
 add_library(btsig::warnings ALIAS btsig_warnings)
-target_compile_options(btsig_warnings INTERFACE -Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef -fno-exceptions)
+target_compile_options(btsig_warnings INTERFACE
+    -Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef
+    -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables)
 
 add_library(btsig_types INTERFACE)
 add_library(btsig::types ALIAS btsig_types)
