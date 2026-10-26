@@ -54,7 +54,7 @@
     },
     "ScalarField": {
       "title": "ScalarField",
-      "description": "One resolved integer scalar in wire order.",
+      "description": "One resolved field in wire order.\n\n    Integer, boolean, and real fields store a raw ``minimum`` and ``maximum``.\n    A UTF-8 field stores ``0`` for both. ``utf8_capacity`` is the ``utf8s{N}``\n    octet maximum; a variable ``utf8s`` omits it. ``enumerators`` is empty unless\n    ``value_set`` is ``enumeration`` or ``flags``.",
       "type": "object",
       "properties": {
         "name": {
@@ -97,6 +97,35 @@
             "$ref": "#/$defs/Sentinel"
           },
           "default": []
+        },
+        "utf8_capacity": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "default": null
+        },
+        "enumerators": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Enumerator"
+          },
+          "default": []
+        },
+        "value_set": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/ValueSet"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -122,12 +151,15 @@
         "sint24",
         "sint32",
         "sint8",
+        "uint1",
         "uint16",
+        "uint2",
         "uint24",
         "uint32",
         "uint48",
         "uint64",
-        "uint8"
+        "uint8",
+        "utf8"
       ]
     },
     "Transform": {
@@ -193,6 +225,32 @@
       "enum": [
         "not_known",
         "not_valid"
+      ]
+    },
+    "Enumerator": {
+      "title": "Enumerator",
+      "description": "One named constant stored in a field.\n\n    An enumeration stores the raw code. A flags set stores the single-bit mask.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "ValueSet": {
+      "title": "ValueSet",
+      "description": "How a field's named constants combine.\n\n    ``enumeration`` is one code. ``flags`` is a set of independent bits.",
+      "enum": [
+        "enumeration",
+        "flags"
       ]
     }
   }

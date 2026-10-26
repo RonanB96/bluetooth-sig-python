@@ -11,6 +11,7 @@ IR_VERSION = 1
 IDENTIFIER_PREFIX = "org.bluetooth.characteristic."
 UNIT_PREFIX = "org.bluetooth.unit."
 UUID16_MAX = 0xFFFF
+BITS_PER_OCTET = 8
 
 _SNAKE_CASE = re.compile(r"[a-z][a-z0-9_]*\Z")
 
@@ -69,6 +70,9 @@ class WireType(str, Enum):
     MEDFLOAT16 = "medfloat16"
     MEDFLOAT32 = "medfloat32"
     FLOAT32 = "float32"
+    UTF8 = "utf8"
+    UINT1 = "uint1"
+    UINT2 = "uint2"
 
 
 WIRE_SIZE_BYTES: dict[WireType, int] = {
@@ -121,8 +125,34 @@ class Sentinel(ContractStruct, frozen=True):
     meaning: SentinelMeaning
 
 
+class ValueSet(str, Enum):
+    """How a field's named constants combine.
+
+    ``enumeration`` is one code. ``flags`` is a set of independent bits.
+    """
+
+    ENUMERATION = "enumeration"
+    FLAGS = "flags"
+
+
+class Enumerator(ContractStruct, frozen=True):
+    """One named constant stored in a field.
+
+    An enumeration stores the raw code. A flags set stores the single-bit mask.
+    """
+
+    name: str
+    value: int
+
+
 class ScalarField(ContractStruct, frozen=True):
-    """One resolved integer scalar in wire order."""
+    """One resolved field in wire order.
+
+    Integer, boolean, and real fields store a raw ``minimum`` and ``maximum``.
+    A UTF-8 field stores ``0`` for both. ``utf8_capacity`` is the ``utf8s{N}``
+    octet maximum; a variable ``utf8s`` omits it. ``enumerators`` is empty unless
+    ``value_set`` is ``enumeration`` or ``flags``.
+    """
 
     name: str
     wire_type: WireType
@@ -131,6 +161,9 @@ class ScalarField(ContractStruct, frozen=True):
     transform: Transform | None = None
     unit: UnitRef | None = None
     sentinels: tuple[Sentinel, ...] = ()
+    utf8_capacity: int | None = None
+    enumerators: tuple[Enumerator, ...] = ()
+    value_set: ValueSet | None = None
 
 
 class Provenance(ContractStruct, frozen=True):
@@ -170,6 +203,13 @@ def _validate_field(field: ScalarField, names: set[str]) -> None:
         raise _semantic_error(f"field name '{field.name}' must be snake_case")
     if field.minimum > field.maximum:
         raise _semantic_error(f"{field.name}: minimum exceeds maximum")
+    if field.wire_type is WireType.UTF8:
+        if field.minimum != 0 or field.maximum != 0:
+            raise _semantic_error(f"{field.name}: utf8 has no integer range")
+        if field.utf8_capacity is not None and field.utf8_capacity <= 0:
+            raise _semantic_error(f"{field.name}: utf8 capacity must be positive")
+    elif field.utf8_capacity is not None:
+        raise _semantic_error(f"{field.name}: utf8 capacity is only valid for utf8")
     if field.transform is not None and field.transform.coefficient == 0:
         raise _semantic_error(f"{field.name}: transform coefficient must not be zero")
     if field.unit is not None:
@@ -181,6 +221,33 @@ def _validate_field(field: ScalarField, names: set[str]) -> None:
         if sentinel.raw_value in seen_raw:
             raise _semantic_error(f"{field.name}: duplicate sentinel raw value {sentinel.raw_value}")
         seen_raw.add(sentinel.raw_value)
+    _validate_enumerators(field)
+
+
+def _validate_enumerators(field: ScalarField) -> None:
+    if field.value_set is None:
+        if field.enumerators:
+            raise _semantic_error(f"{field.name}: enumerators require a value set")
+        return
+    if field.wire_type is WireType.UTF8:
+        raise _semantic_error(f"{field.name}: utf8 has no enumerators")
+    if not field.enumerators:
+        raise _semantic_error(f"{field.name}: value set has no enumerators")
+    names: set[str] = set()
+    values: set[int] = set()
+    for enumerator in field.enumerators:
+        if _SNAKE_CASE.fullmatch(enumerator.name) is None:
+            raise _semantic_error(f"{field.name}: enumerator '{enumerator.name}' must be snake_case")
+        if enumerator.name in names:
+            raise _semantic_error(f"{field.name}: duplicate enumerator name '{enumerator.name}'")
+        names.add(enumerator.name)
+        if enumerator.value in values:
+            raise _semantic_error(f"{field.name}: duplicate enumerator value {enumerator.value}")
+        values.add(enumerator.value)
+        if enumerator.value < field.minimum or enumerator.value > field.maximum:
+            raise _semantic_error(f"{field.name}: enumerator {enumerator.value} is outside the field range")
+        if field.value_set is ValueSet.FLAGS and (enumerator.value <= 0 or enumerator.value & (enumerator.value - 1)):
+            raise _semantic_error(f"{field.name}: flag {enumerator.value} is not one bit")
 
 
 def validate_ir(document: IrDocument) -> None:

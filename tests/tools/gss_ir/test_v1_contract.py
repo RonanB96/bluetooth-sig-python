@@ -8,7 +8,18 @@ import msgspec
 import pytest
 
 from tools.gss_ir import IrContractError, IrErrorCode, decode_ir, encode_ir, encode_json_schema
-from tools.gss_ir.v1 import IrDocument, Provenance, ScalarField, Sentinel, SentinelMeaning, Transform, UnitRef, WireType
+from tools.gss_ir.v1 import (
+    Enumerator,
+    IrDocument,
+    Provenance,
+    ScalarField,
+    Sentinel,
+    SentinelMeaning,
+    Transform,
+    UnitRef,
+    ValueSet,
+    WireType,
+)
 
 IDENTIFIER = "org.bluetooth.characteristic.contract_fixture"
 SCHEMA_PATH = Path(__file__).resolve().parents[3] / "tools" / "gss_ir" / "v1.schema.json"
@@ -153,6 +164,27 @@ def test_transform_and_sentinel_round_trip() -> None:
     )
 
     assert decode_ir(encode_ir(document), require_canonical=True) == document
+
+
+def test_flag_that_is_not_one_bit_is_rejected() -> None:
+    document = msgspec.structs.replace(
+        _document(),
+        fields=(
+            ScalarField(
+                name="sample_value",
+                wire_type=WireType.UINT8,
+                minimum=0,
+                maximum=255,
+                enumerators=(Enumerator(name="both", value=3),),
+                value_set=ValueSet.FLAGS,
+            ),
+        ),
+    )
+
+    with pytest.raises(IrContractError) as error:
+        encode_ir(document)
+
+    assert error.value.code is IrErrorCode.SEMANTIC_VIOLATION
 
 
 def test_frozen_json_schema_matches_bytes() -> None:

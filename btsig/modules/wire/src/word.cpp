@@ -27,6 +27,9 @@ bool is_signed(wire_type type) {
     case wire_type::medfloat16:
     case wire_type::medfloat32:
     case wire_type::float32:
+    case wire_type::utf8:
+    case wire_type::uint1:
+    case wire_type::uint2:
         return false;
     }
     return false;
@@ -59,6 +62,10 @@ std::size_t width(wire_type type) {
         return 6;
     case wire_type::uint64:
         return 8;
+    case wire_type::utf8:
+    case wire_type::uint1:
+    case wire_type::uint2:
+        return 0;
     }
     return 0;
 }

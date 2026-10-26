@@ -1,0 +1,62 @@
+[
+  {
+    "identifier": "org.bluetooth.characteristic.cgm_measurement",
+    "rule": "struct_ref",
+    "detail": "struct reference does not name a characteristic"
+  },
+  {
+    "identifier": "org.bluetooth.characteristic.chromaticity_coordinate",
+    "rule": "range",
+    "detail": "endpoints do not fit uint16"
+  },
+  {
+    "identifier": "org.bluetooth.characteristic.cooking_conditions",
+    "rule": "characteristic_uuid",
+    "detail": "missing UUID for org.bluetooth.characteristic.cooking_conditions"
+  },
+  {
+    "identifier": "org.bluetooth.characteristic.cooking_zone_perceived_power",
+    "rule": "characteristic_uuid",
+    "detail": "missing UUID for org.bluetooth.characteristic.cooking_zone_perceived_power"
+  },
+  {
+    "identifier": "org.bluetooth.characteristic.cosine_of_the_angle",
+    "rule": "range",
+    "detail": "endpoints do not fit sint8"
+  },
+  {
+    "identifier": "org.bluetooth.characteristic.ieee_11073-20601_regulatory_certification_data_list",
+    "rule": "struct_ref",
+    "detail": "struct reference does not name a characteristic"
+  },
+  {
+    "identifier": "org.bluetooth.characteristic.object_name",
+    "rule": "utf8",
+    "detail": "size '0\u2013120' is not variable"
+  },
+  {
+    "identifier": "org.bluetooth.characteristic.object_type",
+    "rule": "wire_type",
+    "detail": "unsupported wire type 'gatt_uuid'"
+  },
+  {
+    "identifier": "org.bluetooth.characteristic.preferred_units",
+    "rule": "wire_type",
+    "detail": "unsupported wire type 'uint16 [1-256]'"
+  },
+  {
+    "identifier": "org.bluetooth.characteristic.time_exponential_8",
+    "rule": "range",
+    "detail": "endpoints do not fit uint8"
+  },
+  {
+    "identifier": "org.bluetooth.characteristic.udi_for_medical_devices",
+    "rule": "utf8",
+    "detail": "utf8 length is the whole value"
+  },
+  {
+    "identifier": "org.bluetooth.characteristic.volume_flow",
+    "rule": "range",
+    "detail": "endpoints do not fit uint16"
+  }
+]

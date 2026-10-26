@@ -1,4 +1,7 @@
-"""Write canonical IR and the provenance manifest for selected characteristics."""
+"""Write canonical IR for every characteristic that is not blacklisted.
+
+A characteristic that cannot be normalised is recorded and generation continues.
+"""
 
 from __future__ import annotations
 
@@ -8,12 +11,12 @@ import json
 import subprocess
 from pathlib import Path
 
-from tools.gss_ir.normalise import Unsupported, iter_characteristic_paths, normalise_identifier, normalise_path
+from tools.gss_ir.normalise import Unsupported, iter_characteristic_paths, normalise_path
 from tools.gss_ir.v1 import IR_VERSION, IrDocument, encode_ir
 
 
 class GenerateError(RuntimeError):
-    """A selected characteristic could not be written."""
+    """The blacklist or the SIG submodule could not be read."""
 
     def __init__(self, detail: str) -> None:
         """Initialise the error with a diagnostic detail."""
@@ -34,17 +37,17 @@ def _canonical_json(payload: object) -> bytes:
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 
 
-def _load_characteristics(path: Path) -> tuple[str, ...]:
+def _load_blacklist(path: Path) -> tuple[str, ...]:
     try:
         loaded = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
-        raise GenerateError(f"characteristic list is not JSON: {error}") from error
+        raise GenerateError(f"blacklist is not JSON: {error}") from error
     except OSError as error:
         raise GenerateError(str(error)) from error
-    if not isinstance(loaded, list) or not loaded or not all(isinstance(item, str) for item in loaded):
-        raise GenerateError("characteristic list must be a non-empty JSON array of identifiers")
+    if not isinstance(loaded, list) or not all(isinstance(item, str) for item in loaded):
+        raise GenerateError("blacklist must be a JSON array of identifiers")
     if len(loaded) != len(set(loaded)):
-        raise GenerateError("characteristic list contains a duplicate identifier")
+        raise GenerateError("blacklist contains a duplicate identifier")
     return tuple(loaded)
 
 
@@ -64,38 +67,21 @@ def _sig_commit(root: Path) -> str:
     return commit
 
 
-def _classification(root: Path) -> bytes:
-    supported: list[str] = []
-    unsupported: list[dict[str, str]] = []
-    for path in iter_characteristic_paths(root):
-        result = normalise_path(path, root=root)
-        source_path = path.resolve().relative_to(root.resolve()).as_posix()
-        if isinstance(result, Unsupported):
-            unsupported.append(
-                {
-                    "identifier": path.stem,
-                    "source_path": source_path,
-                    "rule": result.rule,
-                    "detail": result.detail,
-                }
-            )
-        else:
-            supported.append(result.identifier)
-    payload = {
-        "supported": sorted(supported),
-        "unsupported": sorted(unsupported, key=lambda item: item["identifier"]),
+def _error_record(path: Path, root: Path, result: Unsupported) -> dict[str, str]:
+    return {
+        "identifier": path.stem,
+        "source_path": path.resolve().relative_to(root.resolve()).as_posix(),
+        "rule": result.rule,
+        "detail": result.detail,
     }
-    return _canonical_json(payload)
 
 
-def _documents(identifiers: tuple[str, ...], root: Path) -> tuple[IrDocument, ...]:
-    documents: list[IrDocument] = []
-    for identifier in identifiers:
-        result = normalise_identifier(identifier, root=root)
-        if isinstance(result, Unsupported):
-            raise GenerateError(f"{identifier} is unsupported by {result.rule}: {result.detail}")
-        documents.append(result)
-    return tuple(documents)
+def _write_errors(destination: Path, errors: list[dict[str, str]]) -> bytes:
+    payload = _canonical_json(sorted(errors, key=lambda item: item["identifier"]))
+    output = destination / "generated/errors.json"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(payload)
+    return payload
 
 
 def generate_characteristics(
@@ -104,10 +90,11 @@ def generate_characteristics(
     root: Path | None = None,
     output_root: Path | None = None,
 ) -> dict[str, bytes]:
-    """Write IR, the manifest, and the corpus classification for selected characteristics.
+    """Write IR for every characteristic outside the blacklist.
 
     Args:
-        characteristics_path: JSON array of characteristic identifiers.
+        characteristics_path: JSON array of characteristic identifiers to skip.
+            An empty array tries every characteristic.
         root: Repository root used to read SIG YAML and the submodule commit.
         output_root: Directory that receives ``generated/``. Defaults to ``root``.
 
@@ -115,13 +102,61 @@ def generate_characteristics(
         Repository-relative output path to the bytes written there.
 
     Raises:
-        GenerateError: If a selected characteristic cannot be written.
+        GenerateError: If the blacklist or the SIG submodule commit cannot be read.
     """
     repo = repository_root() if root is None else root
     destination = repo if output_root is None else output_root
-    identifiers = _load_characteristics(characteristics_path)
-    documents = _documents(identifiers, repo)
-    files: dict[str, bytes] = {}
+    blocked = _load_blacklist(characteristics_path)
+    paths = iter_characteristic_paths(repo)
+    known = {path.stem for path in paths}
+    unknown = next((identifier for identifier in blocked if identifier not in known), None)
+    if unknown is not None:
+        raise GenerateError(f"blacklist identifier is not a characteristic: {unknown}")
+    blocked_ids = set(blocked)
+    documents: list[IrDocument] = []
+    errors: list[dict[str, str]] = []
+    seen_identifiers: dict[str, str] = {}
+    seen_uuids: dict[int, str] = {}
+    _write_errors(destination, errors)
+    for path in paths:
+        if path.stem in blocked_ids:
+            continue
+        result = normalise_path(path, root=repo)
+        if isinstance(result, Unsupported):
+            errors.append(_error_record(path, repo, result))
+            _write_errors(destination, errors)
+            continue
+        if result.identifier in blocked_ids:
+            continue
+        previous = seen_identifiers.get(result.identifier)
+        if previous is not None:
+            errors.append(
+                {
+                    "identifier": path.stem,
+                    "source_path": path.resolve().relative_to(repo.resolve()).as_posix(),
+                    "rule": "identifier",
+                    "detail": f"duplicate identifier {result.identifier} also read from {previous}",
+                }
+            )
+            _write_errors(destination, errors)
+            continue
+        previous_uuid = seen_uuids.get(result.uuid)
+        if previous_uuid is not None:
+            errors.append(
+                {
+                    "identifier": path.stem,
+                    "source_path": path.resolve().relative_to(repo.resolve()).as_posix(),
+                    "rule": "characteristic_uuid",
+                    "detail": f"duplicate UUID 0x{result.uuid:04X} also used by {previous_uuid}",
+                }
+            )
+            _write_errors(destination, errors)
+            continue
+        seen_identifiers[result.identifier] = path.stem
+        seen_uuids[result.uuid] = result.identifier
+        documents.append(result)
+    error_payload = _write_errors(destination, errors)
+    files: dict[str, bytes] = {"generated/errors.json": error_payload}
     manifest_files: list[dict[str, str]] = []
     for document in documents:
         relative = f"generated/ir/{IR_VERSION}/{document.identifier}.json"
@@ -142,7 +177,12 @@ def generate_characteristics(
         }
     )
     files["generated/MANIFEST.json"] = manifest
-    files["generated/classification.json"] = _classification(repo)
+    files["generated/classification.json"] = _canonical_json(
+        {
+            "supported": sorted(document.identifier for document in documents),
+            "unsupported": sorted(errors, key=lambda item: item["identifier"]),
+        }
+    )
     for relative, payload in files.items():
         output = destination / relative
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -151,7 +191,7 @@ def generate_characteristics(
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Write IR for the listed characteristics.
+    """Write IR for every characteristic outside the blacklist.
 
     Args:
         argv: Command arguments, excluding the program name.
@@ -159,8 +199,10 @@ def main(argv: list[str] | None = None) -> int:
     Returns:
         Process status, ``0`` on success and ``1`` on a generate error.
     """
-    parser = argparse.ArgumentParser(description="Write canonical IR for selected GSS characteristics.")
-    parser.add_argument("characteristics", type=Path)
+    parser = argparse.ArgumentParser(
+        description="Write canonical IR for every GSS characteristic outside the blacklist."
+    )
+    parser.add_argument("characteristics", type=Path, help="JSON array of identifiers to skip")
     args = parser.parse_args(argv)
     try:
         generate_characteristics(args.characteristics)
