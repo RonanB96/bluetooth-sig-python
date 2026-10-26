@@ -1,7 +1,14 @@
 #include "btsig/wire/word.h"
 
+#include "btsig/wire/subbyte.h"
+
 #include <stdbool.h>
 #include <stdint.h>
+
+enum {
+    uint48_octets = 6,
+    uint64_octets = 8,
+};
 
 static bool is_signed(uint8_t wire) {
     switch (wire) {
@@ -37,9 +44,9 @@ size_t btsig_wire_width(uint8_t wire) {
     case BTSIG_WIRE_FLOAT32:
         return 4;
     case BTSIG_WIRE_UINT48:
-        return 6;
+        return uint48_octets;
     case BTSIG_WIRE_UINT64:
-        return 8;
+        return uint64_octets;
     default:
         return 0;
     }
@@ -61,7 +68,7 @@ btsig_error btsig_wire_read(const uint8_t* data, size_t size, uint8_t wire, int6
     }
     uint64_t bits = 0;
     for (size_t index = 0; index < octets; ++index) {
-        const uint32_t shift = (uint32_t)index * 8U;
+        const uint32_t shift = (uint32_t)index * BTSIG_WIRE_BITS_PER_OCTET;
         bits |= (uint64_t)data[index] << shift;
     }
     if (!is_signed(wire)) {
@@ -73,8 +80,9 @@ btsig_error btsig_wire_read(const uint8_t* data, size_t size, uint8_t wire, int6
         return error;
     }
     // Two's complement, sign bit most significant (Core Specification 6.3, Volume 1, Part E, Section 2.9.1).
-    const uint32_t bits_in_wire = (uint32_t)(octets * 8U);
-    if (bits_in_wire < 64U && (bits & ((uint64_t)1 << (bits_in_wire - 1U))) != 0U) {
+    const uint32_t bits_in_wire = (uint32_t)(octets * BTSIG_WIRE_BITS_PER_OCTET);
+    const uint32_t uint64_bits = (uint32_t)(sizeof(uint64_t) * BTSIG_WIRE_BITS_PER_OCTET);
+    if (bits_in_wire < uint64_bits && (bits & ((uint64_t)1 << (bits_in_wire - 1U))) != 0U) {
         bits |= ~(((uint64_t)1 << bits_in_wire) - 1U);
     }
     *raw = (int64_t)bits;
@@ -90,7 +98,7 @@ btsig_error btsig_wire_write(uint8_t* out, size_t out_size, int64_t raw) {
     }
     const uint64_t bits = (uint64_t)raw;
     for (size_t index = 0; index < out_size; ++index) {
-        const uint32_t shift = (uint32_t)index * 8U;
+        const uint32_t shift = (uint32_t)index * BTSIG_WIRE_BITS_PER_OCTET;
         out[index] = (uint8_t)(bits >> shift);
     }
     return error;

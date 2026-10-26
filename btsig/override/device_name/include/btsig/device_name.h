@@ -12,9 +12,11 @@
 extern "C" {
 #endif
 
+enum { btsig_device_name_octets = 248 };
+
 typedef struct btsig_device_name {
     uint16_t device_name_length;
-    uint8_t device_name[248];
+    uint8_t device_name[btsig_device_name_octets];
 } btsig_device_name;
 
 btsig_error btsig_decode_device_name(btsig_bytes input, const btsig_context* context, btsig_device_name* value);

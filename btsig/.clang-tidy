@@ -1,5 +1,14 @@
+# C11 codec. This is the clang-tidy default, the C bug and portability modules,
+# CERT C, and the readability checks that match this tree.
+# google-, llvm-, fuchsia-, abseil-, hicpp-, cppcoreguidelines-, and modernize-
+# are other projects' styles and are mostly C++. They stay off.
+#
 # Annex K memcpy_s and memset_s are optional and this libc does not provide them.
 # The copies are sizeof a local object, or a length the caller already checked.
+# cert-str34-c is for character values. An int8_t wire value has to sign-extend,
+# and bugprone-signed-char-misuse already ignores int8_t.
+# readability-magic-numbers ignores a const or enum initialiser. Generated
+# characteristic sizes stay numeric; btsig/generated/.clang-tidy turns that check off.
 Checks: >
   clang-diagnostic-*,
   clang-analyzer-*,
@@ -12,10 +21,21 @@ Checks: >
   misc-*,
   -misc-include-cleaner,
   -misc-const-correctness,
+  cert-*-c,
+  -cert-str34-c,
   readability-braces-around-statements,
   readability-redundant-control-flow,
   readability-isolate-declaration,
-  readability-simplify-boolean-expr
+  readability-simplify-boolean-expr,
+  readability-uppercase-literal-suffix,
+  readability-implicit-bool-conversion,
+  readability-avoid-const-params-in-decls,
+  readability-inconsistent-declaration-parameter-name,
+  readability-duplicate-include,
+  readability-misplaced-array-index,
+  readability-misleading-indentation,
+  readability-avoid-unconditional-preprocessor-if,
+  readability-magic-numbers
 
 WarningsAsErrors: '*'
 

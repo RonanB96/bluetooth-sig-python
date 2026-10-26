@@ -4,7 +4,7 @@
 #include <string.h>
 
 static float binary32_from_bits(uint32_t bits) {
-    float value = 0.0f;
+    float value = 0.0F;
     memcpy(&value, &bits, sizeof value);
     return value;
 }

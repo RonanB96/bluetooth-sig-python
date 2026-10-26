@@ -57,16 +57,18 @@ static const DecimalFloat kFloat = {
     .reserved = 0x00800001,
 };
 
+static const double decimal_radix = 10.0;
+
 static double decade_power(int exponent) {
     double decade = 1.0;
     if (exponent >= 0) {
         for (int step = 0; step < exponent; ++step) {
-            decade *= 10.0;
+            decade *= decimal_radix;
         }
         return decade;
     }
     for (int step = exponent; step < 0; ++step) {
-        decade *= 10.0;
+        decade *= decimal_radix;
     }
     return 1.0 / decade;
 }

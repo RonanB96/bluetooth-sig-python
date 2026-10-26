@@ -110,7 +110,13 @@ btsig_error btsig_encode_volume_state(const btsig_volume_state* value, uint8_t* 
     return btsig_codec_encode(&volume_state_descriptor, value, sizeof(*value), out, out_size, written);
 }
 
-_Static_assert(sizeof(btsig_volume_state) == 12, "volume state keeps the C enum width");
+enum {
+    volume_state_bytes = 12,
+    change_counter_offset = 8,
+};
+
+_Static_assert(sizeof(btsig_volume_state) == volume_state_bytes, "volume state keeps the C enum width");
 _Static_assert(offsetof(btsig_volume_state, mute) == 4, "mute follows the padded volume setting");
-_Static_assert(offsetof(btsig_volume_state, change_counter) == 8, "change counter follows the mute enum");
+_Static_assert(offsetof(btsig_volume_state, change_counter) == change_counter_offset,
+               "change counter follows the mute enum");
 _Static_assert(sizeof(enum btsig_mute) == sizeof(int), "the public mute enum stays an int");

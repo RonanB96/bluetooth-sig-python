@@ -22,7 +22,7 @@ static const btsig_field_descriptor device_name_fields[] = {
         .sentinel_count = 0,
         .allowed_offset = 0,
         .allowed_count = 0,
-        .utf8_capacity = 248,
+        .utf8_capacity = btsig_device_name_octets,
         .unit_uuid = 0,
         .value_kind = BTSIG_VALUE_UTF8,
         .wire = BTSIG_WIRE_UTF8,
@@ -67,5 +67,5 @@ btsig_error btsig_encode_device_name(const btsig_device_name* value, uint8_t* ou
     return btsig_codec_encode(&device_name_descriptor, value, sizeof(*value), out, out_size, written);
 }
 
-_Static_assert(sizeof(btsig_device_name) == 250, "length plus 248 octets");
+_Static_assert(sizeof(btsig_device_name) == sizeof(uint16_t) + btsig_device_name_octets, "length plus the name octets");
 _Static_assert(offsetof(btsig_device_name, device_name_length) == 0, "the stored length is the first member");
