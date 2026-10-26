@@ -27,11 +27,6 @@ namespace btsig::wire {
 // True for medfloat16, medfloat32, and IEEE-754 binary32.
 [[nodiscard]] bool is_real(wire_type type);
 
-// BTSIG_OUT_OF_RANGE for medfloat NRes or reserved, or when a finite value packs as a medfloat special.
-// BTSIG_INVALID_ARGUMENT when the wire type is not real.
-[[nodiscard]] expected<double> decode_real(wire_type type, std::int64_t raw);
-[[nodiscard]] expected<std::int64_t> encode_real(wire_type type, double value);
-
 } // namespace btsig::wire
 
 #endif

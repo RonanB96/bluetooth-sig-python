@@ -11,6 +11,8 @@
 #include <cstring>
 #include <limits>
 
+#include "real.h"
+
 namespace btsig {
 namespace {
 
@@ -394,9 +396,10 @@ btsig_error accept_input(const CharacteristicDescriptor& descriptor, btsig_bytes
             return make_error(BTSIG_OUT_OF_RANGE, refs.name, input);
         }
         if (wire::is_real(field.wire)) {
-            const expected<double> decoded = wire::decode_real(field.wire, raw.value());
-            if (!decoded) {
-                return annotate(decoded.error(), refs.name, input);
+            double decoded = 0.0;
+            const btsig_error error = btsig_wire_decode_real(static_cast<uint8_t>(field.wire), raw.value(), &decoded);
+            if (error.status != BTSIG_OK) {
+                return annotate(error, refs.name, input);
             }
         } else if (!storable(field)) {
             return make_error(BTSIG_INVALID_ARGUMENT, refs.name, input);
@@ -481,11 +484,12 @@ btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input
             return make_error(BTSIG_OUT_OF_RANGE, refs.name, input);
         }
         if (wire::is_real(field.wire)) {
-            const expected<double> decoded = wire::decode_real(field.wire, raw.value());
-            if (!decoded) {
-                return annotate(decoded.error(), refs.name, input);
+            double decoded = 0.0;
+            const btsig_error error = btsig_wire_decode_real(static_cast<uint8_t>(field.wire), raw.value(), &decoded);
+            if (error.status != BTSIG_OK) {
+                return annotate(error, refs.name, input);
             }
-            std::memcpy(output + field.offset, &decoded.value(), sizeof decoded.value());
+            std::memcpy(output + field.offset, &decoded, sizeof decoded);
         } else if (!store_scaled(output, field, raw.value())) {
             return make_error(BTSIG_INVALID_ARGUMENT, refs.name, input);
         }
@@ -558,7 +562,12 @@ btsig_error encode(const CharacteristicDescriptor& descriptor, const void* value
             if (wire::is_real(field.wire)) {
                 double member = 0.0;
                 std::memcpy(&member, base + field.offset, sizeof member);
-                return wire::encode_real(field.wire, member);
+                std::int64_t encoded = 0;
+                const btsig_error error = btsig_wire_encode_real(static_cast<uint8_t>(field.wire), member, &encoded);
+                if (error.status == BTSIG_OK) {
+                    return encoded;
+                }
+                return unexpected<std::int64_t>(error);
             }
             if (field.value_kind == BTSIG_VALUE_DOUBLE) {
                 double member = 0.0;

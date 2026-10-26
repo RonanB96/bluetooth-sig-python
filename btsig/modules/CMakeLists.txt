@@ -33,7 +33,7 @@ add_library(btsig_wire STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/word.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/medfloat.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/ieee754.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/real.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/real.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/utf8.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/subbyte.cpp")
 add_library(btsig::wire ALIAS btsig_wire)
@@ -44,6 +44,7 @@ target_link_libraries(btsig_wire PUBLIC btsig::schema PRIVATE btsig::warnings m)
 add_library(btsig_codec STATIC "${CMAKE_CURRENT_SOURCE_DIR}/codec/src/codec.cpp")
 add_library(btsig::codec ALIAS btsig_codec)
 target_include_directories(btsig_codec PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/codec/include")
+target_include_directories(btsig_codec PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/wire/src")
 target_link_libraries(btsig_codec PUBLIC btsig::schema PRIVATE btsig::wire btsig::warnings)
 
 file(GLOB btsig_generated_sources CONFIGURE_DEPENDS
