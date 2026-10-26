@@ -1,6 +1,8 @@
 #ifndef BTSIG_TYPES_UTF8_TEXT_HPP
 #define BTSIG_TYPES_UTF8_TEXT_HPP
 
+#include "btsig/types/utf8_text.h"
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -23,9 +25,7 @@ template <std::size_t Capacity> struct utf8_text {
 
 // Bytes occupied by `utf8_text<capacity>`, including tail padding to `uint16_t` alignment.
 constexpr std::size_t stored_utf8_bytes(std::uint16_t capacity) {
-    const std::size_t raw = sizeof(std::uint16_t) + static_cast<std::size_t>(capacity);
-    constexpr std::size_t alignment = alignof(std::uint16_t);
-    return (raw + alignment - 1) / alignment * alignment;
+    return btsig_stored_utf8_bytes(capacity);
 }
 
 static_assert(stored_utf8_bytes(1) == sizeof(utf8_text<1>));

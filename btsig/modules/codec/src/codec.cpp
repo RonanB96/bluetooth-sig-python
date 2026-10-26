@@ -218,7 +218,7 @@ std::size_t member_bytes(const FieldDescriptor& field) {
         if (field.utf8_capacity == 0) {
             return 0;
         }
-        return stored_utf8_bytes(field.utf8_capacity);
+        return btsig_stored_utf8_bytes(field.utf8_capacity);
     }
     return member_size(field.value_kind);
 }
