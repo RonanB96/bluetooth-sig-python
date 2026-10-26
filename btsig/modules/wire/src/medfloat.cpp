@@ -23,19 +23,16 @@ struct DecimalFloat {
     std::int64_t nan;
     std::int64_t nres;
     std::int64_t reserved;
-
-    [[nodiscard]] int mantissa_mask() const {
-        return (1 << mantissa_bits) - 1;
-    }
-
-    [[nodiscard]] int exponent_mask() const {
-        return (1 << exponent_bits) - 1;
-    }
-
-    [[nodiscard]] bool is_special(std::int64_t raw) const {
-        return raw == positive_infinity || raw == negative_infinity || raw == nan || raw == nres || raw == reserved;
-    }
 };
+
+int field_mask(int bits) {
+    return (1 << bits) - 1;
+}
+
+bool is_special(std::int64_t raw, const DecimalFloat& format) {
+    return raw == format.positive_infinity || raw == format.negative_infinity || raw == format.nan ||
+           raw == format.nres || raw == format.reserved;
+}
 
 // ISO/IEEE 11073-20601 SFLOAT-Type, Personal Health Devices Transcoding White Paper V15r00 §2.2.2.
 constexpr DecimalFloat sfloat_format() {
@@ -149,9 +146,9 @@ expected<double> decode(std::int64_t raw, const DecimalFloat& format) {
     if (raw == format.nres || raw == format.reserved) {
         return unexpected_status<double>(BTSIG_OUT_OF_RANGE);
     }
-    const int mantissa = sign_extend(static_cast<int>(raw & format.mantissa_mask()), format.mantissa_bits);
-    const int exponent =
-        sign_extend(static_cast<int>((raw >> format.mantissa_bits) & format.exponent_mask()), format.exponent_bits);
+    const int mantissa = sign_extend(static_cast<int>(raw & field_mask(format.mantissa_bits)), format.mantissa_bits);
+    const int exponent = sign_extend(static_cast<int>((raw >> format.mantissa_bits) & field_mask(format.exponent_bits)),
+                                     format.exponent_bits);
     const double value = product(mantissa, exponent);
     if (!std::isfinite(value)) {
         return unexpected_status<double>(BTSIG_OUT_OF_RANGE);
@@ -162,8 +159,8 @@ expected<double> decode(std::int64_t raw, const DecimalFloat& format) {
 std::int64_t pack(int mantissa, int exponent, const DecimalFloat& format) {
     const auto mantissa_bits = static_cast<std::int64_t>(twos_bits(mantissa, format.mantissa_bits));
     const auto exponent_bits = static_cast<std::int64_t>(twos_bits(exponent, format.exponent_bits));
-    return (mantissa_bits & format.mantissa_mask()) |
-           ((exponent_bits & format.exponent_mask()) << format.mantissa_bits);
+    return (mantissa_bits & field_mask(format.mantissa_bits)) |
+           ((exponent_bits & field_mask(format.exponent_bits)) << format.mantissa_bits);
 }
 
 expected<std::int64_t> encode(double value, const DecimalFloat& format) {
@@ -178,7 +175,7 @@ expected<std::int64_t> encode(double value, const DecimalFloat& format) {
         return unexpected_status<std::int64_t>(chosen.error().status);
     }
     const std::int64_t packed = pack(chosen.value().mantissa, chosen.value().exponent, format);
-    if (format.is_special(packed)) {
+    if (is_special(packed, format)) {
         return unexpected_status<std::int64_t>(BTSIG_OUT_OF_RANGE);
     }
     return packed;
