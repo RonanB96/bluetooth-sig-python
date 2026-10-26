@@ -9,14 +9,16 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
         set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
     endif()
-    project(btsig_characteristics LANGUAGES CXX)
+    project(btsig_characteristics LANGUAGES C CXX)
 endif()
 
 add_library(btsig_warnings INTERFACE)
 add_library(btsig::warnings ALIAS btsig_warnings)
 target_compile_options(btsig_warnings INTERFACE
     -Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef
-    -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables)
+    "$<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-fno-unwind-tables>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-fno-asynchronous-unwind-tables>")
 
 add_library(btsig_types INTERFACE)
 add_library(btsig::types ALIAS btsig_types)
@@ -30,11 +32,12 @@ target_link_libraries(btsig_schema INTERFACE btsig::types)
 add_library(btsig_wire STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/word.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/medfloat.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/ieee754.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/ieee754.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/real.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/utf8.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/subbyte.cpp")
 add_library(btsig::wire ALIAS btsig_wire)
+set_target_properties(btsig_wire PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
 target_include_directories(btsig_wire PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/wire/include")
 target_link_libraries(btsig_wire PUBLIC btsig::schema PRIVATE btsig::warnings)
 
