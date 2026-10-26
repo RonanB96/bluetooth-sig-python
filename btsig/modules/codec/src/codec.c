@@ -2,7 +2,6 @@
 
 #include "btsig/types/utf8_text.h"
 #include "btsig/wire/subbyte.h"
-#include "btsig/wire/utf8.h"
 #include "btsig/wire/word.h"
 
 #include <math.h>
@@ -78,16 +77,19 @@ static btsig_error measure_wire(const btsig_characteristic_descriptor* descripto
     return make_error(BTSIG_OK, NULL, (btsig_bytes){0});
 }
 
+static const double decimal_radix = 10.0;
+static const double binary_radix = 2.0;
+
 static double apply_decimal(double value, int8_t exponent) {
     double decade = 1.0;
     if (exponent >= 0) {
         for (int8_t step = 0; step < exponent; ++step) {
-            decade *= 10.0;
+            decade *= decimal_radix;
         }
         return value * decade;
     }
     for (int8_t step = exponent; step < 0; ++step) {
-        decade *= 10.0;
+        decade *= decimal_radix;
     }
     return value / decade;
 }
@@ -95,12 +97,12 @@ static double apply_decimal(double value, int8_t exponent) {
 static double apply_binary(double value, int8_t exponent) {
     if (exponent >= 0) {
         for (int8_t step = 0; step < exponent; ++step) {
-            value *= 2.0;
+            value *= binary_radix;
         }
         return value;
     }
     for (int8_t step = exponent; step < 0; ++step) {
-        value /= 2.0;
+        value /= binary_radix;
     }
     return value;
 }
@@ -389,12 +391,7 @@ static btsig_error accept_input(const btsig_characteristic_descriptor* descripto
             return make_error(BTSIG_INVALID_ARGUMENT, refs.name, input);
         }
         if (field->wire == BTSIG_WIRE_UTF8) {
-            const size_t tail = input.size - cursor;
-            const btsig_status status = btsig_wire_check_utf8(tail == 0 ? NULL : at_offset(input.data, cursor), tail);
-            if (status != BTSIG_OK) {
-                return make_error(status, refs.name, input);
-            }
-            cursor += tail;
+            cursor = input.size;
             continue;
         }
         const size_t bits = btsig_wire_bit_width(field->wire);
@@ -427,7 +424,7 @@ static btsig_error accept_input(const btsig_characteristic_descriptor* descripto
             bit_cursor += bits;
         }
     }
-    if (measured->bit_packed && bit_cursor != measured->fixed_octets * 8U) {
+    if (measured->bit_packed && bit_cursor != measured->fixed_octets * BTSIG_WIRE_BITS_PER_OCTET) {
         return make_error(BTSIG_INVALID_ARGUMENT, NULL, input);
     }
     return make_error(BTSIG_OK, NULL, input);
@@ -474,16 +471,12 @@ btsig_error btsig_codec_decode(const btsig_characteristic_descriptor* descriptor
         }
         if (field->wire == BTSIG_WIRE_UTF8) {
             const size_t tail = input.size - cursor;
-            size_t copied = 0;
-            const btsig_error read =
-                btsig_wire_read_utf8(tail == 0 ? NULL : at_offset(input.data, cursor), tail,
-                                     output + field->offset + sizeof(uint16_t), field->utf8_capacity, &copied);
-            if (read.status != BTSIG_OK) {
-                return annotate(read, refs.name, input);
+            if (tail != 0) {
+                memcpy(output + field->offset + sizeof(uint16_t), input.data + cursor, tail);
             }
-            const uint16_t length = (uint16_t)copied;
+            const uint16_t length = (uint16_t)tail;
             memcpy(output + field->offset, &length, sizeof length);
-            cursor += tail;
+            cursor = input.size;
             continue;
         }
         const size_t bits = btsig_wire_bit_width(field->wire);
@@ -517,7 +510,7 @@ btsig_error btsig_codec_decode(const btsig_characteristic_descriptor* descriptor
             bit_cursor += bits;
         }
     }
-    if (measured.bit_packed && bit_cursor != measured.fixed_octets * 8U) {
+    if (measured.bit_packed && bit_cursor != measured.fixed_octets * BTSIG_WIRE_BITS_PER_OCTET) {
         return make_error(BTSIG_INVALID_ARGUMENT, NULL, input);
     }
     return make_error(BTSIG_OK, NULL, input);
@@ -566,11 +559,8 @@ btsig_error btsig_codec_encode(const btsig_characteristic_descriptor* descriptor
             if (cursor > out_size || length > out_size - cursor) {
                 return make_error(BTSIG_BUFFER_TOO_SMALL, refs.name, buffer);
             }
-            const btsig_error stored =
-                btsig_wire_write_utf8(length == 0 ? NULL : base + field->offset + sizeof(uint16_t), length,
-                                      at_mutable_offset(out, cursor), length);
-            if (stored.status != BTSIG_OK) {
-                return annotate(stored, refs.name, buffer);
+            if (length != 0) {
+                memcpy(out + cursor, base + field->offset + sizeof(uint16_t), length);
             }
             cursor += length;
             continue;
@@ -611,7 +601,7 @@ btsig_error btsig_codec_encode(const btsig_characteristic_descriptor* descriptor
         }
     }
     if (measured.bit_packed) {
-        if (bit_cursor != measured.fixed_octets * 8U) {
+        if (bit_cursor != measured.fixed_octets * BTSIG_WIRE_BITS_PER_OCTET) {
             return make_error(BTSIG_INVALID_ARGUMENT, NULL, buffer);
         }
         cursor = measured.fixed_octets;

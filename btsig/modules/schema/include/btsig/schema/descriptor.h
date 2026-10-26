@@ -60,6 +60,7 @@ typedef struct btsig_field_descriptor {
     uint16_t allowed_count;
     // Octet maximum of a utf8 member. Zero for every other wire type.
     // The member starts at `offset`: uint16_t size, then uint8_t data[utf8_capacity].
+    // The codec copies those octets and checks this capacity. It does not decode UTF-8.
     uint16_t utf8_capacity;
     uint16_t unit_uuid;
     btsig_value_kind value_kind;
