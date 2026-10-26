@@ -114,7 +114,7 @@ def _utf8_field(raw: GssField, utf8: Utf8Type, units: dict[str, int]) -> ScalarF
         maximum=0,
         unit=unit,
         sentinels=sentinels,
-        utf8_capacity=utf8.capacity,
+        utf8_capacity=sized,
     )
 
 

@@ -30,11 +30,6 @@
     "detail": "struct reference does not name a characteristic"
   },
   {
-    "identifier": "org.bluetooth.characteristic.object_name",
-    "rule": "utf8",
-    "detail": "size '0\u2013120' is not variable"
-  },
-  {
     "identifier": "org.bluetooth.characteristic.object_type",
     "rule": "wire_type",
     "detail": "unsupported wire type 'gatt_uuid'"

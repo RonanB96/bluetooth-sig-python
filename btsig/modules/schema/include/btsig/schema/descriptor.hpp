@@ -55,7 +55,7 @@ struct FieldDescriptor {
     std::int8_t decimal_exponent;
     std::int8_t binary_exponent;
     // Octet maximum of a utf8 member. Zero for every other wire type.
-    // The C member is uint16_t name_length followed by uint8_t name[utf8_capacity].
+    // The member starts at `offset`: uint16_t size, then uint8_t data[utf8_capacity].
     std::uint16_t utf8_capacity;
     // Discrete codes for an enumeration member. Null unless allowed_count is non-zero.
     const std::int64_t* allowed;
