@@ -51,6 +51,7 @@ target_link_libraries(btsig_codec PUBLIC btsig::schema PRIVATE btsig::wire btsig
 file(GLOB btsig_generated_sources CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/../generated/*/src/*.cpp")
 file(GLOB btsig_override_sources CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/../override/*/src/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/../override/*/src/*.cpp")
 set(btsig_override_names "")
 foreach(source IN LISTS btsig_override_sources)
@@ -80,6 +81,7 @@ if(NOT btsig_characteristic_sources)
 endif()
 add_library(btsig_characteristics STATIC ${btsig_characteristic_sources})
 add_library(btsig::characteristics ALIAS btsig_characteristics)
+set_target_properties(btsig_characteristics PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
 target_link_libraries(btsig_characteristics PUBLIC btsig::types btsig::codec PRIVATE btsig::warnings)
 foreach(source IN LISTS btsig_characteristic_sources)
     cmake_path(GET source PARENT_PATH source_dir)
