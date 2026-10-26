@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from tools.gss_ir.sources.characteristic_uuids import read_characteristic_uuids
+import pytest
+
+from tools.gss_ir.sources.characteristic_uuids import read_characteristic_records, read_characteristic_uuids
+from tools.gss_ir.sources.dp import read_device_properties
+from tools.gss_ir.sources.errors import GssSourceError
 from tools.gss_ir.sources.gss import read_characteristic
 from tools.gss_ir.sources.unit_uuids import read_unit_uuids
 
@@ -41,6 +45,44 @@ def test_characteristic_uuid_reader_maps_the_pilot() -> None:
     assert table["org.bluetooth.characteristic.battery_level"] == 0x2A19
     assert table["org.bluetooth.characteristic.temperature"] == 0x2A6E
     assert table["org.bluetooth.characteristic.temperature_range"] == 0x2B10
+
+
+def test_characteristic_records_keep_the_display_name() -> None:
+    records = read_characteristic_records(ROOT / "bluetooth_sig/assigned_numbers/uuids/characteristic_uuids.yaml")
+    by_id = {record.identifier: record for record in records}
+
+    assert len(records) == 502
+    assert by_id["org.bluetooth.characteristic.gap.device_name"].name == "Device Name"
+    assert by_id["org.bluetooth.characteristic.gap.device_name"].uuid == 0x2A00
+    assert by_id["org.bluetooth.characteristic.battery_level"].name == "Battery Level"
+
+
+def test_device_property_reader_names_characteristics() -> None:
+    properties = read_device_properties(ROOT / "bluetooth_sig/dp/properties")
+    by_id = {prop.identifier: prop for prop in properties}
+
+    assert by_id["org.bluetooth.property.wind_chill"].characteristics == ("org.bluetooth.characteristic.wind_chill",)
+    assert by_id["org.bluetooth.property.subsensor_weights_5"].characteristics == (
+        "org.bluetooth.characteristic.percentage_8_steps",
+        "org.bluetooth.characteristic.percentage_8",
+    )
+
+
+def test_device_property_reader_rejects_a_missing_characteristic(tmp_path: Path) -> None:
+    document = "\n".join(
+        (
+            "property:",
+            "  identifier: org.bluetooth.property.example",
+            "  name: Example",
+            "  group: org.bluetooth.property_group.example",
+        )
+    )
+    (tmp_path / "org.bluetooth.property.example.yaml").write_text(document, encoding="utf-8")
+
+    with pytest.raises(GssSourceError) as error:
+        read_device_properties(tmp_path)
+
+    assert "characteristic" in error.value.detail
 
 
 def test_unit_uuid_reader_maps_celsius_and_percentage() -> None:
