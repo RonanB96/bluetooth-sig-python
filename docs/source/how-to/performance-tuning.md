@@ -162,8 +162,8 @@ async def setup() -> BluetoothSIGTranslator:
 ```
 
 Import stays fast because registries load on first access. Prewarm moves that work to
-startup so notifications and reads stay responsive. See [ADR-009](../explanation/architecture/decisions.md)
-for the lazy-loading model and [Running Benchmarks Locally](#running-benchmarks-locally)
+startup so notifications and reads stay responsive. See
+[Running Benchmarks Locally](#running-benchmarks-locally)
 to measure import and parse times on your machine.
 
 <a id="running-benchmarks-locally"></a>

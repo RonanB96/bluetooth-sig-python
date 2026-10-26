@@ -1,286 +1,238 @@
 # Architectural Decision Records
 
-This document explains key architectural decisions made in the bluetooth-sig-python library.
+These records describe the characteristic codec as it is built. The library is a C11 codec for Bluetooth SIG characteristics. A decode and encode path for every characteristic is the goal of the library.
 
-## ADR-001: Registry-Driven Resolution
+ADR-001 to ADR-011 described the former Python runtime. That package is under `archived/python-lib/`. Those records are superseded by ADR-012.
 
-**Context**: Need to support 70+ Bluetooth SIG characteristics without manual UUID mapping.
+## ADR-012: C11 core and libm
 
-**Decision**: Automatic discovery via `pkgutil.walk_packages()` with enum-based registry.
+**Accepted** | Proposed | Rejected | Superseded | Deprecated
 
-**Rationale**:
+**Date**: 2026-10-26
 
-- Adding a new characteristic requires zero boilerplate
-- Compile-time safety through enum validation
-- Registry stays synchronized with implementation automatically
+**Supersedes**: ADR-001, ADR-002, ADR-003, ADR-004, ADR-007, ADR-008, ADR-009, ADR-010, ADR-011
 
-**Consequences**:
+### Context
 
-- ✅ Zero maintenance overhead for UUID mappings
-- ✅ Type-safe characteristic lookups
-- ⚠️ First access incurs 10-50ms discovery cost (one-time)
+The codec has to stay small, express each characteristic value as a concrete C type, and perform IEEE-11073 and decimal scaling without a C++ runtime.
 
-**Alternatives Considered**:
+### Decision
 
-- Manual UUID dictionary: High maintenance, error-prone
-- Module-level registration: Requires explicit imports
+The core is C11. `btsig_types`, `btsig_schema`, `btsig_wire`, `btsig_codec`, and `btsig_characteristics` are C targets (`btsig/modules/CMakeLists.txt`). `btsig_wire` and `btsig_codec` link libm. IEEE-11073 conversion uses `double` and calls `isnan`, `isinf`, and `fabs` (`btsig/modules/wire/src/medfloat.c`). The scale `raw * coefficient * 10^decimal_exponent * 2^binary_exponent` is `double` arithmetic in `btsig_codec_decode` and `btsig_codec_encode` (`btsig/modules/codec/src/codec.c`).
 
-## ADR-002: Double-Checked Locking for Lazy Initialization
+A call returns `btsig_error`. `btsig_status` names the outcome, including insufficient data, length mismatch, unknown UUID, out of range, buffer too small, invalid argument, not known, and not valid (`btsig/modules/types/include/btsig/types/status.h`). Public headers keep an `extern "C"` block so a C++ translation unit can call the C API (`btsig/modules/codec/include/btsig/codec/codec.h`).
 
-**Context**: Registry initialization is expensive but must be thread-safe in concurrent applications.
+### Consequences
 
-**Decision**: Implement double-checked locking pattern with `threading.RLock`.
+#### Positive
 
-**Rationale**:
+- **POS-001**: One C11 dialect for the core. Callers link C objects and libm.
+- **POS-002**: Each failure is a status value with the field name and the bytes involved.
+- **POS-003**: A C++ caller can include the C headers. The core does not require the C++ standard library.
 
-- Most accesses are reads after initialization
-- Lock contention should only occur during first access
-- RLock allows reentrant calls from same thread
+#### Negative
 
-**Consequences**:
+- **NEG-001**: `double` is the scaled and real value type. Integer wire values that are not scaled stay integers.
+- **NEG-002**: libm is a link dependency of `btsig_wire` and `btsig_codec`.
+- **NEG-003**: Status codes replace exceptions. Callers check `btsig_error.status`.
 
-- ✅ Lock-free reads after initialization (<0.1ms)
-- ✅ Thread-safe lazy loading
-- ⚠️ Slightly more complex initialization code
+### Alternatives Considered
 
-**Performance**:
+#### C++ core
 
-- Cold (first access): 10-50ms (one-time cost)
-- Warm (subsequent): <0.1ms (lock-free fast path)
+- **ALT-001**: **Description**: Characteristic types, `std::expected`, and spans in C++ headers.
+- **ALT-002**: **Rejection Reason**: The core is C11 and libm. Those C++ headers are removed.
 
-## ADR-003: Template Composition Over Inheritance
+#### Python objects as the codec result
 
-**Context**: Many characteristics share identical parsing logic (uint16, float32, etc.).
+- **ALT-003**: **Description**: Parse into Python structs at the centre of the library.
+- **ALT-004**: **Rejection Reason**: The codec result is a C struct and a `btsig_error`. A Python API is deferred (ADR-015).
 
-**Decision**: Use composition with `_template` attribute instead of inheritance hierarchies.
+### Implementation Notes
 
-**Rationale**:
+- **IMP-001**: C standard 11, extensions off, for the wire, codec, and characteristic targets.
+- **IMP-002**: Compile with `-Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef` through `btsig::warnings`.
 
-- Avoids deep inheritance trees
-- Templates are reusable and testable independently
-- Clear separation: template handles encoding, characteristic handles validation
+### References
 
-**Consequences**:
+- **REF-001**: ADR-013 for the descriptor and generated struct.
+- **REF-002**: ADR-015 for what this library includes.
 
-- ✅ Flat class hierarchy
-- ✅ Reusable parsing strategies
-- ✅ Easy to test templates independently
-- ⚠️ Slight indirection in understanding data flow
+## ADR-013: One descriptor-driven codec
 
-**Example**:
+**Accepted** | Proposed | Rejected | Superseded | Deprecated
 
-```python
-from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
-from bluetooth_sig.gatt.characteristics.templates import ScaledSint16Template
+**Date**: 2026-10-26
 
+**Supersedes**: ADR-003, ADR-004
 
-class Temperature(BaseCharacteristic):
-    _template = ScaledSint16Template(scale_factor=0.01)  # Composition
-    expected_length = 2
+### Context
 
+Characteristics share wire widths, ranges, sentinels, units, and the same scale formula. A separate parser class per characteristic duplicates that logic.
 
-# Little-endian: [low_byte, high_byte] = [0x00, 0x0A] = 0x0A00 = 2560
-# 2560 * 0.01 = 25.6°C
-temperature_data = bytearray([0x00, 0x0A])  # 2560 in little-endian
-temp_char = Temperature()
-result = temp_char.parse_value(temperature_data)
-print(f"Temperature: {result}°C")  # Temperature: 25.6°C
-```
+### Decision
 
-## ADR-004: Declarative Validation
+One codec interprets a `btsig_characteristic_descriptor`. A field descriptor holds ranges, a flag mask, offsets, the wire type, the value kind, and the scale integers. It holds no pointers. Names, units, sentinels, and allowed values are addressed from the characteristic descriptor that owns the field, so the field table can stay in flash (`btsig/modules/schema/include/btsig/schema/descriptor.h`, `BTSIG_SCHEMA_VERSION` 1).
 
-**Context**: Manual validation in every `decode_value()` method is verbose and inconsistent.
+The emitter writes a typed struct, a `const` descriptor, and `btsig_decode_<name>` / `btsig_encode_<name>`. Those functions call `btsig_codec_decode` and `btsig_codec_encode` with `sizeof` the struct (`tools/gss_ir/emit_cpp.py`). An integer member stores the raw value. A scaled member, and `medfloat16`, `medfloat32`, and `float32`, store a `double`. A UTF-8 member is `uint16_t size` plus `uint8_t data[capacity]`. A closed code set or a named flag word is a C enum. The generated translation unit static-asserts the schema version, the struct size, each member offset, and each enumeration width.
 
-**Decision**: Use class-level validation attributes that `BaseCharacteristic` enforces.
+### Consequences
 
-**Rationale**:
+#### Positive
 
-- DRY principle: validation logic in one place
-- Consistent error messages across all characteristics
-- Self-documenting: attributes describe constraints clearly
+- **POS-004**: Wire rules live in one codec. A generated characteristic adds data and a typed struct.
+- **POS-005**: Field tables do not embed pointers.
+- **POS-006**: The C type of each member is fixed when the source is generated. The static asserts check size and offset.
 
-**Consequences**:
+#### Negative
 
-- ✅ Reduced boilerplate in characteristic implementations
-- ✅ Consistent validation behaviour
-- ✅ Easy to understand constraints
-- ⚠️ Less flexibility for complex conditional validation
+- **NEG-004**: A layout the descriptor cannot express needs a handwritten codec (ADR-014).
+- **NEG-005**: The emitter module is still named `tools.gss_ir.emit_cpp`. It writes C and deletes a stale `.hpp` or `.cpp` for that characteristic.
 
-**Validation Attributes**:
+### Alternatives Considered
 
-- `expected_length`: Enforce exact byte length
-- `min_value` / `max_value`: Range validation
-- `allowed_values`: Whitelist specific values
+#### One hand-written parser per characteristic
 
-## ADR-005: Framework-Agnostic Design
+- **ALT-005**: **Description**: Each characteristic implements its own decode and encode.
+- **ALT-006**: **Rejection Reason**: Shared wire, range, sentinel, and scale behaviour would be copied into every characteristic.
 
-**Context**: Users integrate with diverse BLE libraries (bleak, simplepyble, bluepy, etc.).
+#### C++ templates as the shared parser
 
-**Decision**: Never import BLE backend libraries in `src/bluetooth_sig/` code.
+- **ALT-007**: **Description**: A template per wire type, composed into each characteristic.
+- **ALT-008**: **Rejection Reason**: The shared parser is the C codec and a descriptor table (ADR-012).
 
-**Rationale**:
+### Implementation Notes
 
-- Avoids coupling to specific BLE library versions
-- Users choose their preferred connection manager
-- Library focuses on standards interpretation only
+- **IMP-003**: `btsig_value_kind` selects the member width the codec reads and writes: `uint8`, `uint16`, `uint32`, `uint64`, `sint8`, `sint16`, `sint32`, `double`, or UTF-8.
+- **IMP-004**: Sub-byte `uint1` and `uint2` fields are packed from bit 0 of the first octet. A UTF-8 field is the tail of the value.
 
-**Consequences**:
+### References
 
-- ✅ Works with any BLE library
-- ✅ No dependency version conflicts
-- ✅ Clear separation of concerns
-- ⚠️ Users must handle connection management separately
+- **REF-003**: `tools/gss_ir/README.md` for the IR fields the emitter stores in the descriptor.
+- **REF-004**: ADR-014 for generation and overrides.
 
-**Boundary**:
+## ADR-014: SIG YAML, IR, then C
 
-```text
-User's BLE Library → bytes → bluetooth-sig → structured data
-```
+**Accepted** | Proposed | Rejected | Superseded | Deprecated
 
-## ADR-006: Bluetooth SIG Git Submodule
+**Date**: 2026-10-26
 
-**Context**: Need authoritative Bluetooth SIG specification data.
+**Supersedes**: ADR-006, ADR-009
 
-**Decision**: Use official `bluetooth_sig/` repository as git submodule.
+### Context
 
-**Rationale**:
+Assigned numbers and GATT Specification Supplement YAML are the source for characteristic layout. The codec must not parse YAML when it decodes a value.
 
-- Single source of truth for UUID definitions
-- Automatic updates when Bluetooth SIG publishes changes
-- No manual YAML maintenance
+### Decision
 
-**Consequences**:
+`tools/gss_ir/sources/` is the only reader of the `bluetooth_sig` submodule. The normaliser writes canonical IR at schema version 1. `python -m tools.gss_ir.generate` writes that IR for every characteristic that is not listed in `tools/gss_ir/characteristics.json`. That file is the blacklist. A characteristic the normaliser cannot express is recorded in `generated/errors.json`, and generation continues (`tools/gss_ir/generate.py`).
 
-- ✅ Always synchronized with official specifications
-- ✅ Zero maintenance for UUID registry
-- ⚠️ Adds ~5MB to repository size
+`python -m tools.gss_ir.emit_cpp` reads the IR only and writes `btsig/generated/<name>/`. CMake builds `btsig_characteristics` from those sources. A directory of the same name under `btsig/override/` replaces the generated codec (`btsig/modules/CMakeLists.txt`). The configure step stops when `btsig/generated/` has no characteristic sources.
 
-**Mitigation**: Clear documentation in README and setup guides.
+### Consequences
 
-## ADR-007: msgspec for Data Structures
+#### Positive
 
-**Context**: Need fast, type-safe data structures for parsed results.
+- **POS-007**: Specification YAML stays in the submodule. The codec sees C tables.
+- **POS-008**: The blacklist is an explicit list of identifiers. An empty list attempts every characteristic.
+- **POS-009**: A characteristic that cannot be normalised does not stop generation of the others. The error file names it.
 
-**Decision**: Use `msgspec.Struct` for characteristic data classes.
+#### Negative
 
-**Rationale**:
+- **NEG-006**: Full characteristic coverage is unfinished while `generated/errors.json` lists characteristics and while identifiers remain on the blacklist without an override.
+- **NEG-007**: An override for a characteristic that also has GSS YAML is reported when generation runs (`tools/gss_ir/sources/overrides.py`). The override still replaces the generated codec.
 
-- 5-10x faster than standard dataclasses
-- Compact memory representation
-- Built-in validation and type checking
-- JSON serialization support
+### Alternatives Considered
 
-**Consequences**:
+#### Interpret YAML in the codec
 
-- ✅ Excellent performance
-- ✅ Strong typing with runtime validation
-- ✅ Easy JSON serialization for APIs
-- ⚠️ Additional dependency
+- **ALT-009**: **Description**: Load GSS YAML on first use and interpret it at decode time.
+- **ALT-010**: **Rejection Reason**: The running codec is C and reads a descriptor compiled into the library.
 
-## ADR-008: Progressive API Levels
+#### Generate C++ classes from the IR
 
-**Context**: Users have varying needs from simple parsing to advanced customization.
+- **ALT-011**: **Description**: Emit a class per characteristic with a C++ value type.
+- **ALT-012**: **Rejection Reason**: The emitter writes a C struct, a C descriptor, and C functions (ADR-012, ADR-013).
 
-**Decision**: Provide four progressive API levels without breaking changes.
+### Implementation Notes
 
-**Rationale**:
+- **IMP-005**: Regenerate with `python -m tools.gss_ir.generate tools/gss_ir/characteristics.json` and `python -m tools.gss_ir.emit_cpp tools/gss_ir/characteristics.json`.
+- **IMP-006**: Generated sources are formatted with `clang-format-18` and `btsig/.clang-format`.
+- **IMP-007**: IR schema version stays 1 until this development line is released. The emitter rejects any other version.
 
-- Low barrier to entry (Level 1: direct characteristic usage)
-- Advanced features available when needed
-- Backward compatible across levels
+### References
 
-**API Levels**:
+- **REF-005**: `tools/gss_ir/README.md` for the IR contract.
+- **REF-006**: ADR-015 for the coverage goal.
 
-1. Direct characteristic parsing
-2. UUID-based parsing via translator
-3. Metadata queries without parsing
-4. Custom characteristic registration
+## ADR-015: Characteristic coverage is the library boundary
 
-**Consequences**:
+**Accepted** | Proposed | Rejected | Superseded | Deprecated
 
-- ✅ Easy for beginners
-- ✅ Powerful for advanced users
-- ✅ No breaking changes when advancing levels
+**Date**: 2026-10-26
 
-## ADR-009: Lazy YAML Loading
+**Supersedes**: ADR-005, ADR-008
 
-**Context**: Loading all Bluetooth SIG YAML files at startup is slow.
+### Context
 
-**Decision**: Load YAML files on first access per registry type.
+The repository used to expose characteristics, services, and advertising through a Python API. The codec work is the library that replaces that centre.
 
-**Rationale**:
+### Decision
 
-- Most applications only use subset of characteristics
-- Startup time must be minimal
-- Trade startup time for runtime overhead
+The library is the C characteristic codec. Its goal is a decode and encode path for every SIG characteristic, either generated from IR or supplied as an override.
 
-**Consequences**:
+A Python API, service definitions, profiles, and an advertising serialiser are deferred. They are not part of this library. The former Python package remains in `archived/python-lib/`.
 
-- ✅ Fast application startup
-- ✅ Load only what's needed
-- ⚠️ First UUID lookup is slower (10-30ms)
+The codec accepts bytes and returns a filled struct. It does not open a BLE connection.
 
-**Optimization**: YAML loading is cached after first access.
+### Consequences
 
-## ADR-010: Singleton Pattern for Translators
+#### Positive
 
-**Context**: Multiple translator instances would cause unnecessary resource duplication.
+- **POS-010**: Work on the library is characteristic coverage: shrink the blacklist and `generated/errors.json` until every characteristic has a codec.
+- **POS-011**: The public surface is the generated and override C APIs plus `btsig_codec_decode` and `btsig_codec_encode`.
 
-**Decision**: Implement singleton pattern for `BluetoothSIGTranslator` and registries.
+#### Negative
 
-**Rationale**:
+- **NEG-008**: Callers that need services, profiles, advertising, or Python wrap this library themselves, or wait until a later library exists.
+- **NEG-009**: Documentation outside this page still describes the archived Python package. Those pages are not the codec contract.
 
-- Registry data should be shared across application
-- Prevent memory waste from duplicate YAML loading
-- Simplify API (no need to pass translator instances)
+### Alternatives Considered
 
-**Consequences**:
+#### Grow the C core to services, profiles, and advertising now
 
-- ✅ Efficient resource usage
-- ✅ Simple API (`get_instance()`)
-- ✅ Consistent state across application
-- ⚠️ Global state (acceptable for read-only registry data)
+- **ALT-013**: **Description**: Add those serialisers beside the characteristic codec before characteristic coverage is complete.
+- **ALT-014**: **Rejection Reason**: Characteristic coverage is the goal of this library. Those serialisers are deferred.
 
-**Implementation note**:
+#### Make the Python package the supported API now
 
-- Access singleton registries via explicit getter/class methods (for example
-    ``get_uuid_registry()`` and ``get_instance()``) instead of relying on
-    import-time module globals.
-- Importing registry modules must be side-effect free with respect to YAML I/O.
+- **ALT-015**: **Description**: Restore `bluetooth_sig` as the interface and keep the C codec internal.
+- **ALT-016**: **Rejection Reason**: The supported library is the C codec. A Python API is deferred.
 
-## ADR-011: Lazy Python Module Loading
+### Implementation Notes
 
-**Context**: Eager re-exports in the GATT characteristics and services packages loaded
-hundreds of Python modules on every `import bluetooth_sig`, even though YAML registries
-already load lazily (ADR-009).
+- **IMP-012**: Coverage is complete for a characteristic when `btsig_characteristics` contains its generated codec or an override of the same directory name.
+- **IMP-013**: `generated/errors.json` and `tools/gss_ir/characteristics.json` are the lists of characteristics still outside that set.
 
-**Decision**: Load named characteristic and service classes on first access using PEP 562
-lazy exports. Keep shared infrastructure (`BaseCharacteristic`, registry accessors) eager.
+### References
 
-**Rationale**:
+- **REF-007**: ADR-012, ADR-013, and ADR-014 for the codec those characteristics use.
+- **REF-008**: `archived/python-lib/` for the former Python package.
 
-- Python import cost dominated startup, not YAML parsing
-- Registry discovery already supported deferred class loading
-- Existing import paths must keep working for library consumers
+## Superseded records
 
-**Consequences**:
+ADR-001 to ADR-011 are **Superseded** by ADR-012. They described the Python runtime and are not the codec contract.
 
-- ✅ Faster package import with a smaller initial module graph
-- ✅ Named class imports unchanged for consumers
-- ✅ Load only the characteristics you actually use
-- ⚠️ First access to a named class imports that module (expected trade-off)
-
-**Optimization**: Contributors regenerate export maps when adding characteristics or
-services (`scripts/generate_lazy_exports.py`). See [Performance Benchmark Data](../performance/performance-data.md)
-for measured import times.
-
-## Summary
-
-These architectural decisions prioritize:
-
-1. **Performance**: Lazy loading, caching, efficient data structures
-2. **Maintainability**: Auto-discovery, declarative patterns, DRY
-3. **Flexibility**: Framework-agnostic, progressive APIs
-4. **Standards Compliance**: Official Bluetooth SIG data source
-
-For implementation details, see [Internal Architecture](internals.md).
+| Record | Subject | Continued by |
+| --- | --- | --- |
+| ADR-001 | Registry discovery of Python characteristic classes | ADR-014 |
+| ADR-002 | Double-checked locking for that registry | ADR-012 |
+| ADR-003 | Python template composition | ADR-013 |
+| ADR-004 | Declarative validation on Python characteristic classes | ADR-013 |
+| ADR-005 | No BLE stack inside the Python package | ADR-015 |
+| ADR-006 | `bluetooth_sig` git submodule as the specification source | ADR-014 |
+| ADR-007 | `msgspec` structs for parse results | ADR-012 |
+| ADR-008 | Four progressive Python API levels | ADR-015 |
+| ADR-009 | Lazy YAML load in the Python process | ADR-014 |
+| ADR-010 | Singleton translator and registries | ADR-012 |
+| ADR-011 | Lazy Python module exports | ADR-015 |
