@@ -48,11 +48,9 @@ jobs:
 
       - name: Check btsig formatting
         run: |
-          mapfile -t files < <(find btsig/modules examples/characteristic_api \
-            -path examples/characteristic_api/build -prune -o \
+          mapfile -t files < <(find btsig examples/characteristic_api \
+            -type d -name build -prune -o \
             -type f \( -name '*.c' -o -name '*.h' -o -name '*.hpp' -o -name '*.cpp' \) -print)
-          mapfile -t generated < <(find btsig/generated -type f \( -path 'btsig/generated/*/src/*' -o -path 'btsig/generated/*/include/btsig/*' \))
-          files+=("${generated[@]}")
           if [[ ${#files[@]} -eq 0 ]]; then
             echo "No btsig sources found"
             exit 1
@@ -116,12 +114,8 @@ jobs:
             --extra-arg="-I/usr/include/c++/${gcc_major}"
             --extra-arg="-I/usr/include/x86_64-linux-gnu/c++/${gcc_major}"
           )
-          mapfile -t library_files < <(find btsig/modules -type f -name '*.cpp')
-          mapfile -t generated_files < <(find btsig/generated -type f -path 'btsig/generated/*/src/*.cpp')
-          library_files+=("${generated_files[@]}")
-          mapfile -t sample_files < <(find examples/characteristic_api \
-            -path examples/characteristic_api/build -prune -o \
-            -type f \( -name '*.c' -o -name '*.cpp' \) -print)
+          mapfile -t library_files < <(python -c 'import json; print("\n".join(entry["file"] for entry in json.load(open("btsig/build/compile_commands.json"))))')
+          mapfile -t sample_files < <(python -c 'import json; print("\n".join(entry["file"] for entry in json.load(open("examples/characteristic_api/build/compile_commands.json"))))')
           if [[ ${#library_files[@]} -eq 0 || ${#sample_files[@]} -eq 0 ]]; then
             echo "No btsig translation units found"
             exit 1
