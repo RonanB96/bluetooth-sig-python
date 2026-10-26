@@ -16,6 +16,12 @@ namespace {
 constexpr std::size_t kStructScratchBytes = 512;
 constexpr std::size_t kWireScratchBytes = 256;
 
+// One buffer per direction. A stack array of this size exceeds the usual
+// embedded frame budget. These are not reentrant: overlapping decode or
+// encode calls share the same bytes.
+std::uint8_t struct_scratch[kStructScratchBytes];
+std::uint8_t wire_scratch[kWireScratchBytes];
+
 btsig_error make_error(btsig_status status, const char* field, btsig_bytes bytes) {
     btsig_error error{};
     error.status = status;
@@ -350,7 +356,8 @@ btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input
     }
 
     // A failed field leaves the caller struct unchanged (ADR-0010).
-    std::uint8_t scratch[kStructScratchBytes]{};
+    std::uint8_t* scratch = struct_scratch;
+    std::memset(scratch, 0, descriptor.size);
     std::size_t cursor = 0;
     std::size_t bit_cursor = 0;
     for (std::size_t index = 0; index < descriptor.field_count; ++index) {
@@ -423,7 +430,8 @@ btsig_error encode(const CharacteristicDescriptor& descriptor, const void* value
         return annotate(measured.error(), nullptr, buffer);
     }
 
-    std::uint8_t scratch[kWireScratchBytes]{};
+    std::uint8_t* scratch = wire_scratch;
+    std::memset(scratch, 0, kWireScratchBytes);
     const auto* base = static_cast<const std::uint8_t*>(value);
     std::size_t cursor = 0;
     std::size_t bit_cursor = 0;
