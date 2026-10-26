@@ -7,7 +7,7 @@
 
 namespace btsig::wire::detail {
 
-// IEEE-754 binary32, widened to double.
+// IEEE 754 binary32 widened to double (Core Specification 6.3, Volume 1, Part E, Section 2.9.1).
 [[nodiscard]] expected<double> decode_binary32(std::int64_t raw);
 [[nodiscard]] expected<std::int64_t> encode_binary32(double value);
 

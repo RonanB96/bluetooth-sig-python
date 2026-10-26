@@ -7,6 +7,69 @@
 namespace btsig::wire::detail {
 namespace {
 
+struct IntRange {
+    int minimum;
+    int maximum;
+};
+
+// Exponent then mantissa, base 10. Specials are exact words, not products.
+struct DecimalFloat {
+    int exponent_bits;
+    int mantissa_bits;
+    IntRange exponent;
+    IntRange mantissa;
+    std::int64_t positive_infinity;
+    std::int64_t negative_infinity;
+    std::int64_t nan;
+    std::int64_t nres;
+    std::int64_t reserved;
+
+    [[nodiscard]] int mantissa_mask() const {
+        return (1 << mantissa_bits) - 1;
+    }
+
+    [[nodiscard]] int exponent_mask() const {
+        return (1 << exponent_bits) - 1;
+    }
+
+    [[nodiscard]] bool is_special(std::int64_t raw) const {
+        return raw == positive_infinity || raw == negative_infinity || raw == nan || raw == nres || raw == reserved;
+    }
+};
+
+// ISO/IEEE 11073-20601 SFLOAT-Type, Personal Health Devices Transcoding White Paper V15r00 §2.2.2.
+constexpr DecimalFloat sfloat_format() {
+    DecimalFloat format{};
+    format.exponent_bits = 4;
+    format.mantissa_bits = 12;
+    format.exponent = {-8, 7};
+    format.mantissa = {-2048, 2047};
+    format.positive_infinity = 0x07FE;
+    format.negative_infinity = 0x0802;
+    format.nan = 0x07FF;
+    format.nres = 0x0800;
+    format.reserved = 0x0801;
+    return format;
+}
+
+// ISO/IEEE 11073-20601 FLOAT-Type, Personal Health Devices Transcoding White Paper V15r00 §2.2.1.
+constexpr DecimalFloat float_format() {
+    DecimalFloat format{};
+    format.exponent_bits = 8;
+    format.mantissa_bits = 24;
+    format.exponent = {-128, 127};
+    format.mantissa = {-8388608, 8388607};
+    format.positive_infinity = 0x007FFFFE;
+    format.negative_infinity = 0x00800002;
+    format.nan = 0x007FFFFF;
+    format.nres = 0x00800000;
+    format.reserved = 0x00800001;
+    return format;
+}
+
+constexpr DecimalFloat kSfloat = sfloat_format();
+constexpr DecimalFloat kFloat = float_format();
+
 double decade_power(int exponent) {
     double decade = 1.0;
     if (exponent >= 0) {
@@ -29,56 +92,21 @@ int sign_extend(int value, int bits) {
     return value;
 }
 
-constexpr int kSfloatMantissaBits = 12;
-constexpr int kSfloatExponentBits = 4;
-constexpr int kSfloatMantissaMask = (1 << kSfloatMantissaBits) - 1;
-constexpr int kSfloatExponentMask = (1 << kSfloatExponentBits) - 1;
-constexpr int kFloatMantissaBits = 24;
-constexpr int kFloatExponentBits = 8;
-constexpr int kFloatMantissaMask = (1 << kFloatMantissaBits) - 1;
-constexpr int kFloatExponentMask = (1 << kFloatExponentBits) - 1;
+int twos_bits(int value, int bits) {
+    if (value < 0) {
+        return value + (1 << bits);
+    }
+    return value;
+}
 
-// SFLOAT specials: GSS v9 Table 2.1 and CGM Service v1.0.2 Table 3.8.
-constexpr std::int64_t kSfloatPositiveInfinity = 0x07FE;
-constexpr std::int64_t kSfloatNan = 0x07FF;
-constexpr std::int64_t kSfloatNres = 0x0800;
-constexpr std::int64_t kSfloatReserved = 0x0801;
-constexpr std::int64_t kSfloatNegativeInfinity = 0x0802;
-constexpr int kSfloatExponentMin = -8;
-constexpr int kSfloatExponentMax = 7;
-constexpr int kSfloatMantissaMin = -2048;
-constexpr int kSfloatMantissaMax = 2047;
-
-// FLOAT specials: GSS v9 Table 2.1 and Generic Health Sensor Service Table 1.2.
-constexpr std::int64_t kFloatPositiveInfinity = 0x007FFFFE;
-constexpr std::int64_t kFloatNan = 0x007FFFFF;
-constexpr std::int64_t kFloatNres = 0x00800000;
-constexpr std::int64_t kFloatReserved = 0x00800001;
-constexpr std::int64_t kFloatNegativeInfinity = 0x00800002;
-constexpr int kFloatExponentMin = -128;
-constexpr int kFloatExponentMax = 127;
-constexpr int kFloatMantissaMin = -8388608;
-constexpr int kFloatMantissaMax = 8388607;
-
-struct IntRange {
-    int minimum;
-    int maximum;
-};
+double product(int mantissa, int exponent) {
+    return static_cast<double>(mantissa) * decade_power(exponent);
+}
 
 struct MantissaExponent {
     int mantissa;
     int exponent;
 };
-
-bool sfloat_special(std::int64_t raw) {
-    return raw == kSfloatNan || raw == kSfloatNres || raw == kSfloatPositiveInfinity ||
-           raw == kSfloatNegativeInfinity || raw == kSfloatReserved;
-}
-
-bool float_special(std::int64_t raw) {
-    return raw == kFloatNan || raw == kFloatNres || raw == kFloatPositiveInfinity || raw == kFloatNegativeInfinity ||
-           raw == kFloatReserved;
-}
 
 expected<MantissaExponent> choose(double value, IntRange exponent_range, IntRange mantissa_range) {
     bool found = false;
@@ -91,8 +119,7 @@ expected<MantissaExponent> choose(double value, IntRange exponent_range, IntRang
         if (mantissa < mantissa_range.minimum || mantissa > mantissa_range.maximum) {
             continue;
         }
-        const double actual = static_cast<double>(mantissa) * decade_power(exponent);
-        const double error = std::fabs(value - actual);
+        const double error = std::fabs(value - product(mantissa, exponent));
         if (!found || error < best_error) {
             found = true;
             best_error = error;
@@ -109,86 +136,70 @@ expected<MantissaExponent> choose(double value, IntRange exponent_range, IntRang
     return MantissaExponent{best_mantissa, best_exponent};
 }
 
+expected<double> decode(std::int64_t raw, const DecimalFloat& format) {
+    if (raw == format.positive_infinity) {
+        return std::numeric_limits<double>::infinity();
+    }
+    if (raw == format.negative_infinity) {
+        return -std::numeric_limits<double>::infinity();
+    }
+    if (raw == format.nan) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (raw == format.nres || raw == format.reserved) {
+        return unexpected_status<double>(BTSIG_OUT_OF_RANGE);
+    }
+    const int mantissa = sign_extend(static_cast<int>(raw & format.mantissa_mask()), format.mantissa_bits);
+    const int exponent =
+        sign_extend(static_cast<int>((raw >> format.mantissa_bits) & format.exponent_mask()), format.exponent_bits);
+    const double value = product(mantissa, exponent);
+    if (!std::isfinite(value)) {
+        return unexpected_status<double>(BTSIG_OUT_OF_RANGE);
+    }
+    return value;
+}
+
+std::int64_t pack(int mantissa, int exponent, const DecimalFloat& format) {
+    const auto mantissa_bits = static_cast<std::int64_t>(twos_bits(mantissa, format.mantissa_bits));
+    const auto exponent_bits = static_cast<std::int64_t>(twos_bits(exponent, format.exponent_bits));
+    return (mantissa_bits & format.mantissa_mask()) |
+           ((exponent_bits & format.exponent_mask()) << format.mantissa_bits);
+}
+
+expected<std::int64_t> encode(double value, const DecimalFloat& format) {
+    if (std::isnan(value)) {
+        return format.nan;
+    }
+    if (std::isinf(value)) {
+        return std::signbit(value) ? format.negative_infinity : format.positive_infinity;
+    }
+    const auto chosen = choose(value, format.exponent, format.mantissa);
+    if (!chosen) {
+        return unexpected_status<std::int64_t>(chosen.error().status);
+    }
+    const std::int64_t packed = pack(chosen.value().mantissa, chosen.value().exponent, format);
+    if (format.is_special(packed)) {
+        return unexpected_status<std::int64_t>(BTSIG_OUT_OF_RANGE);
+    }
+    return packed;
+}
+
 } // namespace
 
 expected<double> decode_medfloat16(std::int64_t raw) {
-    if (sfloat_special(raw)) {
-        return unexpected_status<double>(BTSIG_OUT_OF_RANGE);
-    }
-    // Two's-complement 4-bit exponent, then 12-bit mantissa (IDS v1.0.2, Table 6.1).
-    const int mantissa = sign_extend(static_cast<int>(raw & kSfloatMantissaMask), kSfloatMantissaBits);
-    const int exponent =
-        sign_extend(static_cast<int>((raw >> kSfloatMantissaBits) & kSfloatExponentMask), kSfloatExponentBits);
-    const double value = static_cast<double>(mantissa) * decade_power(exponent);
-    if (!std::isfinite(value)) {
-        return unexpected_status<double>(BTSIG_OUT_OF_RANGE);
-    }
-    return value;
+    return decode(raw, kSfloat);
 }
 
 expected<std::int64_t> encode_medfloat16(double value) {
-    if (!std::isfinite(value)) {
-        return unexpected_status<std::int64_t>(BTSIG_INVALID_ARGUMENT);
-    }
-    const auto chosen = choose(value, IntRange{kSfloatExponentMin, kSfloatExponentMax},
-                               IntRange{kSfloatMantissaMin, kSfloatMantissaMax});
-    if (!chosen) {
-        return unexpected_status<std::int64_t>(chosen.error().status);
-    }
-    int mantissa = chosen.value().mantissa;
-    int exponent = chosen.value().exponent;
-    if (mantissa < 0) {
-        mantissa += 1 << kSfloatMantissaBits;
-    }
-    if (exponent < 0) {
-        exponent += 1 << kSfloatExponentBits;
-    }
-    const auto packed = (static_cast<std::int64_t>(mantissa) & kSfloatMantissaMask) |
-                        ((static_cast<std::int64_t>(exponent) & kSfloatExponentMask) << kSfloatMantissaBits);
-    if (sfloat_special(packed)) {
-        return unexpected_status<std::int64_t>(BTSIG_OUT_OF_RANGE);
-    }
-    return packed;
+    return encode(value, kSfloat);
 }
 
 expected<double> decode_medfloat32(std::int64_t raw) {
-    if (float_special(raw)) {
-        return unexpected_status<double>(BTSIG_OUT_OF_RANGE);
-    }
-    // Signed exponent octet, then signed 24-bit mantissa (GHS, Section 1.5).
-    const int mantissa = sign_extend(static_cast<int>(raw & kFloatMantissaMask), kFloatMantissaBits);
-    const int exponent =
-        sign_extend(static_cast<int>((raw >> kFloatMantissaBits) & kFloatExponentMask), kFloatExponentBits);
-    const double value = static_cast<double>(mantissa) * decade_power(exponent);
-    if (!std::isfinite(value)) {
-        return unexpected_status<double>(BTSIG_OUT_OF_RANGE);
-    }
-    return value;
+    return decode(raw, kFloat);
 }
 
 expected<std::int64_t> encode_medfloat32(double value) {
-    if (!std::isfinite(value)) {
-        return unexpected_status<std::int64_t>(BTSIG_INVALID_ARGUMENT);
-    }
-    const auto chosen =
-        choose(value, IntRange{kFloatExponentMin, kFloatExponentMax}, IntRange{kFloatMantissaMin, kFloatMantissaMax});
-    if (!chosen) {
-        return unexpected_status<std::int64_t>(chosen.error().status);
-    }
-    int mantissa = chosen.value().mantissa;
-    int exponent = chosen.value().exponent;
-    if (mantissa < 0) {
-        mantissa += 1 << kFloatMantissaBits;
-    }
-    if (exponent < 0) {
-        exponent += 1 << kFloatExponentBits;
-    }
-    const auto packed = (static_cast<std::int64_t>(mantissa) & kFloatMantissaMask) |
-                        ((static_cast<std::int64_t>(exponent) & kFloatExponentMask) << kFloatMantissaBits);
-    if (float_special(packed)) {
-        return unexpected_status<std::int64_t>(BTSIG_OUT_OF_RANGE);
-    }
-    return packed;
+    return encode(value, kFloat);
 }
 
 } // namespace btsig::wire::detail
