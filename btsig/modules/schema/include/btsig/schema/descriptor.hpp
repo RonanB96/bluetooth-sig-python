@@ -58,7 +58,7 @@ struct FieldDescriptor {
     std::uint16_t allowed_offset;
     std::uint16_t allowed_count;
     // Octet maximum of a utf8 member. Zero for every other wire type.
-    // The C member is uint16_t name_length followed by uint8_t name[utf8_capacity].
+    // The member starts at `offset`: uint16_t size, then uint8_t data[utf8_capacity].
     std::uint16_t utf8_capacity;
     std::uint16_t unit_uuid;
     btsig_value_kind value_kind;

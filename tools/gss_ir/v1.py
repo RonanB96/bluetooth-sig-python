@@ -149,8 +149,9 @@ class ScalarField(ContractStruct, frozen=True):
     """One resolved field in wire order.
 
     Integer, boolean, and real fields store a raw ``minimum`` and ``maximum``.
-    A UTF-8 field stores ``0`` for both. ``utf8_capacity`` is the ``utf8s{N}``
-    octet maximum; a variable ``utf8s`` omits it. ``enumerators`` is empty unless
+    A UTF-8 field stores ``0`` for both. ``utf8_capacity`` is the octet maximum:
+    ``N`` for ``utf8s{N}`` or the high end of a size range starting at 0. A
+    ``variable`` size with no maximum omits it. ``enumerators`` is empty unless
     ``value_set`` is ``enumeration`` or ``flags``.
     """
 

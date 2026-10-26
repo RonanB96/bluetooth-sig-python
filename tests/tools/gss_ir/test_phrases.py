@@ -113,7 +113,7 @@ def test_utf8s_and_utf8s_n_share_one_parser() -> None:
     assert parse_utf8_size(str(fixed_string_16["size"]), 16) == 16
 
 
-def test_utf8_size_that_is_not_variable_stays_unsupported() -> None:
+def test_utf8_size_range_is_the_octet_maximum() -> None:
     object_name = yaml.safe_load(
         """
         - field: Object Name
@@ -123,6 +123,18 @@ def test_utf8_size_that_is_not_variable_stays_unsupported() -> None:
         """
     )[0]
     result = parse_utf8_size(str(object_name["size"]), None)
+
+    assert result == 120
+
+
+def test_utf8_size_variable_with_a_following_range_is_the_octet_maximum() -> None:
+    result = parse_utf8_size("variable\n0\u201318", None)
+
+    assert result == 18
+
+
+def test_utf8_size_above_the_attribute_limit_stays_unsupported() -> None:
+    result = parse_utf8_size("0\u2013513", None)
 
     assert isinstance(result, Unsupported)
     assert result.rule == "utf8"

@@ -21,8 +21,8 @@ The handwritten headers this output includes, which this task does not create:
 ``btsig_value_kind`` enumerators used here are ``BTSIG_VALUE_UINT8``, ``BTSIG_VALUE_UINT16``,
 ``BTSIG_VALUE_UINT32``, ``BTSIG_VALUE_UINT64``, ``BTSIG_VALUE_SINT8``, ``BTSIG_VALUE_SINT16``,
 ``BTSIG_VALUE_SINT32``, ``BTSIG_VALUE_DOUBLE``, and ``BTSIG_VALUE_UTF8``. A ``double`` member is
-the scaled quantity. An integer member is the raw value. A UTF-8 member is ``uint16_t name_length``
-followed by ``uint8_t name[capacity]``. The codec chooses which one from the value kind.
+the scaled quantity. An integer member is the raw value. A UTF-8 member is one counted value,
+``uint16_t size`` followed by ``uint8_t data[capacity]``. The codec chooses which one from the value kind.
 """
 
 from __future__ import annotations
@@ -34,11 +34,13 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from tools.gss_ir.normalise.utf8 import ATT_MAX_VALUE_OCTETS
 from tools.gss_ir.v1 import (
     IR_VERSION,
     Enumerator,
     IrContractError,
     IrDocument,
+    ScalarField,
     Sentinel,
     UnitRef,
     ValueSet,
@@ -66,9 +68,10 @@ _INTEGER_LAYOUT: dict[WireType, tuple[str, int, int, str]] = {
 }
 _REAL_WIRE = frozenset({WireType.MEDFLOAT16, WireType.MEDFLOAT32, WireType.FLOAT32})
 _SCALED_LAYOUT = ("double", 8, 8, "BTSIG_VALUE_DOUBLE")
-# Unsized ``utf8s`` names no octet maximum. The array bound matches
-# ``Utf8StringTemplate`` in src/bluetooth_sig/gatt/characteristics/templates/string.py.
-_VARIABLE_UTF8_OCTETS = 256
+_INT32_MIN = -(2**31)
+_INT32_MAX = 2**31 - 1
+_UINT32_MAX = 2**32 - 1
+_UNSIGNED_INT_BITS = 32
 
 
 class EmitError(RuntimeError):
@@ -98,7 +101,9 @@ class _Member:
     sentinels: tuple[Sentinel, ...]
     utf8_capacity: int = 0
     cpp_type: str = ""
+    cpp_underlying: str = ""
     c_enum_type: str = ""
+    c_enum_is_typedef: bool = False
     enumerators: tuple[Enumerator, ...] = ()
     value_set: ValueSet | None = None
 
@@ -167,15 +172,25 @@ def _c_string(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
+def _stored_utf8_bytes(capacity: int) -> int:
+    raw = 2 + capacity
+    return (raw + 1) // 2 * 2
+
+
 def _c_member(member: _Member) -> str:
     if member.utf8_capacity:
-        return f"    uint16_t {member.name}_length;\n    uint8_t {member.name}[{member.utf8_capacity}];"
+        return (
+            "    struct {\n"
+            "        uint16_t size;\n"
+            f"        uint8_t data[{member.utf8_capacity}];\n"
+            f"    }} {member.name};"
+        )
     return f"    {member.c_type} {member.name};"
 
 
 def _cpp_member(member: _Member) -> str:
     if member.utf8_capacity:
-        return _c_member(member)
+        return f"    btsig::utf8_text<{member.utf8_capacity}> {member.name};"
     return f"    {member.cpp_type} {member.name};"
 
 
@@ -198,10 +213,32 @@ def _enum_type(field_name: str, class_name: str) -> str:
 
 def _enumerator_expr(member: _Member, enumerator: Enumerator) -> str:
     if member.value_set is ValueSet.FLAGS:
-        return f"1U << {enumerator.value.bit_length() - 1}"
+        bit = enumerator.value.bit_length() - 1
+        # `1U << 32` is undefined when unsigned int is 32 bits.
+        if bit >= _UNSIGNED_INT_BITS:
+            return f"1ULL << {bit}"
+        return f"1U << {bit}"
     if enumerator.value >= 2**31:
         return f"{enumerator.value}U"
     return str(enumerator.value)
+
+
+def _enum_storage(field: ScalarField) -> tuple[str, int, int, str]:
+    """C++ underlying type, member size, alignment, and codec value kind.
+
+    A flags mask is unsigned so bit 31 stays a positive value. A closed code
+    set stays signed when every code fits in int.
+    """
+    values = [item.value for item in field.enumerators]
+    low = min(values)
+    high = max(values)
+    if field.value_set is ValueSet.FLAGS or low < _INT32_MIN or high > _INT32_MAX:
+        if low < 0:
+            raise EmitError(f"{field.name}: signed enumerators do not fit in int32")
+        if high > _UINT32_MAX:
+            return ("std::uint64_t", 8, 8, "BTSIG_VALUE_UINT64")
+        return ("std::uint32_t", 4, 4, "BTSIG_VALUE_UINT32")
+    return ("int", 4, 4, "BTSIG_VALUE_SINT32")
 
 
 def _layout(document: IrDocument) -> _Characteristic:
@@ -212,13 +249,15 @@ def _layout(document: IrDocument) -> _Characteristic:
     members: list[_Member] = []
     for field in document.fields:
         if field.wire_type is WireType.UTF8:
-            capacity = _VARIABLE_UTF8_OCTETS if field.utf8_capacity is None else field.utf8_capacity
+            # A characteristic that states no maximum still cannot exceed one attribute value.
+            capacity = ATT_MAX_VALUE_OCTETS if field.utf8_capacity is None else field.utf8_capacity
+            stored = _stored_utf8_bytes(capacity)
             offset = (offset + 1) // 2 * 2
             members.append(
                 _Member(
                     name=field.name,
                     c_type="uint16_t",
-                    size=2 + capacity,
+                    size=stored,
                     align=2,
                     value_kind="BTSIG_VALUE_UTF8",
                     offset=offset,
@@ -234,7 +273,7 @@ def _layout(document: IrDocument) -> _Characteristic:
                     cpp_type="uint16_t",
                 )
             )
-            offset += 2 + capacity
+            offset += stored
             max_align = max(max_align, 2)
             continue
         transform = field.transform
@@ -245,9 +284,13 @@ def _layout(document: IrDocument) -> _Characteristic:
         c_type, size, align, kind = _SCALED_LAYOUT if scaled else _INTEGER_LAYOUT[field.wire_type]
         cpp_type = c_type if field.value_set is None else _enum_type(field.name, pascal_name)
         c_enum_type = "" if field.value_set is None else f"btsig_{_snake_pascal(cpp_type)}"
-        # A C enum is an int, so the member is wider than the wire field.
+        cpp_underlying = ""
+        c_enum_is_typedef = False
+        # The enumeration is wider than the wire field. Flags use an unsigned width.
         if field.value_set is not None:
-            size, align, kind = (4, 4, "BTSIG_VALUE_SINT32")
+            cpp_underlying, size, align, kind = _enum_storage(field)
+            # ISO C restricts enumerator values to int. A wider mask is a typedef.
+            c_enum_is_typedef = any(item.value > _INT32_MAX for item in field.enumerators)
         offset = (offset + align - 1) // align * align
         coefficient = 1 if transform is None else transform.coefficient
         decimal_exponent = 0 if transform is None else transform.decimal_exponent
@@ -270,7 +313,9 @@ def _layout(document: IrDocument) -> _Characteristic:
                 sentinels=field.sentinels,
                 utf8_capacity=0,
                 cpp_type=cpp_type,
+                cpp_underlying=cpp_underlying,
                 c_enum_type=c_enum_type,
+                c_enum_is_typedef=c_enum_is_typedef,
                 enumerators=field.enumerators,
                 value_set=field.value_set,
             )
@@ -304,8 +349,17 @@ def _c_struct_member(member: _Member) -> str:
     if member.utf8_capacity:
         return _c_member(member)
     if member.c_enum_type:
+        if member.c_enum_is_typedef:
+            return f"    {member.c_enum_type} {member.name};"
         return f"    enum {member.c_enum_type} {member.name};"
     return f"    {member.c_type} {member.name};"
+
+
+def _c_constant(member: _Member, enumerator: Enumerator) -> str:
+    name = f"{member.c_enum_type.upper()}_{enumerator.name.upper()}"
+    if member.c_enum_is_typedef:
+        return f"static const {member.c_enum_type} {name} = {_enumerator_expr(member, enumerator)};"
+    return f"    {name} = {_enumerator_expr(member, enumerator)},"
 
 
 def _c_enumerations(item: _Characteristic) -> str:
@@ -313,12 +367,13 @@ def _c_enumerations(item: _Characteristic) -> str:
     for member in item.members:
         if not member.c_enum_type:
             continue
-        constants = [
-            f"    {member.c_enum_type.upper()}_{enumerator.name.upper()} = {_enumerator_expr(member, enumerator)},"
-            for enumerator in member.enumerators
-        ]
-        body = "\n".join(constants)
-        blocks.append(f"enum {member.c_enum_type} {{\n{body}\n}};\n")
+        if member.c_enum_is_typedef:
+            width = "uint64_t" if member.value_kind == "BTSIG_VALUE_UINT64" else "uint32_t"
+            constants = "\n".join(_c_constant(member, enumerator) for enumerator in member.enumerators)
+            blocks.append(f"typedef {width} {member.c_enum_type};\n{constants}\n")
+            continue
+        constants = "\n".join(_c_constant(member, enumerator) for enumerator in member.enumerators)
+        blocks.append(f"enum {member.c_enum_type} {{\n{constants}\n}};\n")
     if not blocks:
         return ""
     return "\n".join(blocks) + "\n"
@@ -354,15 +409,51 @@ def _c_header(item: _Characteristic, command: str) -> str:
     )
 
 
+def _flag_operators(member: _Member) -> list[str]:
+    if member.value_set is not ValueSet.FLAGS:
+        return []
+    name = member.cpp_type
+    underlying = member.cpp_underlying
+    mask = 0
+    for enumerator in member.enumerators:
+        mask |= enumerator.value
+    return [
+        f"constexpr {name} operator|({name} left, {name} right) {{",
+        f"    return static_cast<{name}>(static_cast<{underlying}>(left) | static_cast<{underlying}>(right));",
+        "}",
+        "",
+        f"constexpr {name} operator&({name} left, {name} right) {{",
+        f"    return static_cast<{name}>(static_cast<{underlying}>(left) & static_cast<{underlying}>(right));",
+        "}",
+        "",
+        f"constexpr {name} operator~({name} value) {{",
+        f"    constexpr {underlying} mask = 0x{mask:X};",
+        f"    return static_cast<{name}>(mask & static_cast<{underlying}>(~static_cast<{underlying}>(value)));",
+        "}",
+        "",
+        f"constexpr {name}& operator|=({name}& left, {name} right) {{",
+        "    left = left | right;",
+        "    return left;",
+        "}",
+        "",
+        f"constexpr {name}& operator&=({name}& left, {name} right) {{",
+        "    left = left & right;",
+        "    return left;",
+        "}",
+        "",
+    ]
+
+
 def _enum_blocks(item: _Characteristic) -> str:
     blocks: list[str] = []
     for member in item.members:
         if member.value_set is None:
             continue
-        lines = [f"enum class {member.cpp_type} : int {{"]
+        lines = [f"enum class {member.cpp_type} : {member.cpp_underlying} {{"]
         for enumerator in member.enumerators:
             lines.append(f"    {enumerator.name} = {_enumerator_expr(member, enumerator)},")
         lines.extend(["};", ""])
+        lines.extend(_flag_operators(member))
         blocks.append("\n".join(lines))
     return "".join(blocks)
 
@@ -397,21 +488,26 @@ def _inline_methods(item: _Characteristic) -> str:
 
 def _hpp(item: _Characteristic, command: str) -> str:
     guard = _guard(item.name, "HPP")
+    includes = [
+        f'#include "btsig/{item.name}.h"',
+        '#include "btsig/codec/codec.hpp"',
+        '#include "btsig/types/expected.hpp"',
+        '#include "btsig/types/span.hpp"',
+    ]
+    if any(member.utf8_capacity for member in item.members):
+        includes.append('#include "btsig/types/utf8_text.hpp"')
+    include_block = "\n".join(includes)
     return (
         f"{_banner(command)}"
         f"#ifndef {guard}\n"
         f"#define {guard}\n\n"
-        f'#include "btsig/{item.name}.h"\n'
-        '#include "btsig/codec/codec.hpp"\n'
-        '#include "btsig/types/expected.hpp"\n'
-        '#include "btsig/types/span.hpp"\n\n'
+        f"{include_block}\n\n"
         "#include <cstddef>\n"
         "#include <cstdint>\n\n"
         "namespace btsig {\n\n"
         f"{_enum_blocks(item)}"
         f"extern const CharacteristicDescriptor {item.name}_descriptor;\n\n"
-        f"class {item.pascal_name} {{\n"
-        "public:\n" + "".join(f"{_cpp_member(member)}\n" for member in item.members) + "\n"
+        f"struct {item.pascal_name} {{\n" + "".join(f"{_cpp_member(member)}\n" for member in item.members) + "\n"
         f"    [[nodiscard]] static btsig::expected<{item.pascal_name}> decode(\n"
         "        btsig_bytes input, const btsig_context* context);\n\n"
         f"    [[nodiscard]] static btsig::expected<std::size_t> encode(\n"
@@ -582,7 +678,9 @@ def _descriptor_lines(item: _Characteristic, layout: _TableLayout) -> list[str]:
     allowed = f"{item.name}_allowed" if layout.has_allowed else "nullptr"
     unit_offset = _offset_token(layout.unit_offset)
     return [
-        f"extern const btsig::CharacteristicDescriptor {item.name}_descriptor{{",
+        "namespace btsig {",
+        "",
+        f"extern const CharacteristicDescriptor {item.name}_descriptor{{",
         f"    {item.name}_text,",
         f"    {sentinels},",
         f"    {allowed},",
@@ -595,6 +693,8 @@ def _descriptor_lines(item: _Characteristic, layout: _TableLayout) -> list[str]:
         f"    {len(item.members)},",
         f"    {bitfield},",
         "};",
+        "",
+        "} // namespace btsig",
         "",
     ]
 
@@ -609,15 +709,13 @@ def _assert_lines(item: _Characteristic) -> list[str]:
         f"              sizeof({item.c_struct}));",
     ]
     for member in item.members:
-        length_name = f"{member.name}_length" if member.utf8_capacity else member.name
-        lines.append(f"static_assert(offsetof({item.c_struct}, {length_name}) == {member.offset});")
-        lines.append(f"static_assert(offsetof({qualified}, {length_name}) == {member.offset});")
+        lines.append(f"static_assert(offsetof({item.c_struct}, {member.name}) == {member.offset});")
+        lines.append(f"static_assert(offsetof({qualified}, {member.name}) == {member.offset});")
         if member.utf8_capacity:
-            lines.append(f"static_assert(offsetof({item.c_struct}, {member.name}) == {member.offset + 2});")
-            lines.append(f"static_assert(offsetof({qualified}, {member.name}) == {member.offset + 2});")
+            lines.append(f"static_assert(sizeof(btsig::utf8_text<{member.utf8_capacity}>) == {member.size});")
         elif member.c_enum_type:
-            lines.append(f"static_assert(sizeof({member.c_enum_type}) == sizeof(int));")
-            lines.append(f"static_assert(sizeof(btsig::{member.cpp_type}) == sizeof(int));")
+            lines.append(f"static_assert(sizeof({member.c_enum_type}) == {member.size});")
+            lines.append(f"static_assert(sizeof(btsig::{member.cpp_type}) == {member.size});")
     return lines
 
 
@@ -636,7 +734,7 @@ def _wrapper_lines(item: _Characteristic) -> list[str]:
         "        invalid.bytes = input;",
         "        return invalid;",
         "    }",
-        f"    return btsig::decode({item.name}_descriptor, input, context, value, sizeof(*value));",
+        f"    return btsig::decode(btsig::{item.name}_descriptor, input, context, value, sizeof(*value));",
         "}",
         "",
         f'extern "C" btsig_error {encode}(',
@@ -651,7 +749,7 @@ def _wrapper_lines(item: _Characteristic) -> list[str]:
         "        invalid.bytes = empty;",
         "        return invalid;",
         "    }",
-        f"    return btsig::encode({item.name}_descriptor, value, sizeof(*value), out, out_size, written);",
+        f"    return btsig::encode(btsig::{item.name}_descriptor, value, sizeof(*value), out, out_size, written);",
         "}",
         "",
     ]

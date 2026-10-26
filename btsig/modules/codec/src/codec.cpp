@@ -1,6 +1,7 @@
 #include "btsig/codec/codec.hpp"
 
 #include "btsig/types/expected.hpp"
+#include "btsig/types/utf8_text.hpp"
 #include "btsig/wire/subbyte.hpp"
 #include "btsig/wire/utf8.hpp"
 #include "btsig/wire/word.hpp"
@@ -215,7 +216,7 @@ std::size_t member_bytes(const FieldDescriptor& field) {
         if (field.utf8_capacity == 0) {
             return 0;
         }
-        return sizeof(std::uint16_t) + field.utf8_capacity;
+        return stored_utf8_bytes(field.utf8_capacity);
     }
     return member_size(field.value_kind);
 }
@@ -339,6 +340,79 @@ expected<std::int64_t> raw_from_scaled(double member, const FieldDescriptor& fie
     return static_cast<std::int64_t>(std::llround(quotient));
 }
 
+bool storable(const FieldDescriptor& field) {
+    switch (field.value_kind) {
+    case BTSIG_VALUE_UINT8:
+    case BTSIG_VALUE_UINT16:
+    case BTSIG_VALUE_UINT32:
+    case BTSIG_VALUE_UINT64:
+    case BTSIG_VALUE_SINT8:
+    case BTSIG_VALUE_SINT16:
+    case BTSIG_VALUE_SINT32:
+    case BTSIG_VALUE_DOUBLE:
+        return true;
+    case BTSIG_VALUE_UTF8:
+        return false;
+    }
+    return false;
+}
+
+// Read the wire value without writing `value`. A non-OK status means the caller buffer stays unchanged.
+btsig_error accept_input(const CharacteristicDescriptor& descriptor, btsig_bytes input, const MeasuredWire& measured) {
+    std::size_t cursor = 0;
+    std::size_t bit_cursor = 0;
+    for (std::size_t index = 0; index < descriptor.field_count; ++index) {
+        const FieldDescriptor& field = descriptor.fields[index];
+        const FieldRefs refs = field_refs(descriptor, field);
+        if (!member_fits(field, descriptor.size) || (field.sentinel_count != 0 && refs.sentinels == nullptr) ||
+            (field.allowed_count != 0 && refs.allowed == nullptr)) {
+            return make_error(BTSIG_INVALID_ARGUMENT, refs.name, input);
+        }
+        if (field.wire == wire_type::utf8) {
+            const std::size_t tail = input.size - cursor;
+            const span<const std::uint8_t> text{tail == 0 ? nullptr : input.data + cursor, tail};
+            const btsig_status status = wire::check_utf8(text);
+            if (status != BTSIG_OK) {
+                return make_error(status, refs.name, input);
+            }
+            cursor += tail;
+            continue;
+        }
+        const std::size_t bits = wire::bit_width(field.wire);
+        const std::size_t field_width = bits == 0 ? wire::width(field.wire) : 0;
+        const expected<std::int64_t> raw =
+            bits == 0 ? wire::read(span<const std::uint8_t>{input.data + cursor, field_width}, field.wire)
+                      : wire::read_bits(span<const std::uint8_t>{input.data, input.size}, bit_cursor, bits);
+        if (!raw) {
+            return annotate(raw.error(), refs.name, input);
+        }
+        const Sentinel* sentinel = find_sentinel(refs.sentinels, field.sentinel_count, raw.value());
+        if (sentinel != nullptr) {
+            return make_error(sentinel_status(sentinel->meaning), refs.name, input);
+        }
+        if (!value_accepted(raw.value(), field, refs.allowed)) {
+            return make_error(BTSIG_OUT_OF_RANGE, refs.name, input);
+        }
+        if (wire::is_real(field.wire)) {
+            const expected<double> decoded = wire::decode_real(field.wire, raw.value());
+            if (!decoded) {
+                return annotate(decoded.error(), refs.name, input);
+            }
+        } else if (!storable(field)) {
+            return make_error(BTSIG_INVALID_ARGUMENT, refs.name, input);
+        }
+        if (bits == 0) {
+            cursor += field_width;
+        } else {
+            bit_cursor += bits;
+        }
+    }
+    if (measured.bit_packed && bit_cursor != measured.fixed_octets * 8U) {
+        return make_error(BTSIG_INVALID_ARGUMENT, nullptr, input);
+    }
+    return make_error(BTSIG_OK, nullptr, input);
+}
+
 } // namespace
 
 btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input, const btsig_context*, void* value,
@@ -361,6 +435,10 @@ btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input
     }
     if (measured.value().utf8_tail && input.size - measured.value().fixed_octets > measured.value().utf8_capacity) {
         return make_error(BTSIG_LENGTH_MISMATCH, nullptr, input);
+    }
+    const btsig_error accepted = accept_input(descriptor, input, measured.value());
+    if (accepted.status != BTSIG_OK) {
+        return accepted;
     }
 
     auto* output = static_cast<std::uint8_t*>(value);
