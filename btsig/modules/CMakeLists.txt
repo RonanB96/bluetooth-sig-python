@@ -34,7 +34,7 @@ add_library(btsig_wire STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/medfloat.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/ieee754.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/real.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/utf8.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/utf8.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/subbyte.c")
 add_library(btsig::wire ALIAS btsig_wire)
 set_target_properties(btsig_wire PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)

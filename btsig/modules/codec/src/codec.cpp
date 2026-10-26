@@ -3,7 +3,7 @@
 #include "btsig/types/expected.hpp"
 #include "btsig/types/utf8_text.hpp"
 #include "btsig/wire/subbyte.h"
-#include "btsig/wire/utf8.hpp"
+#include "btsig/wire/utf8.h"
 #include "btsig/wire/word.hpp"
 
 #include <cmath>
@@ -372,8 +372,7 @@ btsig_error accept_input(const CharacteristicDescriptor& descriptor, btsig_bytes
         }
         if (field.wire == wire_type::utf8) {
             const std::size_t tail = input.size - cursor;
-            const span<const std::uint8_t> text{tail == 0 ? nullptr : input.data + cursor, tail};
-            const btsig_status status = wire::check_utf8(text);
+            const btsig_status status = btsig_wire_check_utf8(tail == 0 ? nullptr : input.data + cursor, tail);
             if (status != BTSIG_OK) {
                 return make_error(status, refs.name, input);
             }
@@ -466,13 +465,14 @@ btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input
         }
         if (field.wire == wire_type::utf8) {
             const std::size_t tail = input.size - cursor;
-            const span<const std::uint8_t> text{tail == 0 ? nullptr : input.data + cursor, tail};
-            const span<std::uint8_t> stored{output + field.offset + sizeof(std::uint16_t), field.utf8_capacity};
-            const expected<std::size_t> copied = wire::read_utf8(text, stored);
-            if (!copied) {
-                return annotate(copied.error(), refs.name, input);
+            std::size_t copied = 0;
+            const btsig_error read =
+                btsig_wire_read_utf8(tail == 0 ? nullptr : input.data + cursor, tail,
+                                     output + field.offset + sizeof(std::uint16_t), field.utf8_capacity, &copied);
+            if (read.status != BTSIG_OK) {
+                return annotate(read, refs.name, input);
             }
-            const auto length = static_cast<std::uint16_t>(copied.value());
+            const auto length = static_cast<std::uint16_t>(copied);
             std::memcpy(output + field.offset, &length, sizeof length);
             cursor += tail;
             continue;
@@ -565,9 +565,8 @@ btsig_error encode(const CharacteristicDescriptor& descriptor, const void* value
             if (cursor > out_size || length > out_size - cursor) {
                 return make_error(BTSIG_BUFFER_TOO_SMALL, refs.name, buffer);
             }
-            const span<const std::uint8_t> text{length == 0 ? nullptr : base + field.offset + sizeof(std::uint16_t),
-                                                length};
-            const btsig_error stored = wire::write_utf8(text, span<std::uint8_t>{out + cursor, length});
+            const btsig_error stored = btsig_wire_write_utf8(
+                length == 0 ? nullptr : base + field.offset + sizeof(std::uint16_t), length, out + cursor, length);
             if (stored.status != BTSIG_OK) {
                 return annotate(stored, refs.name, buffer);
             }
