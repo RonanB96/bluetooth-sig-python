@@ -216,7 +216,10 @@ def test_emitted_code_calls_the_handwritten_codec(tmp_path: Path) -> None:
 
     assert "btsig::decode(" in source
     assert "btsig::encode(" in source
-    assert "Temperature::decode" in source
+    assert "Temperature::decode" not in source
+    header_hpp = emitted["btsig/generated/temperature/include/btsig/temperature.hpp"].decode()
+    assert "Temperature::decode" in header_hpp
+    assert "inline btsig::expected<Temperature>" in header_hpp
     assert "catalog" not in source
     assert "virtual " not in source
     assert "pow(" not in source

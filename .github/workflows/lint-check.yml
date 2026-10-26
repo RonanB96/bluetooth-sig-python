@@ -31,23 +31,10 @@ jobs:
         cache: 'pip'
         cache-dependency-path: 'pyproject.toml'
 
-    - name: 'Cache system dependencies'
-      uses: actions/cache@v5
-      with:
-        path: /var/cache/apt
-        key: ${{ runner.os }}-apt-lint-${{ hashFiles('scripts/install-deps.sh') }}
-        restore-keys: |
-          ${{ runner.os }}-apt-lint-
-
-    - name: 'Install system dependencies'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential cmake ninja-build pkg-config libdbus-1-dev libglib2.0-dev libudev-dev python3-dev
-
     - name: 'Install Python dependencies'
       run: |
         python -m pip install --upgrade pip
-        pip install -e .[dev,test,examples]
+        pip install 'ruff~=0.15.22'
 
     - name: 'Check Code Formatting'
       run: ./scripts/format.sh --check
@@ -72,27 +59,15 @@ jobs:
         cache: 'pip'
         cache-dependency-path: 'pyproject.toml'
 
-    - name: 'Cache system dependencies'
-      uses: actions/cache@v5
-      with:
-        path: /var/cache/apt
-        key: ${{ runner.os }}-apt-lint-${{ hashFiles('scripts/install-deps.sh') }}
-        restore-keys: |
-          ${{ runner.os }}-apt-lint-
-
     - name: 'Install system dependencies'
       run: |
         sudo apt-get update
-        # Install build deps to compile C extensions like bluepy
-        sudo apt-get install -y build-essential cmake ninja-build pkg-config libdbus-1-dev libglib2.0-dev libudev-dev libbluetooth-dev python3-dev
+        sudo apt-get install -y shellcheck
 
     - name: 'Install Python dependencies'
       run: |
         python -m pip install --upgrade pip
-        pip install -e ".[dev,test,examples]"
+        pip install 'ruff~=0.15.22' 'mypy>=1.19.0' 'pydocstyle~=6.3' 'msgspec>=0.18.0' 'pyyaml~=6.0.0' 'types-PyYAML~=6.0'
 
     - name: 'Run Linting Checks'
       run: ./scripts/lint.sh --all
-
-    - name: 'Check lazy export artifacts are up to date'
-      run: python scripts/check_lazy_exports.py

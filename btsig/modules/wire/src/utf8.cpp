@@ -59,6 +59,13 @@ btsig_status validated_copy(span<const std::uint8_t> data, span<std::uint8_t> de
 
 } // namespace
 
+btsig_status check_utf8(span<const std::uint8_t> data) {
+    if (null_span(data.data(), data.size()) || !well_formed(data)) {
+        return BTSIG_INVALID_ARGUMENT;
+    }
+    return BTSIG_OK;
+}
+
 expected<std::size_t> read_utf8(span<const std::uint8_t> data, span<std::uint8_t> destination) {
     const btsig_status status = validated_copy(data, destination);
     if (status != BTSIG_OK) {

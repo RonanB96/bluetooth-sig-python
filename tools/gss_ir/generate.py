@@ -12,6 +12,7 @@ import subprocess
 from pathlib import Path
 
 from tools.gss_ir.normalise import Unsupported, iter_characteristic_paths, normalise_path
+from tools.gss_ir.sources.overrides import warn_handwritten_gss_overlaps
 from tools.gss_ir.v1 import IR_VERSION, IrDocument, encode_ir
 
 
@@ -187,6 +188,7 @@ def generate_characteristics(
         output = destination / relative
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_bytes(payload)
+    warn_handwritten_gss_overlaps(repo)
     return files
 
 

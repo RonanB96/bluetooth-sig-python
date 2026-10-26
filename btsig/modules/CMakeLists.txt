@@ -14,7 +14,9 @@ endif()
 
 add_library(btsig_warnings INTERFACE)
 add_library(btsig::warnings ALIAS btsig_warnings)
-target_compile_options(btsig_warnings INTERFACE -Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef -fno-exceptions)
+target_compile_options(btsig_warnings INTERFACE
+    -Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef
+    -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables)
 
 add_library(btsig_types INTERFACE)
 add_library(btsig::types ALIAS btsig_types)
@@ -41,8 +43,29 @@ add_library(btsig::codec ALIAS btsig_codec)
 target_include_directories(btsig_codec PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/codec/include")
 target_link_libraries(btsig_codec PUBLIC btsig::schema PRIVATE btsig::wire btsig::warnings)
 
-file(GLOB btsig_characteristic_sources CONFIGURE_DEPENDS
+file(GLOB btsig_generated_sources CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/../generated/*/src/*.cpp")
+file(GLOB btsig_override_sources CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/../override/*/src/*.cpp")
+set(btsig_override_names "")
+foreach(source IN LISTS btsig_override_sources)
+    cmake_path(GET source PARENT_PATH source_dir)
+    cmake_path(GET source_dir PARENT_PATH characteristic_dir)
+    cmake_path(GET characteristic_dir FILENAME characteristic_name)
+    list(APPEND btsig_override_names "${characteristic_name}")
+endforeach()
+# A handwritten codec in btsig/override replaces the generated codec of the same directory name.
+set(btsig_characteristic_sources "")
+foreach(source IN LISTS btsig_generated_sources)
+    cmake_path(GET source PARENT_PATH source_dir)
+    cmake_path(GET source_dir PARENT_PATH characteristic_dir)
+    cmake_path(GET characteristic_dir FILENAME characteristic_name)
+    if(characteristic_name IN_LIST btsig_override_names)
+        continue()
+    endif()
+    list(APPEND btsig_characteristic_sources "${source}")
+endforeach()
+list(APPEND btsig_characteristic_sources ${btsig_override_sources})
 if(NOT btsig_characteristic_sources)
     message(FATAL_ERROR
         "No generated characteristics in btsig/generated. "
@@ -52,7 +75,7 @@ if(NOT btsig_characteristic_sources)
 endif()
 add_library(btsig_characteristics STATIC ${btsig_characteristic_sources})
 add_library(btsig::characteristics ALIAS btsig_characteristics)
-target_link_libraries(btsig_characteristics PUBLIC btsig::types PRIVATE btsig::codec btsig::warnings)
+target_link_libraries(btsig_characteristics PUBLIC btsig::types btsig::codec PRIVATE btsig::warnings)
 foreach(source IN LISTS btsig_characteristic_sources)
     cmake_path(GET source PARENT_PATH source_dir)
     cmake_path(GET source_dir PARENT_PATH characteristic_dir)

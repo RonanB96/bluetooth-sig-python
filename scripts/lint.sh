@@ -33,8 +33,6 @@ NC='\033[0m' # No Color
 
 # Folders to lint/format
 RUFF_FOLDERS="."
-EXAMPLES_FOLDERS="examples"
-TEST_FOLDERS="tests"
 TOOLS_FOLDERS="tools"
 
 # Print functions
@@ -173,23 +171,21 @@ run_mypy() {
 
     local exit_code=0
 
-    # Run mypy on production code (strict) using package-based invocation and
-    # explicit package bases so mypy maps the `src/` layout consistently and
-    # avoids "source file found twice" errors.
+    # The Python library lives under archived/python-lib and is not type-checked here.
+    # tools/ is the Python that the characteristic generator still runs.
     if [ "$is_parallel" != "true" ]; then
-        echo "Checking production code types..."
+        echo "Checking tools types..."
     fi
     local PROD_MYPY_OUTPUT
-    # Use cache for better performance and -p flag to check specific package
-    run_capture "MYPYPATH=src python -m mypy --cache-dir=.mypy_cache --explicit-package-bases --config-file pyproject.toml -p bluetooth_sig && MYPYPATH=src python -m mypy --cache-dir=.mypy_cache --explicit-package-bases --config-file pyproject.toml ${TOOLS_FOLDERS}"
+    run_capture "python -m mypy --cache-dir=.mypy_cache --explicit-package-bases --config-file pyproject.toml ${TOOLS_FOLDERS}"
     local PROD_MYPY_EXIT_CODE=$?
     PROD_MYPY_OUTPUT="$CAPTURE_OUTPUT"
 
     if [ "$is_parallel" != "true" ]; then
         if [ $PROD_MYPY_EXIT_CODE -eq 0 ]; then
-            print_success "Production code type checking passed"
+            print_success "Tools type checking passed"
         else
-            print_error "Production code type checking failed"
+            print_error "Tools type checking failed"
             echo "$PROD_MYPY_OUTPUT"
             exit_code=1
         fi
@@ -209,89 +205,6 @@ run_mypy() {
             echo "=== END MYPY PRODUCTION OUTPUT ==="
         fi
         if [ $PROD_MYPY_EXIT_CODE -ne 0 ]; then
-            exit_code=1
-        fi
-    fi
-
-    if [ "$is_parallel" != "true" ]; then
-        echo ""
-    fi
-
-    # Run mypy on examples (lenient - examples are demonstration code)
-    if [ "$is_parallel" != "true" ]; then
-        echo "Checking example code types..."
-    fi
-    # Run mypy but don't fail on errors (examples are allowed to have type issues)
-    # shellcheck disable=SC2086  # EXAMPLES_FOLDERS is intentionally space-separated
-    run_capture "MYPYPATH=src python -m mypy --cache-dir=.mypy_cache --explicit-package-bases --config-file pyproject.toml $EXAMPLES_FOLDERS"
-    local EXAMPLES_MYPY_EXIT_CODE=$?
-    local EXAMPLES_MYPY_OUTPUT="$CAPTURE_OUTPUT"
-
-    if [ "$is_parallel" != "true" ]; then
-        if [ $EXAMPLES_MYPY_EXIT_CODE -eq 0 ]; then
-            print_success "Example code type checking passed"
-        else
-            print_error "Example code type checking found issues"
-            echo "$EXAMPLES_MYPY_OUTPUT"
-            exit_code=1
-        fi
-    else
-        if [ -n "${_logfile}" ]; then
-            {
-                printf "\n=== MYPY: examples ===\n"
-                printf "%s\n" "$EXAMPLES_MYPY_OUTPUT"
-            } >>"$_logfile"
-            # If appending, ensure atomicity by appending to a tmp and then
-            # concatenating. Simpler approach: append to final file as above
-            # but ensure parent waits on PID before reading. Keep as append.
-        fi
-        # Also output to stdout for spawn_bg to capture when there are errors
-        if [ $EXAMPLES_MYPY_EXIT_CODE -ne 0 ]; then
-            echo "=== MYPY EXAMPLES OUTPUT ==="
-            echo "$EXAMPLES_MYPY_OUTPUT"
-            echo "=== END MYPY EXAMPLES OUTPUT ==="
-            exit_code=1
-        fi
-    fi
-
-    if [ "$is_parallel" != "true" ]; then
-        echo ""
-    fi
-
-    # Run mypy on tests (lenient - tests often have type issues due to mocking, fixtures, etc.)
-    if [ "$is_parallel" != "true" ]; then
-        echo "Checking test code types..."
-    fi
-    # Run mypy but don't fail on errors (tests are allowed to have type issues)
-    # shellcheck disable=SC2086  # TEST_FOLDERS is intentionally space-separated
-    # Use PYTHONPATH="" to avoid duplicate source issues
-    run_capture "PYTHONPATH=\"\" python -m mypy --cache-dir=.mypy_cache --config-file pyproject.toml $TEST_FOLDERS"
-    local TEST_MYPY_EXIT_CODE=$?
-    local TEST_MYPY_OUTPUT="$CAPTURE_OUTPUT"
-
-    if [ "$is_parallel" != "true" ]; then
-        if [ $TEST_MYPY_EXIT_CODE -eq 0 ]; then
-            print_success "Test code type checking passed"
-        else
-            print_error "Test code type checking found issues"
-            echo "$TEST_MYPY_OUTPUT"
-            exit_code=1
-        fi
-    else
-        if [ -n "${_logfile}" ]; then
-            {
-                printf "\n=== MYPY: tests ===\n"
-                printf "%s\n" "$TEST_MYPY_OUTPUT"
-            } >>"$_logfile"
-                # As above, tests appended to logfile. The helper uses mv for the
-                # initial production section; subsequent appends are OK because
-                # the parent waits on PID before reading the file.
-        fi
-        # Also output to stdout for spawn_bg to capture when there are errors
-        if [ $TEST_MYPY_EXIT_CODE -ne 0 ]; then
-            echo "=== MYPY TESTS OUTPUT ==="
-            echo "$TEST_MYPY_OUTPUT"
-            echo "=== END MYPY TESTS OUTPUT ==="
             exit_code=1
         fi
     fi
@@ -415,7 +328,7 @@ run_pydocstyle() {
     # Run pydocstyle only on source code (tests are excluded
     # because they intentionally contain many informal helpers
     # scripts that don't require exhaustive Google-style docstrings).
-    local PYDOCSTYLE_FOLDERS="src examples tools scripts docs hatch_build.py tests"
+    local PYDOCSTYLE_FOLDERS="examples tools scripts docs hatch_build.py tests"
     local PYDOCSTYLE_OUTPUT
     # shellcheck disable=SC2086  # PYDOCSTYLE_FOLDERS is intentionally space-separated
     # D202 ignored: Black formatter requires blank line before nested functions
@@ -638,7 +551,7 @@ run_all_checks_parallel() {
     pid_shellcheck=$(cat "$LOGDIR/shellcheck.pid")
     pid_pydocstyle=$(cat "$LOGDIR/pydocstyle.pid")
 
-    echo "⏳ Running comprehensive checks in parallel (ruff, mypy(prod/examples/tests), shellcheck, pydocstyle)..."
+    echo "⏳ Running comprehensive checks in parallel (ruff, mypy(tools), shellcheck, pydocstyle)..."
 
     # Wait & report using the helper to reduce duplication
     wait_and_report "$pid_ruff" "ruff" "$LOGDIR/ruff.out"

@@ -15,9 +15,9 @@ This directory contains GitHub Actions workflows for automated testing, code qua
 - **Triggers**: Push and pull requests to `main` and `v2_dev`
 - **Purpose**: Format, build, and clang-tidy the `btsig` library
 - **Checks**:
-  - `clang-format-18` with `btsig/.clang-format` on `btsig/modules`, `examples/characteristic_api`, and generated `btsig/generated`
+  - `clang-format-18` with `btsig/.clang-format` on every C and C++ file under `btsig` and `examples/characteristic_api`, skipping build directories
   - CMake build of the library from `btsig/modules`, then the sample programs from `examples/characteristic_api`, with `-Werror`
-  - `clang-tidy-18` using `btsig/.clang-tidy` on the handwritten, generated, and sample translation units
+  - `clang-tidy-18` using `btsig/.clang-tidy` on every translation unit in the library and sample compile databases
 
 ### Lint and Code Quality (`lint-check.yml`)
 

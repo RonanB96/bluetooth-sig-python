@@ -9,6 +9,9 @@
 
 namespace btsig::wire {
 
+// BTSIG_INVALID_ARGUMENT when `data` is not well-formed UTF-8, or a pointer is null with a non-zero size.
+[[nodiscard]] btsig_status check_utf8(span<const std::uint8_t> data);
+
 // Copy a well-formed UTF-8 value into `destination`.
 // BTSIG_INVALID_ARGUMENT when `data` is not well-formed UTF-8, or a pointer is null with a non-zero size.
 // BTSIG_LENGTH_MISMATCH when `data.size()` is greater than `destination.size()`.

@@ -10,6 +10,9 @@ namespace btsig {
 
 constexpr std::uint8_t kSchemaVersion = 1;
 
+// Stored in a name or unit offset when that string is absent.
+constexpr std::uint16_t kNoText = 0xFFFF;
+
 enum class wire_type : std::uint8_t {
     uint8,
     uint16,
@@ -40,39 +43,43 @@ struct Sentinel {
     sentinel_meaning meaning;
 };
 
+// No pointers. A field table can stay in flash. Strings, sentinels, and allowed
+// values are addressed from the characteristic descriptor that owns this field.
 struct FieldDescriptor {
-    const char* name;
-    const char* unit;
-    std::size_t offset;
     std::int64_t raw_minimum;
     std::int64_t raw_maximum;
-    const Sentinel* sentinels;
-    std::size_t sentinel_count;
-    btsig_value_kind value_kind;
+    // Bits that may be set on a flags member. Zero for every other field.
+    std::uint64_t flag_mask;
+    std::uint16_t name_offset;
+    std::uint16_t unit_offset;
+    std::uint16_t offset;
+    std::uint16_t sentinel_offset;
+    std::uint16_t sentinel_count;
+    std::uint16_t allowed_offset;
+    std::uint16_t allowed_count;
+    // Octet maximum of a utf8 member. Zero for every other wire type.
+    // The member starts at `offset`: uint16_t size, then uint8_t data[utf8_capacity].
+    std::uint16_t utf8_capacity;
     std::uint16_t unit_uuid;
+    btsig_value_kind value_kind;
     wire_type wire;
     std::int8_t coefficient;
     std::int8_t decimal_exponent;
     std::int8_t binary_exponent;
-    // Octet maximum of a utf8 member. Zero for every other wire type.
-    // The member starts at `offset`: uint16_t size, then uint8_t data[utf8_capacity].
-    std::uint16_t utf8_capacity;
-    // Discrete codes for an enumeration member. Null unless allowed_count is non-zero.
-    const std::int64_t* allowed;
-    std::size_t allowed_count;
-    // Bits that may be set on a flags member. Zero for every other field.
-    std::uint64_t flag_mask;
 };
 
 struct CharacteristicDescriptor {
-    const char* name;
-    const char* id;
-    std::uint16_t uuid;
-    const char* unit;
-    bool is_bitfield;
-    std::size_t size;
+    const char* text;
+    const Sentinel* sentinels;
+    const std::int64_t* allowed;
     const FieldDescriptor* fields;
-    std::size_t field_count;
+    std::uint16_t name_offset;
+    std::uint16_t id_offset;
+    std::uint16_t unit_offset;
+    std::uint16_t uuid;
+    std::uint16_t size;
+    std::uint16_t field_count;
+    bool is_bitfield;
 };
 
 } // namespace btsig

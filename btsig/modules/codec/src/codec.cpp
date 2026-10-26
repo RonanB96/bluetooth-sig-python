@@ -14,10 +14,6 @@
 namespace btsig {
 namespace {
 
-// The wire image is at most one attribute value. The struct also stores the uint16_t count.
-constexpr std::size_t kWireScratchBytes = kMaxAttributeValueOctets;
-constexpr std::size_t kStructScratchBytes = stored_utf8_bytes(static_cast<std::uint16_t>(kMaxAttributeValueOctets));
-
 btsig_error make_error(btsig_status status, const char* field, btsig_bytes bytes) {
     btsig_error error{};
     error.status = status;
@@ -63,9 +59,7 @@ expected<MeasuredWire> measure_wire(const CharacteristicDescriptor& descriptor) 
         }
         if (field.wire == wire_type::utf8) {
             // The UTF-8 value is the remaining octets, so it has to be the last field.
-            if (measured.utf8_tail || index + 1 != descriptor.field_count || field.utf8_capacity == 0 ||
-                field.utf8_capacity > kWireScratchBytes ||
-                measured.fixed_octets > kWireScratchBytes - field.utf8_capacity) {
+            if (measured.utf8_tail || index + 1 != descriptor.field_count || field.utf8_capacity == 0) {
                 return unexpected_status<MeasuredWire>(BTSIG_INVALID_ARGUMENT);
             }
             measured.utf8_tail = true;
@@ -73,13 +67,12 @@ expected<MeasuredWire> measure_wire(const CharacteristicDescriptor& descriptor) 
             continue;
         }
         const std::size_t field_width = wire::width(field.wire);
-        if (field_width == 0 || measured.fixed_octets > kWireScratchBytes - field_width) {
+        if (field_width == 0 || measured.fixed_octets > std::numeric_limits<std::size_t>::max() - field_width) {
             return unexpected_status<MeasuredWire>(BTSIG_INVALID_ARGUMENT);
         }
         measured.fixed_octets += field_width;
     }
-    if (measured.bit_packed && (packed_bits == 0 || packed_bits % wire::kBitsPerOctet != 0 ||
-                                packed_bits / wire::kBitsPerOctet > kWireScratchBytes)) {
+    if (measured.bit_packed && (packed_bits == 0 || packed_bits % wire::kBitsPerOctet != 0)) {
         return unexpected_status<MeasuredWire>(BTSIG_INVALID_ARGUMENT);
     }
     if (measured.bit_packed) {
@@ -126,13 +119,13 @@ double scale_factor(const FieldDescriptor& field) {
                         field.binary_exponent);
 }
 
-const Sentinel* find_sentinel(const FieldDescriptor& field, std::int64_t raw) {
-    if (field.sentinel_count != 0 && field.sentinels == nullptr) {
+const Sentinel* find_sentinel(const Sentinel* sentinels, std::uint16_t count, std::int64_t raw) {
+    if (count != 0 && sentinels == nullptr) {
         return nullptr;
     }
-    for (std::size_t index = 0; index < field.sentinel_count; ++index) {
-        if (field.sentinels[index].raw_value == raw) {
-            return &field.sentinels[index];
+    for (std::uint16_t index = 0; index < count; ++index) {
+        if (sentinels[index].raw_value == raw) {
+            return &sentinels[index];
         }
     }
     return nullptr;
@@ -149,7 +142,7 @@ bool in_range(std::int64_t raw, const FieldDescriptor& field) {
     return raw >= field.raw_minimum && raw <= field.raw_maximum;
 }
 
-bool value_accepted(std::int64_t raw, const FieldDescriptor& field) {
+bool value_accepted(std::int64_t raw, const FieldDescriptor& field, const std::int64_t* allowed) {
     if (!in_range(raw, field)) {
         return false;
     }
@@ -163,15 +156,35 @@ bool value_accepted(std::int64_t raw, const FieldDescriptor& field) {
     if (field.allowed_count == 0) {
         return true;
     }
-    if (field.allowed == nullptr) {
+    if (allowed == nullptr) {
         return false;
     }
-    for (std::size_t index = 0; index < field.allowed_count; ++index) {
-        if (field.allowed[index] == raw) {
+    for (std::uint16_t index = 0; index < field.allowed_count; ++index) {
+        if (allowed[index] == raw) {
             return true;
         }
     }
     return false;
+}
+
+struct FieldRefs {
+    const char* name;
+    const Sentinel* sentinels;
+    const std::int64_t* allowed;
+};
+
+FieldRefs field_refs(const CharacteristicDescriptor& descriptor, const FieldDescriptor& field) {
+    FieldRefs refs{nullptr, nullptr, nullptr};
+    if (descriptor.text != nullptr) {
+        refs.name = descriptor.text + field.name_offset;
+    }
+    if (field.sentinel_count != 0 && descriptor.sentinels != nullptr) {
+        refs.sentinels = descriptor.sentinels + field.sentinel_offset;
+    }
+    if (field.allowed_count != 0 && descriptor.allowed != nullptr) {
+        refs.allowed = descriptor.allowed + field.allowed_offset;
+    }
+    return refs;
 }
 
 std::size_t member_size(btsig_value_kind kind) {
@@ -327,11 +340,84 @@ expected<std::int64_t> raw_from_scaled(double member, const FieldDescriptor& fie
     return static_cast<std::int64_t>(std::llround(quotient));
 }
 
+bool storable(const FieldDescriptor& field) {
+    switch (field.value_kind) {
+    case BTSIG_VALUE_UINT8:
+    case BTSIG_VALUE_UINT16:
+    case BTSIG_VALUE_UINT32:
+    case BTSIG_VALUE_UINT64:
+    case BTSIG_VALUE_SINT8:
+    case BTSIG_VALUE_SINT16:
+    case BTSIG_VALUE_SINT32:
+    case BTSIG_VALUE_DOUBLE:
+        return true;
+    case BTSIG_VALUE_UTF8:
+        return false;
+    }
+    return false;
+}
+
+// Read the wire value without writing `value`. A non-OK status means the caller buffer stays unchanged.
+btsig_error accept_input(const CharacteristicDescriptor& descriptor, btsig_bytes input, const MeasuredWire& measured) {
+    std::size_t cursor = 0;
+    std::size_t bit_cursor = 0;
+    for (std::size_t index = 0; index < descriptor.field_count; ++index) {
+        const FieldDescriptor& field = descriptor.fields[index];
+        const FieldRefs refs = field_refs(descriptor, field);
+        if (!member_fits(field, descriptor.size) || (field.sentinel_count != 0 && refs.sentinels == nullptr) ||
+            (field.allowed_count != 0 && refs.allowed == nullptr)) {
+            return make_error(BTSIG_INVALID_ARGUMENT, refs.name, input);
+        }
+        if (field.wire == wire_type::utf8) {
+            const std::size_t tail = input.size - cursor;
+            const span<const std::uint8_t> text{tail == 0 ? nullptr : input.data + cursor, tail};
+            const btsig_status status = wire::check_utf8(text);
+            if (status != BTSIG_OK) {
+                return make_error(status, refs.name, input);
+            }
+            cursor += tail;
+            continue;
+        }
+        const std::size_t bits = wire::bit_width(field.wire);
+        const std::size_t field_width = bits == 0 ? wire::width(field.wire) : 0;
+        const expected<std::int64_t> raw =
+            bits == 0 ? wire::read(span<const std::uint8_t>{input.data + cursor, field_width}, field.wire)
+                      : wire::read_bits(span<const std::uint8_t>{input.data, input.size}, bit_cursor, bits);
+        if (!raw) {
+            return annotate(raw.error(), refs.name, input);
+        }
+        const Sentinel* sentinel = find_sentinel(refs.sentinels, field.sentinel_count, raw.value());
+        if (sentinel != nullptr) {
+            return make_error(sentinel_status(sentinel->meaning), refs.name, input);
+        }
+        if (!value_accepted(raw.value(), field, refs.allowed)) {
+            return make_error(BTSIG_OUT_OF_RANGE, refs.name, input);
+        }
+        if (wire::is_real(field.wire)) {
+            const expected<double> decoded = wire::decode_real(field.wire, raw.value());
+            if (!decoded) {
+                return annotate(decoded.error(), refs.name, input);
+            }
+        } else if (!storable(field)) {
+            return make_error(BTSIG_INVALID_ARGUMENT, refs.name, input);
+        }
+        if (bits == 0) {
+            cursor += field_width;
+        } else {
+            bit_cursor += bits;
+        }
+    }
+    if (measured.bit_packed && bit_cursor != measured.fixed_octets * 8U) {
+        return make_error(BTSIG_INVALID_ARGUMENT, nullptr, input);
+    }
+    return make_error(BTSIG_OK, nullptr, input);
+}
+
 } // namespace
 
 btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input, const btsig_context*, void* value,
                    std::size_t value_size) {
-    if (value == nullptr || (input.data == nullptr && input.size != 0) || descriptor.size > kStructScratchBytes) {
+    if (value == nullptr || (input.data == nullptr && input.size != 0)) {
         return make_error(BTSIG_INVALID_ARGUMENT, nullptr, input);
     }
     if (value_size < descriptor.size) {
@@ -350,27 +436,32 @@ btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input
     if (measured.value().utf8_tail && input.size - measured.value().fixed_octets > measured.value().utf8_capacity) {
         return make_error(BTSIG_LENGTH_MISMATCH, nullptr, input);
     }
+    const btsig_error accepted = accept_input(descriptor, input, measured.value());
+    if (accepted.status != BTSIG_OK) {
+        return accepted;
+    }
 
-    // A failed field leaves the caller struct unchanged (ADR-0010).
-    std::uint8_t scratch[kStructScratchBytes]{};
+    auto* output = static_cast<std::uint8_t*>(value);
+    std::memset(output, 0, descriptor.size);
     std::size_t cursor = 0;
     std::size_t bit_cursor = 0;
     for (std::size_t index = 0; index < descriptor.field_count; ++index) {
         const FieldDescriptor& field = descriptor.fields[index];
-        if (!member_fits(field, descriptor.size) || (field.sentinel_count != 0 && field.sentinels == nullptr) ||
-            (field.allowed_count != 0 && field.allowed == nullptr)) {
-            return make_error(BTSIG_INVALID_ARGUMENT, field.name, input);
+        const FieldRefs refs = field_refs(descriptor, field);
+        if (!member_fits(field, descriptor.size) || (field.sentinel_count != 0 && refs.sentinels == nullptr) ||
+            (field.allowed_count != 0 && refs.allowed == nullptr)) {
+            return make_error(BTSIG_INVALID_ARGUMENT, refs.name, input);
         }
         if (field.wire == wire_type::utf8) {
             const std::size_t tail = input.size - cursor;
             const span<const std::uint8_t> text{tail == 0 ? nullptr : input.data + cursor, tail};
-            const span<std::uint8_t> stored{scratch + field.offset + sizeof(std::uint16_t), field.utf8_capacity};
+            const span<std::uint8_t> stored{output + field.offset + sizeof(std::uint16_t), field.utf8_capacity};
             const expected<std::size_t> copied = wire::read_utf8(text, stored);
             if (!copied) {
-                return annotate(copied.error(), field.name, input);
+                return annotate(copied.error(), refs.name, input);
             }
             const auto length = static_cast<std::uint16_t>(copied.value());
-            std::memcpy(scratch + field.offset, &length, sizeof length);
+            std::memcpy(output + field.offset, &length, sizeof length);
             cursor += tail;
             continue;
         }
@@ -380,23 +471,23 @@ btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input
             bits == 0 ? wire::read(span<const std::uint8_t>{input.data + cursor, field_width}, field.wire)
                       : wire::read_bits(span<const std::uint8_t>{input.data, input.size}, bit_cursor, bits);
         if (!raw) {
-            return annotate(raw.error(), field.name, input);
+            return annotate(raw.error(), refs.name, input);
         }
-        const Sentinel* sentinel = find_sentinel(field, raw.value());
+        const Sentinel* sentinel = find_sentinel(refs.sentinels, field.sentinel_count, raw.value());
         if (sentinel != nullptr) {
-            return make_error(sentinel_status(sentinel->meaning), field.name, input);
+            return make_error(sentinel_status(sentinel->meaning), refs.name, input);
         }
-        if (!value_accepted(raw.value(), field)) {
-            return make_error(BTSIG_OUT_OF_RANGE, field.name, input);
+        if (!value_accepted(raw.value(), field, refs.allowed)) {
+            return make_error(BTSIG_OUT_OF_RANGE, refs.name, input);
         }
         if (wire::is_real(field.wire)) {
             const expected<double> decoded = wire::decode_real(field.wire, raw.value());
             if (!decoded) {
-                return annotate(decoded.error(), field.name, input);
+                return annotate(decoded.error(), refs.name, input);
             }
-            std::memcpy(scratch + field.offset, &decoded.value(), sizeof decoded.value());
-        } else if (!store_scaled(scratch, field, raw.value())) {
-            return make_error(BTSIG_INVALID_ARGUMENT, field.name, input);
+            std::memcpy(output + field.offset, &decoded.value(), sizeof decoded.value());
+        } else if (!store_scaled(output, field, raw.value())) {
+            return make_error(BTSIG_INVALID_ARGUMENT, refs.name, input);
         }
         if (bits == 0) {
             cursor += field_width;
@@ -407,7 +498,6 @@ btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input
     if (measured.value().bit_packed && bit_cursor != measured.value().fixed_octets * 8U) {
         return make_error(BTSIG_INVALID_ARGUMENT, nullptr, input);
     }
-    std::memcpy(value, scratch, descriptor.size);
     return make_error(BTSIG_OK, nullptr, input);
 }
 
@@ -425,27 +515,39 @@ btsig_error encode(const CharacteristicDescriptor& descriptor, const void* value
         return annotate(measured.error(), nullptr, buffer);
     }
 
-    std::uint8_t scratch[kWireScratchBytes]{};
+    if (measured.value().bit_packed) {
+        if (out_size < measured.value().fixed_octets) {
+            return make_error(BTSIG_BUFFER_TOO_SMALL, nullptr, buffer);
+        }
+        // write_bits only sets bits that are present, so the caller's bytes start clear.
+        // A zero-octet value is a null output with out_size 0, and memset rejects that pointer.
+        if (measured.value().fixed_octets != 0) {
+            std::memset(out, 0, measured.value().fixed_octets);
+        }
+    }
     const auto* base = static_cast<const std::uint8_t*>(value);
     std::size_t cursor = 0;
     std::size_t bit_cursor = 0;
     for (std::size_t index = 0; index < descriptor.field_count; ++index) {
         const FieldDescriptor& field = descriptor.fields[index];
-        if (!member_fits(field, descriptor.size) || (field.allowed_count != 0 && field.allowed == nullptr)) {
-            return make_error(BTSIG_INVALID_ARGUMENT, field.name, buffer);
+        const FieldRefs refs = field_refs(descriptor, field);
+        if (!member_fits(field, descriptor.size) || (field.allowed_count != 0 && refs.allowed == nullptr)) {
+            return make_error(BTSIG_INVALID_ARGUMENT, refs.name, buffer);
         }
         if (field.wire == wire_type::utf8) {
             std::uint16_t length = 0;
             std::memcpy(&length, base + field.offset, sizeof length);
-            if (length > field.utf8_capacity || length > kWireScratchBytes || cursor > kWireScratchBytes - length) {
-                return make_error(length > field.utf8_capacity ? BTSIG_OUT_OF_RANGE : BTSIG_INVALID_ARGUMENT,
-                                  field.name, buffer);
+            if (length > field.utf8_capacity) {
+                return make_error(BTSIG_OUT_OF_RANGE, refs.name, buffer);
+            }
+            if (cursor > out_size || length > out_size - cursor) {
+                return make_error(BTSIG_BUFFER_TOO_SMALL, refs.name, buffer);
             }
             const span<const std::uint8_t> text{length == 0 ? nullptr : base + field.offset + sizeof(std::uint16_t),
                                                 length};
-            const btsig_error stored = wire::write_utf8(text, span<std::uint8_t>{scratch + cursor, length});
+            const btsig_error stored = wire::write_utf8(text, span<std::uint8_t>{out + cursor, length});
             if (stored.status != BTSIG_OK) {
-                return annotate(stored, field.name, buffer);
+                return annotate(stored, refs.name, buffer);
             }
             cursor += length;
             continue;
@@ -466,17 +568,19 @@ btsig_error encode(const CharacteristicDescriptor& descriptor, const void* value
             return load_integer(base + field.offset, field.value_kind);
         }();
         if (!raw) {
-            return annotate(raw.error(), field.name, buffer);
+            return annotate(raw.error(), refs.name, buffer);
         }
-        if (!value_accepted(raw.value(), field)) {
-            return make_error(BTSIG_OUT_OF_RANGE, field.name, buffer);
+        if (!value_accepted(raw.value(), field, refs.allowed)) {
+            return make_error(BTSIG_OUT_OF_RANGE, refs.name, buffer);
         }
-        const btsig_error stored = bits == 0
-                                       ? wire::write(span<std::uint8_t>{scratch + cursor, field_width}, raw.value())
-                                       : wire::write_bits(span<std::uint8_t>{scratch, measured.value().fixed_octets},
-                                                          bit_cursor, bits, raw.value());
+        if (bits == 0 && (cursor > out_size || field_width > out_size - cursor)) {
+            return make_error(BTSIG_BUFFER_TOO_SMALL, refs.name, buffer);
+        }
+        const btsig_error stored = bits == 0 ? wire::write(span<std::uint8_t>{out + cursor, field_width}, raw.value())
+                                             : wire::write_bits(span<std::uint8_t>{out, measured.value().fixed_octets},
+                                                                bit_cursor, bits, raw.value());
         if (stored.status != BTSIG_OK) {
-            return annotate(stored, field.name, buffer);
+            return annotate(stored, refs.name, buffer);
         }
         if (bits == 0) {
             cursor += field_width;
@@ -490,14 +594,8 @@ btsig_error encode(const CharacteristicDescriptor& descriptor, const void* value
         }
         cursor = measured.value().fixed_octets;
     }
-    if (out_size < cursor) {
-        return make_error(BTSIG_BUFFER_TOO_SMALL, nullptr, buffer);
-    }
     if (!measured.value().utf8_tail && cursor != measured.value().fixed_octets) {
         return make_error(BTSIG_INVALID_ARGUMENT, nullptr, buffer);
-    }
-    if (out != nullptr && cursor != 0) {
-        std::memcpy(out, scratch, cursor);
     }
     *written = cursor;
     buffer.size = cursor;

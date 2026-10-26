@@ -458,10 +458,39 @@ def _enum_blocks(item: _Characteristic) -> str:
     return "".join(blocks)
 
 
+def _inline_methods(item: _Characteristic) -> str:
+    """Typed shell. The shared codec is the only out-of-line implementation."""
+    pascal = item.pascal_name
+    descriptor = f"{item.name}_descriptor"
+    return (
+        f"inline btsig::expected<{pascal}> {pascal}::decode(\n"
+        "    btsig_bytes input, const btsig_context* context) {\n"
+        f"    {pascal} value{{}};\n"
+        "    const btsig_error error =\n"
+        f"        btsig::decode({descriptor}, input, context, &value, sizeof value);\n"
+        "    if (error.status != BTSIG_OK) {\n"
+        f"        return btsig::unexpected<{pascal}>(error);\n"
+        "    }\n"
+        f"    return btsig::expected<{pascal}>(value);\n"
+        "}\n\n"
+        f"inline btsig::expected<std::size_t> {pascal}::encode(\n"
+        f"    const {pascal}& value, btsig::span<std::uint8_t> out) {{\n"
+        "    std::size_t written = 0;\n"
+        "    const btsig_error error = btsig::encode(\n"
+        f"        {descriptor}, &value, sizeof value, out.data(), out.size(), &written);\n"
+        "    if (error.status != BTSIG_OK) {\n"
+        "        return btsig::unexpected<std::size_t>(error);\n"
+        "    }\n"
+        "    return btsig::expected<std::size_t>(written);\n"
+        "}\n"
+    )
+
+
 def _hpp(item: _Characteristic, command: str) -> str:
     guard = _guard(item.name, "HPP")
     includes = [
         f'#include "btsig/{item.name}.h"',
+        '#include "btsig/codec/codec.hpp"',
         '#include "btsig/types/expected.hpp"',
         '#include "btsig/types/span.hpp"',
     ]
@@ -477,87 +506,163 @@ def _hpp(item: _Characteristic, command: str) -> str:
         "#include <cstdint>\n\n"
         "namespace btsig {\n\n"
         f"{_enum_blocks(item)}"
+        f"extern const CharacteristicDescriptor {item.name}_descriptor;\n\n"
         f"struct {item.pascal_name} {{\n" + "".join(f"{_cpp_member(member)}\n" for member in item.members) + "\n"
         f"    [[nodiscard]] static btsig::expected<{item.pascal_name}> decode(\n"
         "        btsig_bytes input, const btsig_context* context);\n\n"
         f"    [[nodiscard]] static btsig::expected<std::size_t> encode(\n"
         f"        const {item.pascal_name}& value, btsig::span<std::uint8_t> out);\n"
         "};\n\n"
+        f"{_inline_methods(item)}\n"
         "} // namespace btsig\n\n"
         f"#endif // {guard}\n"
     )
 
 
-def _sentinel_lines(item: _Characteristic) -> list[str]:
-    lines: list[str] = []
+@dataclass(frozen=True)
+class _TableLayout:
+    text_lines: tuple[str, ...]
+    sentinel_lines: tuple[str, ...]
+    allowed_lines: tuple[str, ...]
+    name_offset: int
+    id_offset: int
+    unit_offset: int
+    field_name_offsets: tuple[int, ...]
+    field_unit_offsets: tuple[int, ...]
+    sentinel_spans: tuple[tuple[int, int], ...]
+    allowed_spans: tuple[tuple[int, int], ...]
+    has_sentinels: bool
+    has_allowed: bool
+
+
+def _text_piece(value: str) -> str:
+    return "    " + _c_string(value)[:-1] + '\\0"'
+
+
+_NO_TEXT = 0xFFFF
+_MAX_TEXT_OFFSET = 0xFFFE
+
+
+def _offset_token(offset: int) -> str:
+    return "btsig::kNoText" if offset == _NO_TEXT else str(offset)
+
+
+def _append_text(chunks: list[str], value: str | None) -> int:
+    if value is None:
+        return _NO_TEXT
+    offset = sum(len(chunk) + 1 for chunk in chunks)
+    if offset > _MAX_TEXT_OFFSET:
+        raise EmitError(f"characteristic text exceeds {_MAX_TEXT_OFFSET} bytes")
+    chunks.append(value)
+    return offset
+
+
+def _table_layout(item: _Characteristic) -> _TableLayout:
+    chunks: list[str] = []
+    name_offset = _append_text(chunks, item.name)
+    id_offset = _append_text(chunks, item.identifier)
+    unit_offset = _append_text(chunks, item.unit)
+    field_name_offsets: list[int] = []
+    field_unit_offsets: list[int] = []
     for member in item.members:
-        if not member.sentinels:
-            continue
-        lines.append(f"constexpr btsig::Sentinel {item.name}_{member.name}_sentinels[] = {{")
-        for sentinel in member.sentinels:
-            lines.append(f"    {{{sentinel.raw_value}, btsig::sentinel_meaning::{sentinel.meaning.value}}},")
-        lines.append("};")
-        lines.append("")
-    return lines
+        field_name_offsets.append(_append_text(chunks, member.name))
+        unit = None if member.unit is None else member.unit.identifier
+        field_unit_offsets.append(_append_text(chunks, unit))
+    text_lines = (
+        f"constexpr char {item.name}_text[] =",
+        *(_text_piece(chunk) for chunk in chunks),
+        ";",
+        "",
+    )
 
-
-def _allowed_lines(item: _Characteristic) -> list[str]:
-    lines: list[str] = []
+    sentinel_entries: list[str] = []
+    sentinel_spans: list[tuple[int, int]] = []
     for member in item.members:
-        if member.value_set is not ValueSet.ENUMERATION:
-            continue
-        lines.append(f"constexpr std::int64_t {item.name}_{member.name}_allowed[] = {{")
-        lines.extend(f"    {enumerator.value}," for enumerator in member.enumerators)
-        lines.extend(["};", ""])
-    return lines
-
-
-def _field_lines(item: _Characteristic) -> list[str]:
-    lines = [f"constexpr btsig::FieldDescriptor {item.name}_fields[] = {{"]
-    for member in item.members:
-        unit = "nullptr" if member.unit is None else _c_string(member.unit.identifier)
-        unit_uuid = "0" if member.unit is None else f"0x{member.unit.uuid:04X}"
         if member.sentinels:
-            sentinels = f"{item.name}_{member.name}_sentinels"
-            count = str(len(member.sentinels))
+            sentinel_spans.append((len(sentinel_entries), len(member.sentinels)))
+            sentinel_entries.extend(
+                f"    {{{sentinel.raw_value}, btsig::sentinel_meaning::{sentinel.meaning.value}}},"
+                for sentinel in member.sentinels
+            )
         else:
-            sentinels = "nullptr"
-            count = "0"
+            sentinel_spans.append((0, 0))
+    if sentinel_entries:
+        sentinel_lines: tuple[str, ...] = (
+            f"constexpr btsig::Sentinel {item.name}_sentinels[] = {{",
+            *sentinel_entries,
+            "};",
+            "",
+        )
+    else:
+        sentinel_lines = ()
+
+    allowed_entries: list[str] = []
+    allowed_spans: list[tuple[int, int]] = []
+    for member in item.members:
         if member.value_set is ValueSet.ENUMERATION:
-            allowed = f"{item.name}_{member.name}_allowed"
-            allowed_count = str(len(member.enumerators))
-            flag_mask = "0"
-        elif member.value_set is ValueSet.FLAGS:
-            allowed = "nullptr"
-            allowed_count = "0"
+            allowed_spans.append((len(allowed_entries), len(member.enumerators)))
+            allowed_entries.extend(f"    {enumerator.value}," for enumerator in member.enumerators)
+        else:
+            allowed_spans.append((0, 0))
+    if allowed_entries:
+        allowed_lines: tuple[str, ...] = (
+            f"constexpr std::int64_t {item.name}_allowed[] = {{",
+            *allowed_entries,
+            "};",
+            "",
+        )
+    else:
+        allowed_lines = ()
+
+    return _TableLayout(
+        text_lines=text_lines,
+        sentinel_lines=sentinel_lines,
+        allowed_lines=allowed_lines,
+        name_offset=name_offset,
+        id_offset=id_offset,
+        unit_offset=unit_offset,
+        field_name_offsets=tuple(field_name_offsets),
+        field_unit_offsets=tuple(field_unit_offsets),
+        sentinel_spans=tuple(sentinel_spans),
+        allowed_spans=tuple(allowed_spans),
+        has_sentinels=bool(sentinel_entries),
+        has_allowed=bool(allowed_entries),
+    )
+
+
+def _field_lines(item: _Characteristic, layout: _TableLayout) -> list[str]:
+    lines = [f"constexpr btsig::FieldDescriptor {item.name}_fields[] = {{"]
+    for index, member in enumerate(item.members):
+        unit_uuid = "0" if member.unit is None else f"0x{member.unit.uuid:04X}"
+        sentinel_offset, sentinel_count = layout.sentinel_spans[index]
+        if member.value_set is ValueSet.FLAGS:
             mask = 0
             for enumerator in member.enumerators:
                 mask |= enumerator.value
             flag_mask = f"0x{mask:X}"
         else:
-            allowed = "nullptr"
-            allowed_count = "0"
             flag_mask = "0"
+        allowed_offset, allowed_count = layout.allowed_spans[index]
         lines.extend(
             [
                 "    {",
-                f"        {_c_string(member.name)},",
-                f"        {unit},",
-                f"        offsetof({item.c_struct}, {member.name}),",
                 f"        {member.minimum},",
                 f"        {member.maximum},",
-                f"        {sentinels},",
-                f"        {count},",
-                f"        {member.value_kind},",
+                f"        {flag_mask},",
+                f"        {_offset_token(layout.field_name_offsets[index])},",
+                f"        {_offset_token(layout.field_unit_offsets[index])},",
+                f"        offsetof({item.c_struct}, {member.name}),",
+                f"        {sentinel_offset},",
+                f"        {sentinel_count},",
+                f"        {allowed_offset},",
+                f"        {allowed_count},",
+                f"        {member.utf8_capacity},",
                 f"        {unit_uuid},",
+                f"        {member.value_kind},",
                 f"        btsig::wire_type::{member.wire.value},",
                 f"        {member.coefficient},",
                 f"        {member.decimal_exponent},",
                 f"        {member.binary_exponent},",
-                f"        {member.utf8_capacity},",
-                f"        {allowed},",
-                f"        {allowed_count},",
-                f"        {flag_mask},",
                 "    },",
             ]
         )
@@ -566,21 +671,30 @@ def _field_lines(item: _Characteristic) -> list[str]:
     return lines
 
 
-def _descriptor_lines(item: _Characteristic) -> list[str]:
-    unit = "nullptr" if item.unit is None else _c_string(item.unit)
+def _descriptor_lines(item: _Characteristic, layout: _TableLayout) -> list[str]:
     flags_only = bool(item.members) and all(member.value_set is ValueSet.FLAGS for member in item.members)
     bitfield = "true" if flags_only else "false"
+    sentinels = f"{item.name}_sentinels" if layout.has_sentinels else "nullptr"
+    allowed = f"{item.name}_allowed" if layout.has_allowed else "nullptr"
+    unit_offset = _offset_token(layout.unit_offset)
     return [
-        f"constexpr btsig::CharacteristicDescriptor {item.name}_descriptor{{",
-        f"    {_c_string(item.name)},",
-        f"    {_c_string(item.identifier)},",
-        f"    0x{item.uuid:04X},",
-        f"    {unit},",
-        f"    {bitfield},",
-        f"    sizeof({item.c_struct}),",
+        "namespace btsig {",
+        "",
+        f"extern const CharacteristicDescriptor {item.name}_descriptor{{",
+        f"    {item.name}_text,",
+        f"    {sentinels},",
+        f"    {allowed},",
         f"    {item.name}_fields,",
+        f"    {layout.name_offset},",
+        f"    {layout.id_offset},",
+        f"    {unit_offset},",
+        f"    0x{item.uuid:04X},",
+        f"    sizeof({item.c_struct}),",
         f"    {len(item.members)},",
+        f"    {bitfield},",
         "};",
+        "",
+        "} // namespace btsig",
         "",
     ]
 
@@ -605,43 +719,8 @@ def _assert_lines(item: _Characteristic) -> list[str]:
     return lines
 
 
-def _method_lines(item: _Characteristic) -> list[str]:
-    pascal = item.pascal_name
-    descriptor = f"{item.name}_descriptor"
-    return [
-        f"btsig::expected<{pascal}>",
-        f"{pascal}::decode(btsig_bytes input, const btsig_context* context) {{",
-        f"    {pascal} value{{}};",
-        "    const btsig_error error =",
-        f"        btsig::decode({descriptor}, input, context, &value, sizeof value);",
-        "    if (error.status != BTSIG_OK) {",
-        f"        return btsig::unexpected<{pascal}>(error);",
-        "    }",
-        f"    return btsig::expected<{pascal}>(value);",
-        "}",
-        "",
-        f"btsig::expected<std::size_t> {pascal}::encode(",
-        f"    const {pascal}& value, btsig::span<std::uint8_t> out) {{",
-        "    std::size_t written = 0;",
-        "    const btsig_error error = btsig::encode(",
-        f"        {descriptor},",
-        "        &value,",
-        "        sizeof value,",
-        "        out.data(),",
-        "        out.size(),",
-        "        &written);",
-        "    if (error.status != BTSIG_OK) {",
-        "        return btsig::unexpected<std::size_t>(error);",
-        "    }",
-        "    return btsig::expected<std::size_t>(written);",
-        "}",
-        "",
-    ]
-
-
 def _wrapper_lines(item: _Characteristic) -> list[str]:
     struct_name = item.c_struct
-    pascal = f"btsig::{item.pascal_name}"
     decode = f"btsig_decode_{item.name}"
     encode = f"btsig_encode_{item.name}"
     return [
@@ -655,17 +734,7 @@ def _wrapper_lines(item: _Characteristic) -> list[str]:
         "        invalid.bytes = input;",
         "        return invalid;",
         "    }",
-        f"    const btsig::expected<{pascal}> decoded =",
-        f"        {pascal}::decode(input, context);",
-        "    if (!decoded) {",
-        "        return decoded.error();",
-        "    }",
-        f"    const {pascal} decoded_value = decoded.value();",
-        "    std::memcpy(value, &decoded_value, sizeof(*value));",
-        "    btsig_error ok{};",
-        "    ok.status = BTSIG_OK;",
-        "    ok.bytes = input;",
-        "    return ok;",
+        f"    return btsig::decode(btsig::{item.name}_descriptor, input, context, value, sizeof(*value));",
         "}",
         "",
         f'extern "C" btsig_error {encode}(',
@@ -680,17 +749,7 @@ def _wrapper_lines(item: _Characteristic) -> list[str]:
         "        invalid.bytes = empty;",
         "        return invalid;",
         "    }",
-        f"    {pascal} typed{{}};",
-        "    std::memcpy(&typed, value, sizeof typed);",
-        "    const btsig::expected<std::size_t> encoded =",
-        f"        {pascal}::encode(typed, btsig::span<std::uint8_t>(out, out_size));",
-        "    if (!encoded) {",
-        "        return encoded.error();",
-        "    }",
-        "    *written = encoded.value();",
-        "    btsig_error ok{};",
-        "    ok.status = BTSIG_OK;",
-        "    return ok;",
+        f"    return btsig::encode(btsig::{item.name}_descriptor, value, sizeof(*value), out, out_size, written);",
         "}",
         "",
     ]
@@ -709,26 +768,18 @@ def _translation_unit(item: _Characteristic, command: str) -> str:
         "",
         "#include <cstddef>",
         "#include <cstdint>",
-        "#include <cstring>",
         "#include <type_traits>",
         "",
         "namespace {",
         "",
     ]
-    body.extend(_sentinel_lines(item))
-    body.extend(_allowed_lines(item))
-    body.extend(_field_lines(item))
-    body.extend(_descriptor_lines(item))
-    body.extend(
-        [
-            "} // namespace",
-            "",
-            "namespace btsig {",
-            "",
-        ]
-    )
-    body.extend(_method_lines(item))
-    body.extend(["} // namespace btsig", ""])
+    layout = _table_layout(item)
+    body.extend(layout.text_lines)
+    body.extend(layout.sentinel_lines)
+    body.extend(layout.allowed_lines)
+    body.extend(_field_lines(item, layout))
+    body.extend(["} // namespace", ""])
+    body.extend(_descriptor_lines(item, layout))
     body.extend(_wrapper_lines(item))
     body.append(f"static_assert(btsig::kSchemaVersion == {IR_VERSION});")
     body.extend(_assert_lines(item))

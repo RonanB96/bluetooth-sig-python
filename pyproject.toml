@@ -152,7 +152,7 @@ line-length = 120
 # still override this via the command-line.
 fix = true
 target-version = "py310"
-exclude = [".git", "__pycache__", "build", "dist", ".venv", ".venv*", ".eggs", "src/bluetooth_sig/_version.py"]
+exclude = [".git", "__pycache__", "build", "dist", ".venv", ".venv*", ".eggs", "archived", "src/bluetooth_sig/_version.py"]
 
 [tool.ruff.lint]
 select = [

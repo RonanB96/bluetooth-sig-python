@@ -241,7 +241,7 @@ benchmark.json
 benchmark-history/
 docs/source/_static/performance/*.json
 docs/benchmarks/*.json.cache/gen_ref/
-src/bluetooth_sig/_version.py
+archived/python-lib/bluetooth_sig/_version.py
 
 .tmp/
 
