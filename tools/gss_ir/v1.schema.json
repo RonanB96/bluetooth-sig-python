@@ -54,7 +54,7 @@
     },
     "ScalarField": {
       "title": "ScalarField",
-      "description": "One resolved field in wire order.\n\n    Integer, boolean, and real fields store a raw ``minimum`` and ``maximum``.\n    A UTF-8 field stores ``0`` for both. ``utf8_capacity`` is the ``utf8s{N}``\n    octet maximum; a variable ``utf8s`` omits it. ``enumerators`` is empty unless\n    ``value_set`` is ``enumeration`` or ``flags``.",
+      "description": "One resolved field in wire order.\n\n    Integer, boolean, and real fields store a raw ``minimum`` and ``maximum``.\n    A UTF-8 field stores ``0`` for both. ``utf8_capacity`` is the octet maximum:\n    ``N`` for ``utf8s{N}`` or the high end of a size range starting at 0. A\n    ``variable`` size with no maximum omits it. ``enumerators`` is empty unless\n    ``value_set`` is ``enumeration`` or ``flags``.",
       "type": "object",
       "properties": {
         "name": {

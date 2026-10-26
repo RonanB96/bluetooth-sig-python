@@ -1,6 +1,7 @@
 #include "btsig/codec/codec.hpp"
 
 #include "btsig/types/expected.hpp"
+#include "btsig/types/utf8_text.hpp"
 #include "btsig/wire/subbyte.hpp"
 #include "btsig/wire/utf8.hpp"
 #include "btsig/wire/word.hpp"
@@ -13,8 +14,9 @@
 namespace btsig {
 namespace {
 
-constexpr std::size_t kStructScratchBytes = 512;
-constexpr std::size_t kWireScratchBytes = 256;
+// The wire image is at most one attribute value. The struct also stores the uint16_t count.
+constexpr std::size_t kWireScratchBytes = kMaxAttributeValueOctets;
+constexpr std::size_t kStructScratchBytes = stored_utf8_bytes(static_cast<std::uint16_t>(kMaxAttributeValueOctets));
 
 btsig_error make_error(btsig_status status, const char* field, btsig_bytes bytes) {
     btsig_error error{};
@@ -201,7 +203,7 @@ std::size_t member_bytes(const FieldDescriptor& field) {
         if (field.utf8_capacity == 0) {
             return 0;
         }
-        return sizeof(std::uint16_t) + field.utf8_capacity;
+        return stored_utf8_bytes(field.utf8_capacity);
     }
     return member_size(field.value_kind);
 }
