@@ -252,7 +252,8 @@ btsig/compile_commands.json
 
 # Generator and emitter output. Distribution is separate from this repository.
 /generated/
-/btsig/generated/
+/btsig/generated/*
+!/btsig/generated/.clang-tidy
 
 # Local architecture and planning notes.
 /docs/adr/

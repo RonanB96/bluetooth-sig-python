@@ -17,7 +17,7 @@ C4 stands for **Context, Containers, Components, and Code** - four levels of arc
 
 Shows how the library fits into the broader Bluetooth ecosystem.
 
-**View**: [Design Decisions](decisions.md) (contains C4 Level 1 diagram in ADR-005)
+**View**: [Design Decisions](decisions.md)
 
 **What you'll learn**:
 

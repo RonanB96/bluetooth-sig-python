@@ -1,6 +1,6 @@
-"""Emit C and C++ characteristic headers from IR.
+"""Emit C characteristic sources from IR.
 
-Generated decode and encode functions call ``btsig::decode`` and ``btsig::encode``.
+Generated decode and encode functions call ``btsig_codec_decode`` and ``btsig_codec_encode``.
 Those handwritten functions own the shared formula
 ``raw * coefficient * 10^decimal_exponent * 2^binary_exponent``
 (GSS ``M``, ``d``, and ``b``). This module stores the three integers in the
@@ -9,13 +9,9 @@ descriptor and does not evaluate them.
 The handwritten headers this output includes, which this task does not create:
 
 - ``btsig/types/status.h``: ``btsig_bytes``, ``btsig_error``, ``btsig_context``, ``btsig_status``.
-- ``btsig/types/expected.hpp``: ``btsig::expected<T>`` and ``btsig::unexpected<T>``.
-  ``expected`` is true on success, ``value()`` returns ``T``, and ``error()`` returns ``btsig_error``.
-- ``btsig/types/span.hpp``: ``btsig::span<T>`` with ``data()`` and ``size()``.
-- ``btsig/schema/descriptor.hpp``: ``kSchemaVersion``, ``wire_type``, ``sentinel_meaning``,
-  ``Sentinel``, ``FieldDescriptor``, and ``CharacteristicDescriptor``.
-- ``btsig/wire/word.hpp``: little-endian words, IEEE 11073 medfloat, and IEEE-754 binary32.
-- ``btsig/codec/codec.hpp``: ``btsig::decode`` and ``btsig::encode``. The scalar ``M``, ``d``, ``b``
+- ``btsig/schema/descriptor.h``: ``BTSIG_SCHEMA_VERSION``, wire and sentinel enumerators,
+  ``btsig_sentinel``, ``btsig_field_descriptor``, and ``btsig_characteristic_descriptor``.
+- ``btsig/codec/codec.h``: ``btsig_codec_decode`` and ``btsig_codec_encode``. The scalar ``M``, ``d``, ``b``
   transform stays in the codec.
 
 ``btsig_value_kind`` enumerators used here are ``BTSIG_VALUE_UINT8``, ``BTSIG_VALUE_UINT16``,
@@ -101,7 +97,6 @@ class _Member:
     sentinels: tuple[Sentinel, ...]
     utf8_capacity: int = 0
     cpp_type: str = ""
-    cpp_underlying: str = ""
     c_enum_type: str = ""
     c_enum_is_typedef: bool = False
     enumerators: tuple[Enumerator, ...] = ()
@@ -188,12 +183,6 @@ def _c_member(member: _Member) -> str:
     return f"    {member.c_type} {member.name};"
 
 
-def _cpp_member(member: _Member) -> str:
-    if member.utf8_capacity:
-        return f"    btsig::utf8_text<{member.utf8_capacity}> {member.name};"
-    return f"    {member.cpp_type} {member.name};"
-
-
 def _snake_pascal(name: str) -> str:
     characters: list[str] = []
     for index, character in enumerate(name):
@@ -223,11 +212,14 @@ def _enumerator_expr(member: _Member, enumerator: Enumerator) -> str:
     return str(enumerator.value)
 
 
-def _enum_storage(field: ScalarField) -> tuple[str, int, int, str]:
-    """C++ underlying type, member size, alignment, and codec value kind.
+def _enum_storage(field: ScalarField) -> tuple[int, int, str]:
+    """Member size, alignment, and codec value kind.
 
     A flags mask is unsigned so bit 31 stays a positive value. A closed code
-    set stays signed when every code fits in int.
+    set stays signed when every code fits in int. The C enumeration is wider
+    than the wire field. C11 gives an enum no underlying type, so the generated
+    source asserts that sizeof the enum is 4. A mask that does not fit in int
+    is a uint32_t or uint64_t typedef.
     """
     values = [item.value for item in field.enumerators]
     low = min(values)
@@ -236,9 +228,9 @@ def _enum_storage(field: ScalarField) -> tuple[str, int, int, str]:
         if low < 0:
             raise EmitError(f"{field.name}: signed enumerators do not fit in int32")
         if high > _UINT32_MAX:
-            return ("std::uint64_t", 8, 8, "BTSIG_VALUE_UINT64")
-        return ("std::uint32_t", 4, 4, "BTSIG_VALUE_UINT32")
-    return ("int", 4, 4, "BTSIG_VALUE_SINT32")
+            return (8, 8, "BTSIG_VALUE_UINT64")
+        return (4, 4, "BTSIG_VALUE_UINT32")
+    return (4, 4, "BTSIG_VALUE_SINT32")
 
 
 def _layout(document: IrDocument) -> _Characteristic:
@@ -284,11 +276,10 @@ def _layout(document: IrDocument) -> _Characteristic:
         c_type, size, align, kind = _SCALED_LAYOUT if scaled else _INTEGER_LAYOUT[field.wire_type]
         cpp_type = c_type if field.value_set is None else _enum_type(field.name, pascal_name)
         c_enum_type = "" if field.value_set is None else f"btsig_{_snake_pascal(cpp_type)}"
-        cpp_underlying = ""
         c_enum_is_typedef = False
         # The enumeration is wider than the wire field. Flags use an unsigned width.
         if field.value_set is not None:
-            cpp_underlying, size, align, kind = _enum_storage(field)
+            size, align, kind = _enum_storage(field)
             # ISO C restricts enumerator values to int. A wider mask is a typedef.
             c_enum_is_typedef = any(item.value > _INT32_MAX for item in field.enumerators)
         offset = (offset + align - 1) // align * align
@@ -313,7 +304,6 @@ def _layout(document: IrDocument) -> _Characteristic:
                 sentinels=field.sentinels,
                 utf8_capacity=0,
                 cpp_type=cpp_type,
-                cpp_underlying=cpp_underlying,
                 c_enum_type=c_enum_type,
                 c_enum_is_typedef=c_enum_is_typedef,
                 enumerators=field.enumerators,
@@ -409,116 +399,6 @@ def _c_header(item: _Characteristic, command: str) -> str:
     )
 
 
-def _flag_operators(member: _Member) -> list[str]:
-    if member.value_set is not ValueSet.FLAGS:
-        return []
-    name = member.cpp_type
-    underlying = member.cpp_underlying
-    mask = 0
-    for enumerator in member.enumerators:
-        mask |= enumerator.value
-    return [
-        f"constexpr {name} operator|({name} left, {name} right) {{",
-        f"    return static_cast<{name}>(static_cast<{underlying}>(left) | static_cast<{underlying}>(right));",
-        "}",
-        "",
-        f"constexpr {name} operator&({name} left, {name} right) {{",
-        f"    return static_cast<{name}>(static_cast<{underlying}>(left) & static_cast<{underlying}>(right));",
-        "}",
-        "",
-        f"constexpr {name} operator~({name} value) {{",
-        f"    constexpr {underlying} mask = 0x{mask:X};",
-        f"    return static_cast<{name}>(mask & static_cast<{underlying}>(~static_cast<{underlying}>(value)));",
-        "}",
-        "",
-        f"constexpr {name}& operator|=({name}& left, {name} right) {{",
-        "    left = left | right;",
-        "    return left;",
-        "}",
-        "",
-        f"constexpr {name}& operator&=({name}& left, {name} right) {{",
-        "    left = left & right;",
-        "    return left;",
-        "}",
-        "",
-    ]
-
-
-def _enum_blocks(item: _Characteristic) -> str:
-    blocks: list[str] = []
-    for member in item.members:
-        if member.value_set is None:
-            continue
-        lines = [f"enum class {member.cpp_type} : {member.cpp_underlying} {{"]
-        for enumerator in member.enumerators:
-            lines.append(f"    {enumerator.name} = {_enumerator_expr(member, enumerator)},")
-        lines.extend(["};", ""])
-        lines.extend(_flag_operators(member))
-        blocks.append("\n".join(lines))
-    return "".join(blocks)
-
-
-def _inline_methods(item: _Characteristic) -> str:
-    """Typed shell. The shared codec is the only out-of-line implementation."""
-    pascal = item.pascal_name
-    descriptor = f"{item.name}_descriptor"
-    return (
-        f"inline btsig::expected<{pascal}> {pascal}::decode(\n"
-        "    btsig_bytes input, const btsig_context* context) {\n"
-        f"    {pascal} value{{}};\n"
-        "    const btsig_error error =\n"
-        f"        btsig::decode({descriptor}, input, context, &value, sizeof value);\n"
-        "    if (error.status != BTSIG_OK) {\n"
-        f"        return btsig::unexpected<{pascal}>(error);\n"
-        "    }\n"
-        f"    return btsig::expected<{pascal}>(value);\n"
-        "}\n\n"
-        f"inline btsig::expected<std::size_t> {pascal}::encode(\n"
-        f"    const {pascal}& value, btsig::span<std::uint8_t> out) {{\n"
-        "    std::size_t written = 0;\n"
-        "    const btsig_error error = btsig::encode(\n"
-        f"        {descriptor}, &value, sizeof value, out.data(), out.size(), &written);\n"
-        "    if (error.status != BTSIG_OK) {\n"
-        "        return btsig::unexpected<std::size_t>(error);\n"
-        "    }\n"
-        "    return btsig::expected<std::size_t>(written);\n"
-        "}\n"
-    )
-
-
-def _hpp(item: _Characteristic, command: str) -> str:
-    guard = _guard(item.name, "HPP")
-    includes = [
-        f'#include "btsig/{item.name}.h"',
-        '#include "btsig/codec/codec.hpp"',
-        '#include "btsig/types/expected.hpp"',
-        '#include "btsig/types/span.hpp"',
-    ]
-    if any(member.utf8_capacity for member in item.members):
-        includes.append('#include "btsig/types/utf8_text.hpp"')
-    include_block = "\n".join(includes)
-    return (
-        f"{_banner(command)}"
-        f"#ifndef {guard}\n"
-        f"#define {guard}\n\n"
-        f"{include_block}\n\n"
-        "#include <cstddef>\n"
-        "#include <cstdint>\n\n"
-        "namespace btsig {\n\n"
-        f"{_enum_blocks(item)}"
-        f"extern const CharacteristicDescriptor {item.name}_descriptor;\n\n"
-        f"struct {item.pascal_name} {{\n" + "".join(f"{_cpp_member(member)}\n" for member in item.members) + "\n"
-        f"    [[nodiscard]] static btsig::expected<{item.pascal_name}> decode(\n"
-        "        btsig_bytes input, const btsig_context* context);\n\n"
-        f"    [[nodiscard]] static btsig::expected<std::size_t> encode(\n"
-        f"        const {item.pascal_name}& value, btsig::span<std::uint8_t> out);\n"
-        "};\n\n"
-        f"{_inline_methods(item)}\n"
-        "} // namespace btsig\n\n"
-        f"#endif // {guard}\n"
-    )
-
-
 @dataclass(frozen=True)
 class _TableLayout:
     text_lines: tuple[str, ...]
@@ -544,7 +424,7 @@ _MAX_TEXT_OFFSET = 0xFFFE
 
 
 def _offset_token(offset: int) -> str:
-    return "btsig::kNoText" if offset == _NO_TEXT else str(offset)
+    return "BTSIG_NO_TEXT" if offset == _NO_TEXT else str(offset)
 
 
 def _append_text(chunks: list[str], value: str | None) -> int:
@@ -569,7 +449,7 @@ def _table_layout(item: _Characteristic) -> _TableLayout:
         unit = None if member.unit is None else member.unit.identifier
         field_unit_offsets.append(_append_text(chunks, unit))
     text_lines = (
-        f"constexpr char {item.name}_text[] =",
+        f"static const char {item.name}_text[] =",
         *(_text_piece(chunk) for chunk in chunks),
         ";",
         "",
@@ -581,14 +461,14 @@ def _table_layout(item: _Characteristic) -> _TableLayout:
         if member.sentinels:
             sentinel_spans.append((len(sentinel_entries), len(member.sentinels)))
             sentinel_entries.extend(
-                f"    {{{sentinel.raw_value}, btsig::sentinel_meaning::{sentinel.meaning.value}}},"
+                f"    {{{sentinel.raw_value}, BTSIG_SENTINEL_{sentinel.meaning.value.upper()}}},"
                 for sentinel in member.sentinels
             )
         else:
             sentinel_spans.append((0, 0))
     if sentinel_entries:
         sentinel_lines: tuple[str, ...] = (
-            f"constexpr btsig::Sentinel {item.name}_sentinels[] = {{",
+            f"static const btsig_sentinel {item.name}_sentinels[] = {{",
             *sentinel_entries,
             "};",
             "",
@@ -606,7 +486,7 @@ def _table_layout(item: _Characteristic) -> _TableLayout:
             allowed_spans.append((0, 0))
     if allowed_entries:
         allowed_lines: tuple[str, ...] = (
-            f"constexpr std::int64_t {item.name}_allowed[] = {{",
+            f"static const int64_t {item.name}_allowed[] = {{",
             *allowed_entries,
             "};",
             "",
@@ -631,7 +511,7 @@ def _table_layout(item: _Characteristic) -> _TableLayout:
 
 
 def _field_lines(item: _Characteristic, layout: _TableLayout) -> list[str]:
-    lines = [f"constexpr btsig::FieldDescriptor {item.name}_fields[] = {{"]
+    lines = [f"static const btsig_field_descriptor {item.name}_fields[] = {{"]
     for index, member in enumerate(item.members):
         unit_uuid = "0" if member.unit is None else f"0x{member.unit.uuid:04X}"
         sentinel_offset, sentinel_count = layout.sentinel_spans[index]
@@ -659,7 +539,7 @@ def _field_lines(item: _Characteristic, layout: _TableLayout) -> list[str]:
                 f"        {member.utf8_capacity},",
                 f"        {unit_uuid},",
                 f"        {member.value_kind},",
-                f"        btsig::wire_type::{member.wire.value},",
+                f"        BTSIG_WIRE_{member.wire.value.upper()},",
                 f"        {member.coefficient},",
                 f"        {member.decimal_exponent},",
                 f"        {member.binary_exponent},",
@@ -673,14 +553,12 @@ def _field_lines(item: _Characteristic, layout: _TableLayout) -> list[str]:
 
 def _descriptor_lines(item: _Characteristic, layout: _TableLayout) -> list[str]:
     flags_only = bool(item.members) and all(member.value_set is ValueSet.FLAGS for member in item.members)
-    bitfield = "true" if flags_only else "false"
-    sentinels = f"{item.name}_sentinels" if layout.has_sentinels else "nullptr"
-    allowed = f"{item.name}_allowed" if layout.has_allowed else "nullptr"
+    bitfield = "1" if flags_only else "0"
+    sentinels = f"{item.name}_sentinels" if layout.has_sentinels else "NULL"
+    allowed = f"{item.name}_allowed" if layout.has_allowed else "NULL"
     unit_offset = _offset_token(layout.unit_offset)
     return [
-        "namespace btsig {",
-        "",
-        f"extern const CharacteristicDescriptor {item.name}_descriptor{{",
+        f"static const btsig_characteristic_descriptor {item.name}_descriptor = {{",
         f"    {item.name}_text,",
         f"    {sentinels},",
         f"    {allowed},",
@@ -694,28 +572,19 @@ def _descriptor_lines(item: _Characteristic, layout: _TableLayout) -> list[str]:
         f"    {bitfield},",
         "};",
         "",
-        "} // namespace btsig",
-        "",
     ]
 
 
 def _assert_lines(item: _Characteristic) -> list[str]:
-    qualified = f"btsig::{item.pascal_name}"
     lines = [
-        f"static_assert(std::is_standard_layout_v<{qualified}>);",
-        f"static_assert(std::is_trivially_copyable_v<{qualified}>);",
-        f"static_assert(sizeof({item.c_struct}) == {item.size});",
-        f"static_assert(sizeof({qualified}) ==",
-        f"              sizeof({item.c_struct}));",
+        f'_Static_assert(BTSIG_SCHEMA_VERSION == {IR_VERSION}, "schema version");',
+        f'_Static_assert(sizeof({item.c_struct}) == {item.size}, "characteristic size");',
     ]
     for member in item.members:
-        lines.append(f"static_assert(offsetof({item.c_struct}, {member.name}) == {member.offset});")
-        lines.append(f"static_assert(offsetof({qualified}, {member.name}) == {member.offset});")
-        if member.utf8_capacity:
-            lines.append(f"static_assert(sizeof(btsig::utf8_text<{member.utf8_capacity}>) == {member.size});")
-        elif member.c_enum_type:
-            lines.append(f"static_assert(sizeof({member.c_enum_type}) == {member.size});")
-            lines.append(f"static_assert(sizeof(btsig::{member.cpp_type}) == {member.size});")
+        lines.append(f'_Static_assert(offsetof({item.c_struct}, {member.name}) == {member.offset}, "member offset");')
+        if member.c_enum_type:
+            stored = member.c_enum_type if member.c_enum_is_typedef else f"enum {member.c_enum_type}"
+            lines.append(f'_Static_assert(sizeof({stored}) == {member.size}, "enumeration width");')
     return lines
 
 
@@ -724,53 +593,46 @@ def _wrapper_lines(item: _Characteristic) -> list[str]:
     decode = f"btsig_decode_{item.name}"
     encode = f"btsig_encode_{item.name}"
     return [
-        f'extern "C" btsig_error {decode}(',
+        f"btsig_error {decode}(",
         "    btsig_bytes input,",
         "    const btsig_context* context,",
         f"    {struct_name}* value) {{",
-        "    if (value == nullptr) {",
-        "        btsig_error invalid{};",
+        "    if (value == NULL) {",
+        "        btsig_error invalid = {0};",
         "        invalid.status = BTSIG_INVALID_ARGUMENT;",
         "        invalid.bytes = input;",
         "        return invalid;",
         "    }",
-        f"    return btsig::decode(btsig::{item.name}_descriptor, input, context, value, sizeof(*value));",
+        f"    return btsig_codec_decode(&{item.name}_descriptor, input, context, value, sizeof(*value));",
         "}",
         "",
-        f'extern "C" btsig_error {encode}(',
+        f"btsig_error {encode}(",
         f"    const {struct_name}* value,",
         "    uint8_t* out,",
         "    size_t out_size,",
         "    size_t* written) {",
-        "    btsig_bytes empty{nullptr, 0};",
-        "    if (value == nullptr || written == nullptr || (out == nullptr && out_size != 0)) {",
-        "        btsig_error invalid{};",
+        "    btsig_bytes empty = {0};",
+        "    if (value == NULL || written == NULL || (out == NULL && out_size != 0)) {",
+        "        btsig_error invalid = {0};",
         "        invalid.status = BTSIG_INVALID_ARGUMENT;",
         "        invalid.bytes = empty;",
         "        return invalid;",
         "    }",
-        f"    return btsig::encode(btsig::{item.name}_descriptor, value, sizeof(*value), out, out_size, written);",
+        f"    return btsig_codec_encode(&{item.name}_descriptor, value, sizeof(*value), out, out_size, written);",
         "}",
         "",
     ]
 
 
 def _translation_unit(item: _Characteristic, command: str) -> str:
-    includes = [
-        f'#include "btsig/{item.name}.hpp"',
-        '#include "btsig/codec/codec.hpp"',
-        '#include "btsig/schema/descriptor.hpp"',
-    ]
     body = [
         _banner(command).rstrip("\n"),
         "",
-        *includes,
+        f'#include "btsig/{item.name}.h"',
         "",
-        "#include <cstddef>",
-        "#include <cstdint>",
-        "#include <type_traits>",
+        '#include "btsig/codec/codec.h"',
         "",
-        "namespace {",
+        "#include <stddef.h>",
         "",
     ]
     layout = _table_layout(item)
@@ -778,10 +640,8 @@ def _translation_unit(item: _Characteristic, command: str) -> str:
     body.extend(layout.sentinel_lines)
     body.extend(layout.allowed_lines)
     body.extend(_field_lines(item, layout))
-    body.extend(["} // namespace", ""])
     body.extend(_descriptor_lines(item, layout))
     body.extend(_wrapper_lines(item))
-    body.append(f"static_assert(btsig::kSchemaVersion == {IR_VERSION});")
     body.extend(_assert_lines(item))
     body.append("")
     return "\n".join(body)
@@ -818,7 +678,7 @@ def emit_characteristics(
     root: Path | None = None,
     output_root: Path | None = None,
 ) -> dict[str, bytes]:
-    """Emit one C and C++ characteristic API per generated IR document.
+    """Emit one C characteristic API per generated IR document.
 
     Args:
         characteristics_path: JSON array of characteristic identifiers to skip.
@@ -847,8 +707,7 @@ def emit_characteristics(
     for item in layouts:
         root_dir = f"btsig/generated/{item.name}"
         files[f"{root_dir}/include/btsig/{item.name}.h"] = _c_header(item, command)
-        files[f"{root_dir}/include/btsig/{item.name}.hpp"] = _hpp(item, command)
-        files[f"{root_dir}/src/{item.name}.cpp"] = _translation_unit(item, command)
+        files[f"{root_dir}/src/{item.name}.c"] = _translation_unit(item, command)
     encoded = {path: text.encode("utf-8") for path, text in files.items()}
     written: list[Path] = []
     for relative, payload in encoded.items():
@@ -856,6 +715,13 @@ def emit_characteristics(
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_bytes(payload)
         written.append(output)
+    for item in layouts:
+        generated = destination / "btsig" / "generated" / item.name
+        for stale in (
+            generated / "include" / "btsig" / f"{item.name}.hpp",
+            generated / "src" / f"{item.name}.cpp",
+        ):
+            stale.unlink(missing_ok=True)
     _format_sources(written, repo / "btsig" / ".clang-format")
     return {relative: path.read_bytes() for relative, path in zip(encoded, written, strict=True)}
 
@@ -870,7 +736,7 @@ def main(argv: list[str] | None = None) -> int:
         Process status, ``0`` on success and ``1`` on an emit error.
     """
     parser = argparse.ArgumentParser(
-        description="Emit C and C++ sources for every generated characteristic outside the blacklist."
+        description="Emit C sources for every generated characteristic outside the blacklist."
     )
     parser.add_argument("characteristics", type=Path, help="JSON array of identifiers to skip")
     args = parser.parse_args(argv)

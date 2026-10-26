@@ -50,7 +50,7 @@ jobs:
         run: |
           mapfile -t files < <(find btsig examples/characteristic_api \
             -type d -name build -prune -o \
-            -type f \( -name '*.c' -o -name '*.h' -o -name '*.hpp' -o -name '*.cpp' \) -print)
+            -type f \( -name '*.c' -o -name '*.h' \) -print)
           if [[ ${#files[@]} -eq 0 ]]; then
             echo "No btsig sources found"
             exit 1
@@ -105,20 +105,14 @@ jobs:
       - name: Run sample programs
         run: |
           ./examples/characteristic_api/build/characteristic_api_c
-          ./examples/characteristic_api/build/characteristic_api_cpp
 
       - name: Run clang-tidy
         run: |
-          gcc_major="$(g++ -dumpversion | cut -d. -f1)"
-          extra_args=(
-            --extra-arg="-I/usr/include/c++/${gcc_major}"
-            --extra-arg="-I/usr/include/x86_64-linux-gnu/c++/${gcc_major}"
-          )
           mapfile -t library_files < <(python -c 'import json; print("\n".join(entry["file"] for entry in json.load(open("btsig/build/compile_commands.json"))))')
           mapfile -t sample_files < <(python -c 'import json; print("\n".join(entry["file"] for entry in json.load(open("examples/characteristic_api/build/compile_commands.json"))))')
           if [[ ${#library_files[@]} -eq 0 || ${#sample_files[@]} -eq 0 ]]; then
             echo "No btsig translation units found"
             exit 1
           fi
-          clang-tidy-18 -p btsig/build "${extra_args[@]}" "${library_files[@]}"
-          clang-tidy-18 -p examples/characteristic_api/build "${extra_args[@]}" "${sample_files[@]}"
+          clang-tidy-18 -p btsig/build "${library_files[@]}"
+          clang-tidy-18 -p examples/characteristic_api/build "${sample_files[@]}"

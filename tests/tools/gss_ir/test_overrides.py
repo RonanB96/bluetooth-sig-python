@@ -32,7 +32,7 @@ def test_checked_in_overrides_have_no_gss_document() -> None:
 def test_handwritten_gss_overlap_warns(tmp_path: Path) -> None:
     source = tmp_path / "btsig" / "override" / "battery_level" / "src"
     source.mkdir(parents=True)
-    (source / "battery_level.cpp").write_text(
+    (source / "battery_level.c").write_text(
         '"org.bluetooth.characteristic.battery_level"\n',
         encoding="utf-8",
     )

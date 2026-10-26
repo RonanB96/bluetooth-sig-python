@@ -1,22 +1,20 @@
 cmake_minimum_required(VERSION 3.24)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    set(CMAKE_C_STANDARD 11)
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+    set(CMAKE_C_EXTENSIONS OFF)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
     if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
         set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
     endif()
-    project(btsig_characteristics LANGUAGES CXX)
+    project(btsig_characteristics LANGUAGES C)
 endif()
 
 add_library(btsig_warnings INTERFACE)
 add_library(btsig::warnings ALIAS btsig_warnings)
 target_compile_options(btsig_warnings INTERFACE
-    -Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef
-    -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables)
+    -Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef)
 
 add_library(btsig_types INTERFACE)
 add_library(btsig::types ALIAS btsig_types)
@@ -28,25 +26,27 @@ target_include_directories(btsig_schema INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/s
 target_link_libraries(btsig_schema INTERFACE btsig::types)
 
 add_library(btsig_wire STATIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/word.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/medfloat.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/ieee754.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/real.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/utf8.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/subbyte.cpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/word.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/medfloat.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/ieee754.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/real.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/subbyte.c")
 add_library(btsig::wire ALIAS btsig_wire)
+set_target_properties(btsig_wire PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
 target_include_directories(btsig_wire PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/wire/include")
-target_link_libraries(btsig_wire PUBLIC btsig::schema PRIVATE btsig::warnings)
+target_link_libraries(btsig_wire PUBLIC btsig::schema PRIVATE btsig::warnings m)
 
-add_library(btsig_codec STATIC "${CMAKE_CURRENT_SOURCE_DIR}/codec/src/codec.cpp")
+add_library(btsig_codec STATIC "${CMAKE_CURRENT_SOURCE_DIR}/codec/src/codec.c")
 add_library(btsig::codec ALIAS btsig_codec)
+set_target_properties(btsig_codec PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
 target_include_directories(btsig_codec PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/codec/include")
-target_link_libraries(btsig_codec PUBLIC btsig::schema PRIVATE btsig::wire btsig::warnings)
+target_include_directories(btsig_codec PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/wire/src")
+target_link_libraries(btsig_codec PUBLIC btsig::schema PRIVATE btsig::wire btsig::warnings m)
 
 file(GLOB btsig_generated_sources CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/../generated/*/src/*.cpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/../generated/*/src/*.c")
 file(GLOB btsig_override_sources CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/../override/*/src/*.cpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/../override/*/src/*.c")
 set(btsig_override_names "")
 foreach(source IN LISTS btsig_override_sources)
     cmake_path(GET source PARENT_PATH source_dir)
@@ -75,6 +75,7 @@ if(NOT btsig_characteristic_sources)
 endif()
 add_library(btsig_characteristics STATIC ${btsig_characteristic_sources})
 add_library(btsig::characteristics ALIAS btsig_characteristics)
+set_target_properties(btsig_characteristics PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
 target_link_libraries(btsig_characteristics PUBLIC btsig::types btsig::codec PRIVATE btsig::warnings)
 foreach(source IN LISTS btsig_characteristic_sources)
     cmake_path(GET source PARENT_PATH source_dir)

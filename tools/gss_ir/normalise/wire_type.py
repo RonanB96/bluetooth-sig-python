@@ -8,7 +8,7 @@ from .result import Unsupported
 from .subbyte import subbyte_domain
 
 _RULE = "wire_type"
-# GSS writes ``boolean[N]`` and ``int16``. The IR stores a C++ enumerator name.
+# GSS writes ``boolean[N]`` and ``int16``. The IR stores the wire type name.
 _WIRE_ALIASES: dict[str, WireType] = {
     "boolean[8]": WireType.BOOLEAN8,
     "boolean[16]": WireType.BOOLEAN16,
