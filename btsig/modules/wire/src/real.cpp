@@ -1,16 +1,26 @@
 #include "btsig/wire/word.hpp"
 
 #include "ieee754.h"
-#include "medfloat.hpp"
+#include "medfloat.h"
 
 namespace btsig::wire {
 
 expected<double> decode_real(wire_type type, std::int64_t raw) {
     if (type == wire_type::medfloat16) {
-        return detail::decode_medfloat16(raw);
+        double value = 0.0;
+        const btsig_error error = btsig_wire_decode_medfloat16(raw, &value);
+        if (error.status == BTSIG_OK) {
+            return value;
+        }
+        return unexpected<double>(error);
     }
     if (type == wire_type::medfloat32) {
-        return detail::decode_medfloat32(raw);
+        double value = 0.0;
+        const btsig_error error = btsig_wire_decode_medfloat32(raw, &value);
+        if (error.status == BTSIG_OK) {
+            return value;
+        }
+        return unexpected<double>(error);
     }
     if (type == wire_type::float32) {
         double value = 0.0;
@@ -25,10 +35,20 @@ expected<double> decode_real(wire_type type, std::int64_t raw) {
 
 expected<std::int64_t> encode_real(wire_type type, double value) {
     if (type == wire_type::medfloat16) {
-        return detail::encode_medfloat16(value);
+        std::int64_t raw = 0;
+        const btsig_error error = btsig_wire_encode_medfloat16(value, &raw);
+        if (error.status == BTSIG_OK) {
+            return raw;
+        }
+        return unexpected<std::int64_t>(error);
     }
     if (type == wire_type::medfloat32) {
-        return detail::encode_medfloat32(value);
+        std::int64_t raw = 0;
+        const btsig_error error = btsig_wire_encode_medfloat32(value, &raw);
+        if (error.status == BTSIG_OK) {
+            return raw;
+        }
+        return unexpected<std::int64_t>(error);
     }
     if (type == wire_type::float32) {
         std::int64_t raw = 0;
