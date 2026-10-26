@@ -7,7 +7,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <type_traits>
 
 namespace {
@@ -37,7 +36,9 @@ constexpr btsig::FieldDescriptor protocol_mode_fields[] = {
     },
 };
 
-constexpr btsig::CharacteristicDescriptor protocol_mode_descriptor{
+} // namespace
+
+extern const btsig::CharacteristicDescriptor protocol_mode_descriptor{
     "protocol_mode",
     "org.bluetooth.characteristic.protocol_mode",
     0x2A4E,
@@ -48,31 +49,6 @@ constexpr btsig::CharacteristicDescriptor protocol_mode_descriptor{
     1,
 };
 
-} // namespace
-
-namespace btsig {
-
-btsig::expected<ProtocolMode> ProtocolMode::decode(btsig_bytes input, const btsig_context* context) {
-    ProtocolMode value{};
-    const btsig_error error = btsig::decode(protocol_mode_descriptor, input, context, &value, sizeof value);
-    if (error.status != BTSIG_OK) {
-        return btsig::unexpected<ProtocolMode>(error);
-    }
-    return btsig::expected<ProtocolMode>(value);
-}
-
-btsig::expected<std::size_t> ProtocolMode::encode(const ProtocolMode& value, btsig::span<std::uint8_t> out) {
-    std::size_t written = 0;
-    const btsig_error error =
-        btsig::encode(protocol_mode_descriptor, &value, sizeof value, out.data(), out.size(), &written);
-    if (error.status != BTSIG_OK) {
-        return btsig::unexpected<std::size_t>(error);
-    }
-    return btsig::expected<std::size_t>(written);
-}
-
-} // namespace btsig
-
 extern "C" btsig_error btsig_decode_protocol_mode(btsig_bytes input, const btsig_context* context,
                                                   btsig_protocol_mode* value) {
     if (value == nullptr) {
@@ -81,16 +57,7 @@ extern "C" btsig_error btsig_decode_protocol_mode(btsig_bytes input, const btsig
         invalid.bytes = input;
         return invalid;
     }
-    const btsig::expected<btsig::ProtocolMode> decoded = btsig::ProtocolMode::decode(input, context);
-    if (!decoded) {
-        return decoded.error();
-    }
-    const btsig::ProtocolMode decoded_value = decoded.value();
-    std::memcpy(value, &decoded_value, sizeof(*value));
-    btsig_error ok{};
-    ok.status = BTSIG_OK;
-    ok.bytes = input;
-    return ok;
+    return btsig::decode(protocol_mode_descriptor, input, context, value, sizeof(*value));
 }
 
 extern "C" btsig_error btsig_encode_protocol_mode(const btsig_protocol_mode* value, uint8_t* out, size_t out_size,
@@ -102,17 +69,7 @@ extern "C" btsig_error btsig_encode_protocol_mode(const btsig_protocol_mode* val
         invalid.bytes = empty;
         return invalid;
     }
-    btsig::ProtocolMode typed{};
-    std::memcpy(&typed, value, sizeof typed);
-    const btsig::expected<std::size_t> encoded =
-        btsig::ProtocolMode::encode(typed, btsig::span<std::uint8_t>(out, out_size));
-    if (!encoded) {
-        return encoded.error();
-    }
-    *written = encoded.value();
-    btsig_error ok{};
-    ok.status = BTSIG_OK;
-    return ok;
+    return btsig::encode(protocol_mode_descriptor, value, sizeof(*value), out, out_size, written);
 }
 
 static_assert(btsig::kSchemaVersion == 1);

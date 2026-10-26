@@ -367,6 +367,34 @@ def _enum_blocks(item: _Characteristic) -> str:
     return "".join(blocks)
 
 
+def _inline_methods(item: _Characteristic) -> str:
+    """Typed shell. The shared codec is the only out-of-line implementation."""
+    pascal = item.pascal_name
+    descriptor = f"{item.name}_descriptor"
+    return (
+        f"inline btsig::expected<{pascal}> {pascal}::decode(\n"
+        "    btsig_bytes input, const btsig_context* context) {\n"
+        f"    {pascal} value{{}};\n"
+        "    const btsig_error error =\n"
+        f"        btsig::decode({descriptor}, input, context, &value, sizeof value);\n"
+        "    if (error.status != BTSIG_OK) {\n"
+        f"        return btsig::unexpected<{pascal}>(error);\n"
+        "    }\n"
+        f"    return btsig::expected<{pascal}>(value);\n"
+        "}\n\n"
+        f"inline btsig::expected<std::size_t> {pascal}::encode(\n"
+        f"    const {pascal}& value, btsig::span<std::uint8_t> out) {{\n"
+        "    std::size_t written = 0;\n"
+        "    const btsig_error error = btsig::encode(\n"
+        f"        {descriptor}, &value, sizeof value, out.data(), out.size(), &written);\n"
+        "    if (error.status != BTSIG_OK) {\n"
+        "        return btsig::unexpected<std::size_t>(error);\n"
+        "    }\n"
+        "    return btsig::expected<std::size_t>(written);\n"
+        "}\n"
+    )
+
+
 def _hpp(item: _Characteristic, command: str) -> str:
     guard = _guard(item.name, "HPP")
     return (
@@ -374,12 +402,14 @@ def _hpp(item: _Characteristic, command: str) -> str:
         f"#ifndef {guard}\n"
         f"#define {guard}\n\n"
         f'#include "btsig/{item.name}.h"\n'
+        '#include "btsig/codec/codec.hpp"\n'
         '#include "btsig/types/expected.hpp"\n'
         '#include "btsig/types/span.hpp"\n\n'
         "#include <cstddef>\n"
         "#include <cstdint>\n\n"
         "namespace btsig {\n\n"
         f"{_enum_blocks(item)}"
+        f"extern const CharacteristicDescriptor {item.name}_descriptor;\n\n"
         f"class {item.pascal_name} {{\n"
         "public:\n" + "".join(f"{_cpp_member(member)}\n" for member in item.members) + "\n"
         f"    [[nodiscard]] static btsig::expected<{item.pascal_name}> decode(\n"
@@ -387,6 +417,7 @@ def _hpp(item: _Characteristic, command: str) -> str:
         f"    [[nodiscard]] static btsig::expected<std::size_t> encode(\n"
         f"        const {item.pascal_name}& value, btsig::span<std::uint8_t> out);\n"
         "};\n\n"
+        f"{_inline_methods(item)}\n"
         "} // namespace btsig\n\n"
         f"#endif // {guard}\n"
     )
@@ -475,7 +506,7 @@ def _descriptor_lines(item: _Characteristic) -> list[str]:
     flags_only = bool(item.members) and all(member.value_set is ValueSet.FLAGS for member in item.members)
     bitfield = "true" if flags_only else "false"
     return [
-        f"constexpr btsig::CharacteristicDescriptor {item.name}_descriptor{{",
+        f"extern const btsig::CharacteristicDescriptor {item.name}_descriptor{{",
         f"    {_c_string(item.name)},",
         f"    {_c_string(item.identifier)},",
         f"    0x{item.uuid:04X},",
@@ -511,43 +542,8 @@ def _assert_lines(item: _Characteristic) -> list[str]:
     return lines
 
 
-def _method_lines(item: _Characteristic) -> list[str]:
-    pascal = item.pascal_name
-    descriptor = f"{item.name}_descriptor"
-    return [
-        f"btsig::expected<{pascal}>",
-        f"{pascal}::decode(btsig_bytes input, const btsig_context* context) {{",
-        f"    {pascal} value{{}};",
-        "    const btsig_error error =",
-        f"        btsig::decode({descriptor}, input, context, &value, sizeof value);",
-        "    if (error.status != BTSIG_OK) {",
-        f"        return btsig::unexpected<{pascal}>(error);",
-        "    }",
-        f"    return btsig::expected<{pascal}>(value);",
-        "}",
-        "",
-        f"btsig::expected<std::size_t> {pascal}::encode(",
-        f"    const {pascal}& value, btsig::span<std::uint8_t> out) {{",
-        "    std::size_t written = 0;",
-        "    const btsig_error error = btsig::encode(",
-        f"        {descriptor},",
-        "        &value,",
-        "        sizeof value,",
-        "        out.data(),",
-        "        out.size(),",
-        "        &written);",
-        "    if (error.status != BTSIG_OK) {",
-        "        return btsig::unexpected<std::size_t>(error);",
-        "    }",
-        "    return btsig::expected<std::size_t>(written);",
-        "}",
-        "",
-    ]
-
-
 def _wrapper_lines(item: _Characteristic) -> list[str]:
     struct_name = item.c_struct
-    pascal = f"btsig::{item.pascal_name}"
     decode = f"btsig_decode_{item.name}"
     encode = f"btsig_encode_{item.name}"
     return [
@@ -561,17 +557,7 @@ def _wrapper_lines(item: _Characteristic) -> list[str]:
         "        invalid.bytes = input;",
         "        return invalid;",
         "    }",
-        f"    const btsig::expected<{pascal}> decoded =",
-        f"        {pascal}::decode(input, context);",
-        "    if (!decoded) {",
-        "        return decoded.error();",
-        "    }",
-        f"    const {pascal} decoded_value = decoded.value();",
-        "    std::memcpy(value, &decoded_value, sizeof(*value));",
-        "    btsig_error ok{};",
-        "    ok.status = BTSIG_OK;",
-        "    ok.bytes = input;",
-        "    return ok;",
+        f"    return btsig::decode({item.name}_descriptor, input, context, value, sizeof(*value));",
         "}",
         "",
         f'extern "C" btsig_error {encode}(',
@@ -586,17 +572,7 @@ def _wrapper_lines(item: _Characteristic) -> list[str]:
         "        invalid.bytes = empty;",
         "        return invalid;",
         "    }",
-        f"    {pascal} typed{{}};",
-        "    std::memcpy(&typed, value, sizeof typed);",
-        "    const btsig::expected<std::size_t> encoded =",
-        f"        {pascal}::encode(typed, btsig::span<std::uint8_t>(out, out_size));",
-        "    if (!encoded) {",
-        "        return encoded.error();",
-        "    }",
-        "    *written = encoded.value();",
-        "    btsig_error ok{};",
-        "    ok.status = BTSIG_OK;",
-        "    return ok;",
+        f"    return btsig::encode({item.name}_descriptor, value, sizeof(*value), out, out_size, written);",
         "}",
         "",
     ]
@@ -615,7 +591,6 @@ def _translation_unit(item: _Characteristic, command: str) -> str:
         "",
         "#include <cstddef>",
         "#include <cstdint>",
-        "#include <cstring>",
         "#include <type_traits>",
         "",
         "namespace {",
@@ -624,17 +599,8 @@ def _translation_unit(item: _Characteristic, command: str) -> str:
     body.extend(_sentinel_lines(item))
     body.extend(_allowed_lines(item))
     body.extend(_field_lines(item))
+    body.extend(["} // namespace", ""])
     body.extend(_descriptor_lines(item))
-    body.extend(
-        [
-            "} // namespace",
-            "",
-            "namespace btsig {",
-            "",
-        ]
-    )
-    body.extend(_method_lines(item))
-    body.extend(["} // namespace btsig", ""])
     body.extend(_wrapper_lines(item))
     body.append(f"static_assert(btsig::kSchemaVersion == {IR_VERSION});")
     body.extend(_assert_lines(item))

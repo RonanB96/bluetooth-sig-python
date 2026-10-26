@@ -2,6 +2,7 @@
 #ifndef BTSIG_VOLUME_STATE_HPP
 #define BTSIG_VOLUME_STATE_HPP
 
+#include "btsig/codec/codec.hpp"
 #include "btsig/types/expected.hpp"
 #include "btsig/types/span.hpp"
 #include "btsig/volume_state.h"
@@ -26,6 +27,27 @@ class VolumeState {
 
     [[nodiscard]] static btsig::expected<std::size_t> encode(const VolumeState& value, btsig::span<std::uint8_t> out);
 };
+
+extern const CharacteristicDescriptor volume_state_descriptor;
+
+inline btsig::expected<VolumeState> VolumeState::decode(btsig_bytes input, const btsig_context* context) {
+    VolumeState value{};
+    const btsig_error error = btsig::decode(volume_state_descriptor, input, context, &value, sizeof value);
+    if (error.status != BTSIG_OK) {
+        return btsig::unexpected<VolumeState>(error);
+    }
+    return btsig::expected<VolumeState>(value);
+}
+
+inline btsig::expected<std::size_t> VolumeState::encode(const VolumeState& value, btsig::span<std::uint8_t> out) {
+    std::size_t written = 0;
+    const btsig_error error =
+        btsig::encode(volume_state_descriptor, &value, sizeof value, out.data(), out.size(), &written);
+    if (error.status != BTSIG_OK) {
+        return btsig::unexpected<std::size_t>(error);
+    }
+    return btsig::expected<std::size_t>(written);
+}
 
 } // namespace btsig
 

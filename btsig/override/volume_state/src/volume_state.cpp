@@ -7,7 +7,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <type_traits>
 
 namespace {
@@ -75,7 +74,9 @@ constexpr btsig::FieldDescriptor volume_state_fields[] = {
     },
 };
 
-constexpr btsig::CharacteristicDescriptor volume_state_descriptor{
+} // namespace
+
+extern const btsig::CharacteristicDescriptor volume_state_descriptor{
     "volume_state",
     "org.bluetooth.characteristic.volume_state",
     0x2B7D,
@@ -86,31 +87,6 @@ constexpr btsig::CharacteristicDescriptor volume_state_descriptor{
     3,
 };
 
-} // namespace
-
-namespace btsig {
-
-btsig::expected<VolumeState> VolumeState::decode(btsig_bytes input, const btsig_context* context) {
-    VolumeState value{};
-    const btsig_error error = btsig::decode(volume_state_descriptor, input, context, &value, sizeof value);
-    if (error.status != BTSIG_OK) {
-        return btsig::unexpected<VolumeState>(error);
-    }
-    return btsig::expected<VolumeState>(value);
-}
-
-btsig::expected<std::size_t> VolumeState::encode(const VolumeState& value, btsig::span<std::uint8_t> out) {
-    std::size_t written = 0;
-    const btsig_error error =
-        btsig::encode(volume_state_descriptor, &value, sizeof value, out.data(), out.size(), &written);
-    if (error.status != BTSIG_OK) {
-        return btsig::unexpected<std::size_t>(error);
-    }
-    return btsig::expected<std::size_t>(written);
-}
-
-} // namespace btsig
-
 extern "C" btsig_error btsig_decode_volume_state(btsig_bytes input, const btsig_context* context,
                                                  btsig_volume_state* value) {
     if (value == nullptr) {
@@ -119,16 +95,7 @@ extern "C" btsig_error btsig_decode_volume_state(btsig_bytes input, const btsig_
         invalid.bytes = input;
         return invalid;
     }
-    const btsig::expected<btsig::VolumeState> decoded = btsig::VolumeState::decode(input, context);
-    if (!decoded) {
-        return decoded.error();
-    }
-    const btsig::VolumeState decoded_value = decoded.value();
-    std::memcpy(value, &decoded_value, sizeof(*value));
-    btsig_error ok{};
-    ok.status = BTSIG_OK;
-    ok.bytes = input;
-    return ok;
+    return btsig::decode(volume_state_descriptor, input, context, value, sizeof(*value));
 }
 
 extern "C" btsig_error btsig_encode_volume_state(const btsig_volume_state* value, uint8_t* out, size_t out_size,
@@ -140,17 +107,7 @@ extern "C" btsig_error btsig_encode_volume_state(const btsig_volume_state* value
         invalid.bytes = empty;
         return invalid;
     }
-    btsig::VolumeState typed{};
-    std::memcpy(&typed, value, sizeof typed);
-    const btsig::expected<std::size_t> encoded =
-        btsig::VolumeState::encode(typed, btsig::span<std::uint8_t>(out, out_size));
-    if (!encoded) {
-        return encoded.error();
-    }
-    *written = encoded.value();
-    btsig_error ok{};
-    ok.status = BTSIG_OK;
-    return ok;
+    return btsig::encode(volume_state_descriptor, value, sizeof(*value), out, out_size, written);
 }
 
 static_assert(btsig::kSchemaVersion == 1);
