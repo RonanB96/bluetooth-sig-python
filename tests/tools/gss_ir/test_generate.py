@@ -8,13 +8,32 @@ from pathlib import Path
 from tools.gss_ir.emit_cpp import emit_characteristics
 from tools.gss_ir.generate import generate_characteristics
 from tools.gss_ir.normalise import Unsupported, normalise_identifier
+from tools.gss_ir.v1 import WireType
 
 ROOT = Path(__file__).resolve().parents[3]
 CHARACTERISTICS = ROOT / "tools/gss_ir/characteristics.json"
 
 
-def test_location_and_speed_stops_on_wire_type() -> None:
+def test_glucose_feature_boolean_uses_the_full_bit_domain() -> None:
+    result = normalise_identifier("org.bluetooth.characteristic.glucose_feature")
+
+    assert not isinstance(result, Unsupported)
+    assert len(result.fields) == 1
+    field = result.fields[0]
+    assert field.wire_type is WireType.BOOLEAN16
+    assert field.minimum == 0
+    assert field.maximum == 0xFFFF
+
+
+def test_location_and_speed_stops_on_variable_size() -> None:
     result = normalise_identifier("org.bluetooth.characteristic.location_and_speed")
+
+    assert isinstance(result, Unsupported)
+    assert result.rule == "fixed_size"
+
+
+def test_last_name_stops_on_wire_type() -> None:
+    result = normalise_identifier("org.bluetooth.characteristic.last_name")
 
     assert isinstance(result, Unsupported)
     assert result.rule == "wire_type"

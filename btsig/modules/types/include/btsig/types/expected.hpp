@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BTSIG_TYPES_EXPECTED_HPP
+#define BTSIG_TYPES_EXPECTED_HPP
 
 #include "btsig/types/status.h"
 
@@ -15,6 +16,12 @@ template <typename T> class unexpected {
   private:
     btsig_error error_;
 };
+
+template <typename T> [[nodiscard]] unexpected<T> unexpected_status(btsig_status status) {
+    btsig_error error{};
+    error.status = status;
+    return unexpected<T>{error};
+}
 
 template <typename T> class expected {
   public:
@@ -41,3 +48,5 @@ template <typename T> class expected {
 };
 
 } // namespace btsig
+
+#endif

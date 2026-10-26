@@ -109,8 +109,15 @@
     },
     "WireType": {
       "title": "WireType",
-      "description": "Integer wire types named by ADR-0003.",
+      "description": "Fixed-width wire types named by ADR-0003.\n\n    Boolean widths are bitfields stored as unsigned integers. ``medfloat16``,\n    ``medfloat32``, and ``float32`` store the little-endian bit pattern; the\n    generated member is the decoded ``double``.",
       "enum": [
+        "boolean16",
+        "boolean24",
+        "boolean32",
+        "boolean8",
+        "float32",
+        "medfloat16",
+        "medfloat32",
         "sint16",
         "sint24",
         "sint32",

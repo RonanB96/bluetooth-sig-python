@@ -43,14 +43,28 @@ def test_field_name_rejects_an_empty_label() -> None:
     assert result.rule == "field_name"
 
 
-@pytest.mark.parametrize("type_text", ["uint8", "sint16", "uint24", "sint32"])
-def test_wire_type_accepts_integer_types(type_text: str) -> None:
+@pytest.mark.parametrize("type_text", ["uint8", "sint16", "uint24", "sint32", "medfloat16", "float32"])
+def test_wire_type_accepts_fixed_width_types(type_text: str) -> None:
     assert parse_wire_type(type_text) == WireType(type_text)
 
 
 @pytest.mark.parametrize(
+    ("type_text", "expected"),
+    [
+        ("boolean[8]", WireType.BOOLEAN8),
+        ("boolean[16]", WireType.BOOLEAN16),
+        ("boolean[24]", WireType.BOOLEAN24),
+        ("boolean[32]", WireType.BOOLEAN32),
+        ("int16", WireType.SINT16),
+    ],
+)
+def test_wire_type_stores_gss_names_as_enumerators(type_text: str, expected: WireType) -> None:
+    assert parse_wire_type(type_text) == expected
+
+
+@pytest.mark.parametrize(
     "type_text",
-    ["boolean[8]", "boolean[16]", "medfloat16", "utf8s", "float32", "gatt_uuid", "uint16[n]"],
+    ["utf8s", "utf8s\\{16\\}", "gatt_uuid", "uint16[n]", "uint1", "uint2", "uint128"],
 )
 def test_wire_type_rejects_other_types(type_text: str) -> None:
     result = parse_wire_type(type_text)
@@ -61,6 +75,10 @@ def test_wire_type_rejects_other_types(type_text: str) -> None:
 
 def test_fixed_size_accepts_the_wire_width() -> None:
     assert parse_fixed_size("2", WireType.SINT16) == 2
+
+
+def test_fixed_size_accepts_the_system_id_bit_count() -> None:
+    assert parse_fixed_size("64", WireType.UINT64) == 8
 
 
 @pytest.mark.parametrize("size", ["0 or 4", "variable", "1"])

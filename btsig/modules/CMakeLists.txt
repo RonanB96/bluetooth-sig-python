@@ -14,7 +14,7 @@ endif()
 
 add_library(btsig_warnings INTERFACE)
 add_library(btsig::warnings ALIAS btsig_warnings)
-target_compile_options(btsig_warnings INTERFACE -Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef)
+target_compile_options(btsig_warnings INTERFACE -Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef -fno-exceptions)
 
 add_library(btsig_types INTERFACE)
 add_library(btsig::types ALIAS btsig_types)
@@ -25,10 +25,19 @@ add_library(btsig::schema ALIAS btsig_schema)
 target_include_directories(btsig_schema INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/schema/include")
 target_link_libraries(btsig_schema INTERFACE btsig::types)
 
+add_library(btsig_wire STATIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/word.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/medfloat.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/ieee754.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wire/src/real.cpp")
+add_library(btsig::wire ALIAS btsig_wire)
+target_include_directories(btsig_wire PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/wire/include")
+target_link_libraries(btsig_wire PUBLIC btsig::schema PRIVATE btsig::warnings)
+
 add_library(btsig_codec STATIC "${CMAKE_CURRENT_SOURCE_DIR}/codec/src/codec.cpp")
 add_library(btsig::codec ALIAS btsig_codec)
 target_include_directories(btsig_codec PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/codec/include")
-target_link_libraries(btsig_codec PUBLIC btsig::schema PRIVATE btsig::warnings)
+target_link_libraries(btsig_codec PUBLIC btsig::schema PRIVATE btsig::wire btsig::warnings)
 
 file(GLOB btsig_characteristic_sources CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/../generated/*/src/*.cpp")

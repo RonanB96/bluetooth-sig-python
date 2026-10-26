@@ -26,6 +26,9 @@ def parse_fixed_size(size: str, wire: WireType) -> int | Unsupported:
         return Unsupported(rule=_RULE, detail=f"size {size!r} is not a single integer")
     width = int(size)
     expected = WIRE_SIZE_BYTES[wire]
+    # System ID records the EUI-64 width as 64 bits (system_id.yaml, size "64").
+    if wire is WireType.UINT64 and width == expected * 8:
+        return expected
     if width != expected:
         return Unsupported(
             rule=_RULE,

@@ -45,7 +45,12 @@ class ContractStruct(
 
 
 class WireType(str, Enum):
-    """Integer wire types named by ADR-0003."""
+    """Fixed-width wire types named by ADR-0003.
+
+    Boolean widths are bitfields stored as unsigned integers. ``medfloat16``,
+    ``medfloat32``, and ``float32`` store the little-endian bit pattern; the
+    generated member is the decoded ``double``.
+    """
 
     UINT8 = "uint8"
     UINT16 = "uint16"
@@ -57,6 +62,13 @@ class WireType(str, Enum):
     SINT16 = "sint16"
     SINT24 = "sint24"
     SINT32 = "sint32"
+    BOOLEAN8 = "boolean8"
+    BOOLEAN16 = "boolean16"
+    BOOLEAN24 = "boolean24"
+    BOOLEAN32 = "boolean32"
+    MEDFLOAT16 = "medfloat16"
+    MEDFLOAT32 = "medfloat32"
+    FLOAT32 = "float32"
 
 
 WIRE_SIZE_BYTES: dict[WireType, int] = {
@@ -70,6 +82,13 @@ WIRE_SIZE_BYTES: dict[WireType, int] = {
     WireType.SINT16: 2,
     WireType.SINT24: 3,
     WireType.SINT32: 4,
+    WireType.BOOLEAN8: 1,
+    WireType.BOOLEAN16: 2,
+    WireType.BOOLEAN24: 3,
+    WireType.BOOLEAN32: 4,
+    WireType.MEDFLOAT16: 2,
+    WireType.MEDFLOAT32: 4,
+    WireType.FLOAT32: 4,
 }
 
 

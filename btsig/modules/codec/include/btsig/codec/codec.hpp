@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BTSIG_CODEC_CODEC_HPP
+#define BTSIG_CODEC_CODEC_HPP
 
 #include "btsig/schema/descriptor.hpp"
 #include "btsig/types/status.h"
@@ -15,3 +16,5 @@ namespace btsig {
                                  std::uint8_t* out, std::size_t out_size, std::size_t* written);
 
 } // namespace btsig
+
+#endif

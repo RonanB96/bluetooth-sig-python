@@ -35,7 +35,12 @@ validation remains authoritative for cross-field invariants.
 A document has `schema_version`, `identifier`, a 16-bit `uuid`, `provenance` (`source_path`,
 `source_identifier`), and one or more scalar `fields`. Each field has a `snake_case` `name`, an integer
 `wire_type` (`uint8`, `uint16`, `uint24`, `uint32`, `uint48`, `uint64`, `sint8`, `sint16`, `sint24`,
-`sint32`), raw `minimum` and `maximum`, an optional `transform`, an optional `unit`, and `sentinels`.
+`sint32`, `boolean8`, `boolean16`, `boolean24`, `boolean32`, `medfloat16`, `medfloat32`, `float32`),
+raw `minimum` and `maximum`, an optional `transform`, an optional `unit`, and `sentinels`.
+GSS `boolean[N]` and `int16` are stored as those enumerator names. `medfloat16`, `medfloat32`, and
+`float32` keep the little-endian bit pattern in `minimum`/`maximum`; the generated member is the
+decoded `double`. A boolean or real field with no numeric range uses every bit pattern of its width.
+`utf8s`, `gatt_uuid`, repeated fields, and sub-byte `uint1`/`uint2` fields stay unsupported.
 An absent transform means coefficient 1, decimal exponent 0, and binary exponent 0. A sentinel meaning
 is `not_known` or `not_valid`. A referenced characteristic is copied into the field; the document has
 no cross-document reference.

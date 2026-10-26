@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BTSIG_SCHEMA_DESCRIPTOR_HPP
+#define BTSIG_SCHEMA_DESCRIPTOR_HPP
 
 #include "btsig/types/status.h"
 
@@ -20,6 +21,13 @@ enum class wire_type : std::uint8_t {
     sint16,
     sint24,
     sint32,
+    boolean8,
+    boolean16,
+    boolean24,
+    boolean32,
+    medfloat16,
+    medfloat32,
+    float32,
 };
 
 enum class sentinel_meaning : std::uint8_t { not_known, not_valid };
@@ -57,3 +65,5 @@ struct CharacteristicDescriptor {
 };
 
 } // namespace btsig
+
+#endif

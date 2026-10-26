@@ -1,5 +1,8 @@
 #include "btsig/codec/codec.hpp"
 
+#include "btsig/types/expected.hpp"
+#include "btsig/wire/word.hpp"
+
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -20,78 +23,26 @@ btsig_error make_error(btsig_status status, const char* field, btsig_bytes bytes
     return error;
 }
 
-std::size_t wire_width(wire_type wire) {
-    switch (wire) {
-    case wire_type::uint8:
-    case wire_type::sint8:
-        return 1;
-    case wire_type::uint16:
-    case wire_type::sint16:
-        return 2;
-    case wire_type::uint24:
-    case wire_type::sint24:
-        return 3;
-    case wire_type::uint32:
-    case wire_type::sint32:
-        return 4;
-    case wire_type::uint48:
-        return 6;
-    case wire_type::uint64:
-        return 8;
-    }
-    return 0;
+btsig_error annotate(btsig_error error, const char* field, btsig_bytes bytes) {
+    error.characteristic = nullptr;
+    error.field = field;
+    error.bytes = bytes;
+    return error;
 }
 
-bool is_signed(wire_type wire) {
-    switch (wire) {
-    case wire_type::sint8:
-    case wire_type::sint16:
-    case wire_type::sint24:
-    case wire_type::sint32:
-        return true;
-    case wire_type::uint8:
-    case wire_type::uint16:
-    case wire_type::uint24:
-    case wire_type::uint32:
-    case wire_type::uint48:
-    case wire_type::uint64:
-        return false;
-    }
-    return false;
-}
-
-std::size_t member_size(btsig_value_kind kind) {
-    switch (kind) {
-    case BTSIG_VALUE_UINT8:
-    case BTSIG_VALUE_SINT8:
-        return 1;
-    case BTSIG_VALUE_UINT16:
-    case BTSIG_VALUE_SINT16:
-        return 2;
-    case BTSIG_VALUE_UINT32:
-    case BTSIG_VALUE_SINT32:
-        return 4;
-    case BTSIG_VALUE_UINT64:
-    case BTSIG_VALUE_DOUBLE:
-        return 8;
-    }
-    return 0;
-}
-
-bool total_wire_size(const CharacteristicDescriptor& descriptor, std::size_t* size) {
+expected<std::size_t> total_wire_size(const CharacteristicDescriptor& descriptor) {
     std::size_t total = 0;
     if (descriptor.field_count != 0 && descriptor.fields == nullptr) {
-        return false;
+        return unexpected_status<std::size_t>(BTSIG_INVALID_ARGUMENT);
     }
     for (std::size_t index = 0; index < descriptor.field_count; ++index) {
-        const std::size_t width = wire_width(descriptor.fields[index].wire);
-        if (width == 0 || total > kWireScratchBytes - width) {
-            return false;
+        const std::size_t field_width = wire::width(descriptor.fields[index].wire);
+        if (field_width == 0 || total > kWireScratchBytes - field_width) {
+            return unexpected_status<std::size_t>(BTSIG_INVALID_ARGUMENT);
         }
-        total += width;
+        total += field_width;
     }
-    *size = total;
-    return true;
+    return total;
 }
 
 double apply_decimal(double value, std::int8_t exponent) {
@@ -132,42 +83,6 @@ double scale_factor(const FieldDescriptor& field) {
                         field.binary_exponent);
 }
 
-bool read_raw(const std::uint8_t* data, wire_type wire, std::int64_t* raw) {
-    const std::size_t width = wire_width(wire);
-    // wire_width returns 0 for an unknown enumerator. bits_in_wire is uint32_t,
-    // so a zero width wraps bits_in_wire - 1 before the sign-bit shift. A width
-    // above 8 shifts a byte out of uint64_t.
-    if (width == 0 || width > sizeof(std::uint64_t)) {
-        return false;
-    }
-    std::uint64_t bits = 0;
-    for (std::size_t index = 0; index < width; ++index) {
-        const std::uint32_t shift = static_cast<std::uint32_t>(index) * 8;
-        bits |= static_cast<std::uint64_t>(data[index]) << shift;
-    }
-    if (!is_signed(wire)) {
-        if (bits > static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max())) {
-            return false;
-        }
-        *raw = static_cast<std::int64_t>(bits);
-        return true;
-    }
-    const std::uint32_t bits_in_wire = static_cast<std::uint32_t>(width * 8);
-    if (bits_in_wire < 64 && (bits & (std::uint64_t{1} << (bits_in_wire - 1))) != 0) {
-        bits |= ~((std::uint64_t{1} << bits_in_wire) - 1);
-    }
-    *raw = static_cast<std::int64_t>(bits);
-    return true;
-}
-
-void write_raw(std::uint8_t* out, std::size_t width, std::int64_t raw) {
-    const std::uint64_t bits = static_cast<std::uint64_t>(raw);
-    for (std::size_t index = 0; index < width; ++index) {
-        const std::uint32_t shift = static_cast<std::uint32_t>(index) * 8;
-        out[index] = static_cast<std::uint8_t>(bits >> shift);
-    }
-}
-
 const Sentinel* find_sentinel(const FieldDescriptor& field, std::int64_t raw) {
     if (field.sentinel_count != 0 && field.sentinels == nullptr) {
         return nullptr;
@@ -191,46 +106,68 @@ bool in_range(std::int64_t raw, const FieldDescriptor& field) {
     return raw >= field.raw_minimum && raw <= field.raw_maximum;
 }
 
+std::size_t member_size(btsig_value_kind kind) {
+    switch (kind) {
+    case BTSIG_VALUE_UINT8:
+        return sizeof(std::uint8_t);
+    case BTSIG_VALUE_SINT8:
+        return sizeof(std::int8_t);
+    case BTSIG_VALUE_UINT16:
+        return sizeof(std::uint16_t);
+    case BTSIG_VALUE_SINT16:
+        return sizeof(std::int16_t);
+    case BTSIG_VALUE_UINT32:
+        return sizeof(std::uint32_t);
+    case BTSIG_VALUE_SINT32:
+        return sizeof(std::int32_t);
+    case BTSIG_VALUE_UINT64:
+        return sizeof(std::uint64_t);
+    case BTSIG_VALUE_DOUBLE:
+        return sizeof(double);
+    }
+    return 0;
+}
+
 bool member_fits(const FieldDescriptor& field, std::size_t struct_size) {
     const std::size_t size = member_size(field.value_kind);
     return size != 0 && field.offset <= struct_size && size <= struct_size - field.offset;
 }
 
-bool store_decoded(std::uint8_t* base, const FieldDescriptor& field, std::int64_t raw) {
+bool store_scaled(std::uint8_t* base, const FieldDescriptor& field, std::int64_t raw) {
     std::uint8_t* address = base + field.offset;
     switch (field.value_kind) {
     case BTSIG_VALUE_UINT8: {
-        const std::uint8_t stored = static_cast<std::uint8_t>(raw);
+        const auto stored = static_cast<std::uint8_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
     case BTSIG_VALUE_UINT16: {
-        const std::uint16_t stored = static_cast<std::uint16_t>(raw);
+        const auto stored = static_cast<std::uint16_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
     case BTSIG_VALUE_UINT32: {
-        const std::uint32_t stored = static_cast<std::uint32_t>(raw);
+        const auto stored = static_cast<std::uint32_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
     case BTSIG_VALUE_UINT64: {
-        const std::uint64_t stored = static_cast<std::uint64_t>(raw);
+        const auto stored = static_cast<std::uint64_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
     case BTSIG_VALUE_SINT8: {
-        const std::int8_t stored = static_cast<std::int8_t>(raw);
+        const auto stored = static_cast<std::int8_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
     case BTSIG_VALUE_SINT16: {
-        const std::int16_t stored = static_cast<std::int16_t>(raw);
+        const auto stored = static_cast<std::int16_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
     case BTSIG_VALUE_SINT32: {
-        const std::int32_t stored = static_cast<std::int32_t>(raw);
+        const auto stored = static_cast<std::int32_t>(raw);
         std::memcpy(address, &stored, sizeof stored);
         return true;
     }
@@ -243,76 +180,68 @@ bool store_decoded(std::uint8_t* base, const FieldDescriptor& field, std::int64_
     return false;
 }
 
-bool load_integer(const std::uint8_t* address, btsig_value_kind kind, std::int64_t* raw) {
+expected<std::int64_t> load_integer(const std::uint8_t* address, btsig_value_kind kind) {
     switch (kind) {
     case BTSIG_VALUE_UINT8: {
         std::uint8_t stored = 0;
         std::memcpy(&stored, address, sizeof stored);
-        *raw = stored;
-        return true;
+        return stored;
     }
     case BTSIG_VALUE_UINT16: {
         std::uint16_t stored = 0;
         std::memcpy(&stored, address, sizeof stored);
-        *raw = stored;
-        return true;
+        return stored;
     }
     case BTSIG_VALUE_UINT32: {
         std::uint32_t stored = 0;
         std::memcpy(&stored, address, sizeof stored);
-        *raw = stored;
-        return true;
+        return stored;
     }
     case BTSIG_VALUE_UINT64: {
         std::uint64_t stored = 0;
         std::memcpy(&stored, address, sizeof stored);
         if (stored > static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max())) {
-            return false;
+            return unexpected_status<std::int64_t>(BTSIG_OUT_OF_RANGE);
         }
-        *raw = static_cast<std::int64_t>(stored);
-        return true;
+        return static_cast<std::int64_t>(stored);
     }
     case BTSIG_VALUE_SINT8: {
         std::int8_t stored = 0;
         std::memcpy(&stored, address, sizeof stored);
-        *raw = stored;
-        return true;
+        return stored;
     }
     case BTSIG_VALUE_SINT16: {
         std::int16_t stored = 0;
         std::memcpy(&stored, address, sizeof stored);
-        *raw = stored;
-        return true;
+        return stored;
     }
     case BTSIG_VALUE_SINT32: {
         std::int32_t stored = 0;
         std::memcpy(&stored, address, sizeof stored);
-        *raw = stored;
-        return true;
+        return stored;
     }
     case BTSIG_VALUE_DOUBLE:
-        return false;
+        return unexpected_status<std::int64_t>(BTSIG_INVALID_ARGUMENT);
     }
-    return false;
+    return unexpected_status<std::int64_t>(BTSIG_INVALID_ARGUMENT);
 }
 
-bool raw_from_double(double member, const FieldDescriptor& field, std::int64_t* raw) {
+expected<std::int64_t> raw_from_scaled(double member, const FieldDescriptor& field) {
     if (!std::isfinite(member)) {
-        return false;
+        return unexpected_status<std::int64_t>(BTSIG_INVALID_ARGUMENT);
     }
     const double factor = scale_factor(field);
     if (!std::isfinite(factor) || factor == 0.0) {
-        return false;
+        return unexpected_status<std::int64_t>(BTSIG_INVALID_ARGUMENT);
     }
     const double quotient = member / factor;
     const double highest = static_cast<double>(std::numeric_limits<std::int64_t>::max());
     const double lowest = static_cast<double>(std::numeric_limits<std::int64_t>::min());
     if (!std::isfinite(quotient) || quotient >= highest || quotient < lowest) {
-        return false;
+        return unexpected_status<std::int64_t>(BTSIG_OUT_OF_RANGE);
     }
     // std::llround rounds halfway cases away from zero (cppreference, std::round).
-    *raw = static_cast<std::int64_t>(std::llround(quotient));
-    return true;
+    return static_cast<std::int64_t>(std::llround(quotient));
 }
 
 } // namespace
@@ -325,14 +254,14 @@ btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input
     if (value_size < descriptor.size) {
         return make_error(BTSIG_BUFFER_TOO_SMALL, nullptr, input);
     }
-    std::size_t wire_size = 0;
-    if (!total_wire_size(descriptor, &wire_size)) {
-        return make_error(BTSIG_INVALID_ARGUMENT, nullptr, input);
+    const expected<std::size_t> wire_size = total_wire_size(descriptor);
+    if (!wire_size) {
+        return annotate(wire_size.error(), nullptr, input);
     }
-    if (input.size < wire_size) {
+    if (input.size < wire_size.value()) {
         return make_error(BTSIG_INSUFFICIENT_DATA, nullptr, input);
     }
-    if (input.size > wire_size) {
+    if (input.size > wire_size.value()) {
         return make_error(BTSIG_LENGTH_MISMATCH, nullptr, input);
     }
 
@@ -341,25 +270,32 @@ btsig_error decode(const CharacteristicDescriptor& descriptor, btsig_bytes input
     std::size_t cursor = 0;
     for (std::size_t index = 0; index < descriptor.field_count; ++index) {
         const FieldDescriptor& field = descriptor.fields[index];
-        const std::size_t width = wire_width(field.wire);
+        const std::size_t field_width = wire::width(field.wire);
         if (!member_fits(field, descriptor.size) || (field.sentinel_count != 0 && field.sentinels == nullptr)) {
             return make_error(BTSIG_INVALID_ARGUMENT, field.name, input);
         }
-        std::int64_t raw = 0;
-        if (!read_raw(input.data + cursor, field.wire, &raw)) {
-            return make_error(BTSIG_OUT_OF_RANGE, field.name, input);
+        const span<const std::uint8_t> word{input.data + cursor, field_width};
+        const expected<std::int64_t> raw = wire::read(word, field.wire);
+        if (!raw) {
+            return annotate(raw.error(), field.name, input);
         }
-        const Sentinel* sentinel = find_sentinel(field, raw);
+        const Sentinel* sentinel = find_sentinel(field, raw.value());
         if (sentinel != nullptr) {
             return make_error(sentinel_status(sentinel->meaning), field.name, input);
         }
-        if (!in_range(raw, field)) {
+        if (!in_range(raw.value(), field)) {
             return make_error(BTSIG_OUT_OF_RANGE, field.name, input);
         }
-        if (!store_decoded(scratch, field, raw)) {
+        if (wire::is_real(field.wire)) {
+            const expected<double> decoded = wire::decode_real(field.wire, raw.value());
+            if (!decoded) {
+                return annotate(decoded.error(), field.name, input);
+            }
+            std::memcpy(scratch + field.offset, &decoded.value(), sizeof decoded.value());
+        } else if (!store_scaled(scratch, field, raw.value())) {
             return make_error(BTSIG_INVALID_ARGUMENT, field.name, input);
         }
-        cursor += width;
+        cursor += field_width;
     }
     std::memcpy(value, scratch, descriptor.size);
     return make_error(BTSIG_OK, nullptr, input);
@@ -374,47 +310,53 @@ btsig_error encode(const CharacteristicDescriptor& descriptor, const void* value
     if (value_size < descriptor.size) {
         return make_error(BTSIG_BUFFER_TOO_SMALL, nullptr, buffer);
     }
-    std::size_t wire_size = 0;
-    if (!total_wire_size(descriptor, &wire_size)) {
-        return make_error(BTSIG_INVALID_ARGUMENT, nullptr, buffer);
+    const expected<std::size_t> wire_size = total_wire_size(descriptor);
+    if (!wire_size) {
+        return annotate(wire_size.error(), nullptr, buffer);
     }
-    if (out_size < wire_size) {
+    if (out_size < wire_size.value()) {
         return make_error(BTSIG_BUFFER_TOO_SMALL, nullptr, buffer);
     }
 
     std::uint8_t scratch[kWireScratchBytes]{};
-    const std::uint8_t* base = static_cast<const std::uint8_t*>(value);
+    const auto* base = static_cast<const std::uint8_t*>(value);
     std::size_t cursor = 0;
     for (std::size_t index = 0; index < descriptor.field_count; ++index) {
         const FieldDescriptor& field = descriptor.fields[index];
-        const std::size_t width = wire_width(field.wire);
+        const std::size_t field_width = wire::width(field.wire);
         if (!member_fits(field, descriptor.size)) {
             return make_error(BTSIG_INVALID_ARGUMENT, field.name, buffer);
         }
-        std::int64_t raw = 0;
-        if (field.value_kind == BTSIG_VALUE_DOUBLE) {
-            double member = 0.0;
-            std::memcpy(&member, base + field.offset, sizeof member);
-            if (!std::isfinite(member)) {
-                return make_error(BTSIG_INVALID_ARGUMENT, field.name, buffer);
+        const auto raw = [&]() -> expected<std::int64_t> {
+            if (wire::is_real(field.wire)) {
+                double member = 0.0;
+                std::memcpy(&member, base + field.offset, sizeof member);
+                return wire::encode_real(field.wire, member);
             }
-            if (!raw_from_double(member, field, &raw)) {
-                return make_error(BTSIG_OUT_OF_RANGE, field.name, buffer);
+            if (field.value_kind == BTSIG_VALUE_DOUBLE) {
+                double member = 0.0;
+                std::memcpy(&member, base + field.offset, sizeof member);
+                return raw_from_scaled(member, field);
             }
-        } else if (!load_integer(base + field.offset, field.value_kind, &raw)) {
+            return load_integer(base + field.offset, field.value_kind);
+        }();
+        if (!raw) {
+            return annotate(raw.error(), field.name, buffer);
+        }
+        if (!in_range(raw.value(), field)) {
             return make_error(BTSIG_OUT_OF_RANGE, field.name, buffer);
         }
-        if (!in_range(raw, field)) {
-            return make_error(BTSIG_OUT_OF_RANGE, field.name, buffer);
+        const btsig_error stored = wire::write(span<std::uint8_t>{scratch + cursor, field_width}, raw.value());
+        if (stored.status != BTSIG_OK) {
+            return annotate(stored, field.name, buffer);
         }
-        write_raw(scratch + cursor, width, raw);
-        cursor += width;
+        cursor += field_width;
     }
     if (out != nullptr) {
-        std::memcpy(out, scratch, wire_size);
+        std::memcpy(out, scratch, wire_size.value());
     }
-    *written = wire_size;
-    buffer.size = wire_size;
+    *written = wire_size.value();
+    buffer.size = wire_size.value();
     return make_error(BTSIG_OK, nullptr, buffer);
 }
 

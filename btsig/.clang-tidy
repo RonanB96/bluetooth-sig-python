@@ -16,7 +16,7 @@ Checks: >
 
 WarningsAsErrors: '*'
 
-HeaderFilterRegex: '.*/(btsig/modules/(codec|schema|types)|btsig/generated|examples/characteristic_api)/.*'
+HeaderFilterRegex: '.*/(btsig|examples/characteristic_api)/.*'
 
 CheckOptions:
   - key: bugprone-signed-char-misuse.CharTypdefsToIgnore
