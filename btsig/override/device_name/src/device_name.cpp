@@ -11,23 +11,27 @@
 
 namespace {
 
+constexpr char device_name_text[] = "device_name\0"
+                                    "org.bluetooth.characteristic.gap.device_name\0"
+                                    "device_name\0";
+
 constexpr btsig::FieldDescriptor device_name_fields[] = {
     {
-        "device_name",
-        nullptr,
+        0,
+        0,
+        0,
+        57,
+        btsig::kNoText,
         offsetof(btsig_device_name, device_name_length),
         0,
         0,
-        nullptr,
-        0,
-        BTSIG_VALUE_UTF8,
-        0,
-        btsig::wire_type::utf8,
-        1,
         0,
         0,
         248,
-        nullptr,
+        0,
+        BTSIG_VALUE_UTF8,
+        btsig::wire_type::utf8,
+        1,
         0,
         0,
     },
@@ -36,14 +40,8 @@ constexpr btsig::FieldDescriptor device_name_fields[] = {
 } // namespace
 
 extern const btsig::CharacteristicDescriptor device_name_descriptor{
-    "device_name",
-    "org.bluetooth.characteristic.gap.device_name",
-    0x2A00,
-    nullptr,
-    false,
-    sizeof(btsig_device_name),
-    device_name_fields,
-    1,
+    device_name_text,          nullptr, nullptr, device_name_fields, 0, 12, btsig::kNoText, 0x2A00,
+    sizeof(btsig_device_name), 1,       false,
 };
 
 extern "C" btsig_error btsig_decode_device_name(btsig_bytes input, const btsig_context* context,

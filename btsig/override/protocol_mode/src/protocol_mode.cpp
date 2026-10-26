@@ -11,27 +11,31 @@
 
 namespace {
 
+constexpr char protocol_mode_text[] = "protocol_mode\0"
+                                      "org.bluetooth.characteristic.protocol_mode\0"
+                                      "protocol_mode\0";
+
 // HID Service 1.1, Table 2.2. 0x02 to 0xFF is reserved.
 constexpr std::int64_t protocol_mode_allowed[] = {0, 1};
 
 constexpr btsig::FieldDescriptor protocol_mode_fields[] = {
     {
-        "protocol_mode",
-        nullptr,
-        offsetof(btsig_protocol_mode, protocol_mode),
         0,
         255,
-        nullptr,
+        0,
+        57,
+        btsig::kNoText,
+        offsetof(btsig_protocol_mode, protocol_mode),
+        0,
+        0,
+        0,
+        2,
+        0,
         0,
         BTSIG_VALUE_SINT32,
-        0,
         btsig::wire_type::uint8,
         1,
         0,
-        0,
-        0,
-        protocol_mode_allowed,
-        2,
         0,
     },
 };
@@ -39,14 +43,17 @@ constexpr btsig::FieldDescriptor protocol_mode_fields[] = {
 } // namespace
 
 extern const btsig::CharacteristicDescriptor protocol_mode_descriptor{
-    "protocol_mode",
-    "org.bluetooth.characteristic.protocol_mode",
-    0x2A4E,
+    protocol_mode_text,
     nullptr,
-    false,
-    sizeof(btsig_protocol_mode),
+    protocol_mode_allowed,
     protocol_mode_fields,
+    0,
+    14,
+    btsig::kNoText,
+    0x2A4E,
+    sizeof(btsig_protocol_mode),
     1,
+    false,
 };
 
 extern "C" btsig_error btsig_decode_protocol_mode(btsig_bytes input, const btsig_context* context,

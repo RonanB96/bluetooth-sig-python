@@ -11,42 +11,47 @@
 
 namespace {
 
+constexpr char service_changed_text[] = "service_changed\0"
+                                        "org.bluetooth.characteristic.gatt.service_changed\0"
+                                        "start_handle\0"
+                                        "end_handle\0";
+
 constexpr btsig::FieldDescriptor service_changed_fields[] = {
     {
-        "start_handle",
-        nullptr,
-        offsetof(btsig_service_changed, start_handle),
         0,
         65535,
-        nullptr,
+        0,
+        66,
+        btsig::kNoText,
+        offsetof(btsig_service_changed, start_handle),
+        0,
+        0,
+        0,
+        0,
+        0,
         0,
         BTSIG_VALUE_UINT16,
-        0,
         btsig::wire_type::uint16,
         1,
-        0,
-        0,
-        0,
-        nullptr,
         0,
         0,
     },
     {
-        "end_handle",
-        nullptr,
-        offsetof(btsig_service_changed, end_handle),
         0,
         65535,
-        nullptr,
+        0,
+        79,
+        btsig::kNoText,
+        offsetof(btsig_service_changed, end_handle),
+        0,
+        0,
+        0,
+        0,
+        0,
         0,
         BTSIG_VALUE_UINT16,
-        0,
         btsig::wire_type::uint16,
         1,
-        0,
-        0,
-        0,
-        nullptr,
         0,
         0,
     },
@@ -55,14 +60,8 @@ constexpr btsig::FieldDescriptor service_changed_fields[] = {
 } // namespace
 
 extern const btsig::CharacteristicDescriptor service_changed_descriptor{
-    "service_changed",
-    "org.bluetooth.characteristic.gatt.service_changed",
-    0x2A05,
-    nullptr,
-    false,
-    sizeof(btsig_service_changed),
-    service_changed_fields,
-    2,
+    service_changed_text,          nullptr, nullptr, service_changed_fields, 0, 16, btsig::kNoText, 0x2A05,
+    sizeof(btsig_service_changed), 2,       false,
 };
 
 extern "C" btsig_error btsig_decode_service_changed(btsig_bytes input, const btsig_context* context,

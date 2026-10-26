@@ -11,64 +11,70 @@
 
 namespace {
 
+constexpr char volume_state_text[] = "volume_state\0"
+                                     "org.bluetooth.characteristic.volume_state\0"
+                                     "volume_setting\0"
+                                     "mute\0"
+                                     "change_counter\0";
+
 // Volume Control Service 1.0.1, section 2.3.1.2: Not Muted is 0 and Muted is 1.
-constexpr std::int64_t volume_state_mute_allowed[] = {0, 1};
+constexpr std::int64_t volume_state_allowed[] = {0, 1};
 
 constexpr btsig::FieldDescriptor volume_state_fields[] = {
     {
-        "volume_setting",
-        nullptr,
+        0,
+        255,
+        0,
+        55,
+        btsig::kNoText,
         offsetof(btsig_volume_state, volume_setting),
         0,
-        255,
-        nullptr,
+        0,
+        0,
+        0,
+        0,
         0,
         BTSIG_VALUE_UINT8,
-        0,
         btsig::wire_type::uint8,
         1,
         0,
         0,
-        0,
-        nullptr,
-        0,
-        0,
     },
     {
-        "mute",
-        nullptr,
+        0,
+        255,
+        0,
+        70,
+        btsig::kNoText,
         offsetof(btsig_volume_state, mute),
         0,
-        255,
-        nullptr,
+        0,
+        0,
+        2,
+        0,
         0,
         BTSIG_VALUE_SINT32,
-        0,
         btsig::wire_type::uint8,
         1,
         0,
-        0,
-        0,
-        volume_state_mute_allowed,
-        2,
         0,
     },
     {
-        "change_counter",
-        nullptr,
-        offsetof(btsig_volume_state, change_counter),
         0,
         255,
-        nullptr,
+        0,
+        75,
+        btsig::kNoText,
+        offsetof(btsig_volume_state, change_counter),
+        0,
+        0,
+        0,
+        0,
+        0,
         0,
         BTSIG_VALUE_UINT8,
-        0,
         btsig::wire_type::uint8,
         1,
-        0,
-        0,
-        0,
-        nullptr,
         0,
         0,
     },
@@ -77,14 +83,17 @@ constexpr btsig::FieldDescriptor volume_state_fields[] = {
 } // namespace
 
 extern const btsig::CharacteristicDescriptor volume_state_descriptor{
-    "volume_state",
-    "org.bluetooth.characteristic.volume_state",
-    0x2B7D,
+    volume_state_text,
     nullptr,
-    false,
-    sizeof(btsig_volume_state),
+    volume_state_allowed,
     volume_state_fields,
+    0,
+    13,
+    btsig::kNoText,
+    0x2B7D,
+    sizeof(btsig_volume_state),
     3,
+    false,
 };
 
 extern "C" btsig_error btsig_decode_volume_state(btsig_bytes input, const btsig_context* context,
