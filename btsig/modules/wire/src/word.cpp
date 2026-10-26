@@ -86,6 +86,7 @@ expected<std::int64_t> read(span<const std::uint8_t> data, wire_type type) {
         }
         return static_cast<std::int64_t>(bits);
     }
+    // Two's complement, sign bit most significant (Core Specification 6.3, Volume 1, Part E, Section 2.9.1).
     const auto bits_in_wire = static_cast<std::uint32_t>(octets * 8U);
     if (bits_in_wire < 64U && (bits & (std::uint64_t{1} << (bits_in_wire - 1U))) != 0U) {
         bits |= ~((std::uint64_t{1} << bits_in_wire) - 1U);
