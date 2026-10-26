@@ -14,7 +14,7 @@ _RULE = "named_values"
 _NUMBER = r"(?:0x[0-9A-Fa-f]+|-?\d+)"
 _RANGE = re.compile(rf"{_NUMBER}\s*[\u2013\u2014-]\s*{_NUMBER}")
 _EXACT_INTEGER = re.compile(_NUMBER)
-# These names are C++ keywords or alternative tokens, so they cannot be an enumerator identifier.
+# These names are reserved in C or C++, so they cannot be an enumerator identifier.
 _CPP_KEYWORDS = frozenset(
     {
         "alignas",
@@ -81,6 +81,7 @@ _CPP_KEYWORDS = frozenset(
         "register",
         "reinterpret_cast",
         "requires",
+        "restrict",
         "return",
         "short",
         "signed",
