@@ -67,40 +67,45 @@ bool is_real(wire_type type) {
     return type == wire_type::medfloat16 || type == wire_type::medfloat32 || type == wire_type::float32;
 }
 
-bool read(const std::uint8_t* data, wire_type type, std::int64_t* raw) {
+expected<std::int64_t> read(span<const std::uint8_t> data, wire_type type) {
     const std::size_t octets = width(type);
     // width returns 0 for an unknown enumerator. bits_in_wire is uint32_t,
     // so a zero width wraps bits_in_wire - 1 before the sign-bit shift. A width
     // above 8 shifts a byte out of uint64_t.
-    if (octets == 0 || octets > sizeof(std::uint64_t)) {
-        return false;
+    if (octets == 0 || octets > sizeof(std::uint64_t) || data.data() == nullptr || data.size() < octets) {
+        return unexpected_status<std::int64_t>(BTSIG_INVALID_ARGUMENT);
     }
     std::uint64_t bits = 0;
     for (std::size_t index = 0; index < octets; ++index) {
         const auto shift = static_cast<std::uint32_t>(index) * 8U;
-        bits |= static_cast<std::uint64_t>(data[index]) << shift;
+        bits |= static_cast<std::uint64_t>(data.data()[index]) << shift;
     }
     if (!is_signed(type)) {
         if (bits > static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max())) {
-            return false;
+            return unexpected_status<std::int64_t>(BTSIG_OUT_OF_RANGE);
         }
-        *raw = static_cast<std::int64_t>(bits);
-        return true;
+        return static_cast<std::int64_t>(bits);
     }
     const auto bits_in_wire = static_cast<std::uint32_t>(octets * 8U);
     if (bits_in_wire < 64U && (bits & (std::uint64_t{1} << (bits_in_wire - 1U))) != 0U) {
         bits |= ~((std::uint64_t{1} << bits_in_wire) - 1U);
     }
-    *raw = static_cast<std::int64_t>(bits);
-    return true;
+    return static_cast<std::int64_t>(bits);
 }
 
-void write(std::uint8_t* out, std::size_t octets, std::int64_t raw) {
-    const auto bits = static_cast<std::uint64_t>(raw);
-    for (std::size_t index = 0; index < octets; ++index) {
-        const auto shift = static_cast<std::uint32_t>(index) * 8U;
-        out[index] = static_cast<std::uint8_t>(bits >> shift);
+btsig_error write(span<std::uint8_t> out, std::int64_t raw) {
+    btsig_error error{};
+    // A shift of 64 bits or more is undefined for uint64_t.
+    if (out.data() == nullptr || out.size() == 0 || out.size() > sizeof(std::uint64_t)) {
+        error.status = BTSIG_INVALID_ARGUMENT;
+        return error;
     }
+    const auto bits = static_cast<std::uint64_t>(raw);
+    for (std::size_t index = 0; index < out.size(); ++index) {
+        const auto shift = static_cast<std::uint32_t>(index) * 8U;
+        out.data()[index] = static_cast<std::uint8_t>(bits >> shift);
+    }
+    return error;
 }
 
 } // namespace btsig::wire

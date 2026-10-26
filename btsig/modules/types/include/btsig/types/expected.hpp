@@ -17,6 +17,12 @@ template <typename T> class unexpected {
     btsig_error error_;
 };
 
+template <typename T> [[nodiscard]] unexpected<T> unexpected_status(btsig_status status) {
+    btsig_error error{};
+    error.status = status;
+    return unexpected<T>{error};
+}
+
 template <typename T> class expected {
   public:
     expected(const T& value) : has_value_(true), value_(value), error_() {}

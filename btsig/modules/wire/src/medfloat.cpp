@@ -29,6 +29,15 @@ int sign_extend(int value, int bits) {
     return value;
 }
 
+constexpr int kSfloatMantissaBits = 12;
+constexpr int kSfloatExponentBits = 4;
+constexpr int kSfloatMantissaMask = (1 << kSfloatMantissaBits) - 1;
+constexpr int kSfloatExponentMask = (1 << kSfloatExponentBits) - 1;
+constexpr int kFloatMantissaBits = 24;
+constexpr int kFloatExponentBits = 8;
+constexpr int kFloatMantissaMask = (1 << kFloatMantissaBits) - 1;
+constexpr int kFloatExponentMask = (1 << kFloatExponentBits) - 1;
+
 // SFLOAT specials: GSS v9 Table 2.1 and CGM Service v1.0.2 Table 3.8.
 constexpr std::int64_t kSfloatPositiveInfinity = 0x07FE;
 constexpr std::int64_t kSfloatNan = 0x07FF;
@@ -51,6 +60,16 @@ constexpr int kFloatExponentMax = 127;
 constexpr int kFloatMantissaMin = -8388608;
 constexpr int kFloatMantissaMax = 8388607;
 
+struct IntRange {
+    int minimum;
+    int maximum;
+};
+
+struct MantissaExponent {
+    int mantissa;
+    int exponent;
+};
+
 bool sfloat_special(std::int64_t raw) {
     return raw == kSfloatNan || raw == kSfloatNres || raw == kSfloatPositiveInfinity ||
            raw == kSfloatNegativeInfinity || raw == kSfloatReserved;
@@ -61,16 +80,15 @@ bool float_special(std::int64_t raw) {
            raw == kFloatReserved;
 }
 
-bool choose(double value, int exponent_min, int exponent_max, int mantissa_min, int mantissa_max, int* mantissa_out,
-            int* exponent_out) {
+expected<MantissaExponent> choose(double value, IntRange exponent_range, IntRange mantissa_range) {
     bool found = false;
     int best_mantissa = 0;
     int best_exponent = 0;
     double best_error = std::numeric_limits<double>::infinity();
-    for (int exponent = exponent_min; exponent <= exponent_max; ++exponent) {
+    for (int exponent = exponent_range.minimum; exponent <= exponent_range.maximum; ++exponent) {
         const double potential = value * decade_power(-exponent);
         const auto mantissa = static_cast<int>(std::llround(potential));
-        if (mantissa < mantissa_min || mantissa > mantissa_max) {
+        if (mantissa < mantissa_range.minimum || mantissa > mantissa_range.maximum) {
             continue;
         }
         const double actual = static_cast<double>(mantissa) * decade_power(exponent);
@@ -86,79 +104,91 @@ bool choose(double value, int exponent_min, int exponent_max, int mantissa_min, 
         }
     }
     if (!found) {
-        return false;
+        return unexpected_status<MantissaExponent>(BTSIG_OUT_OF_RANGE);
     }
-    *mantissa_out = best_mantissa;
-    *exponent_out = best_exponent;
-    return true;
+    return MantissaExponent{best_mantissa, best_exponent};
 }
 
 } // namespace
 
-bool decode_medfloat16(std::int64_t raw, double* value) {
+expected<double> decode_medfloat16(std::int64_t raw) {
     if (sfloat_special(raw)) {
-        return false;
+        return unexpected_status<double>(BTSIG_OUT_OF_RANGE);
     }
     // Two's-complement 4-bit exponent, then 12-bit mantissa (IDS v1.0.2, Table 6.1).
-    const int mantissa = sign_extend(static_cast<int>(raw & 0x0FFF), 12);
-    const int exponent = sign_extend(static_cast<int>((raw >> 12) & 0x0F), 4);
-    *value = static_cast<double>(mantissa) * decade_power(exponent);
-    return std::isfinite(*value);
+    const int mantissa = sign_extend(static_cast<int>(raw & kSfloatMantissaMask), kSfloatMantissaBits);
+    const int exponent =
+        sign_extend(static_cast<int>((raw >> kSfloatMantissaBits) & kSfloatExponentMask), kSfloatExponentBits);
+    const double value = static_cast<double>(mantissa) * decade_power(exponent);
+    if (!std::isfinite(value)) {
+        return unexpected_status<double>(BTSIG_OUT_OF_RANGE);
+    }
+    return value;
 }
 
-bool encode_medfloat16(double value, std::int64_t* raw) {
-    int mantissa = 0;
-    int exponent = 0;
-    if (!choose(value, kSfloatExponentMin, kSfloatExponentMax, kSfloatMantissaMin, kSfloatMantissaMax, &mantissa,
-                &exponent)) {
-        return false;
+expected<std::int64_t> encode_medfloat16(double value) {
+    if (!std::isfinite(value)) {
+        return unexpected_status<std::int64_t>(BTSIG_INVALID_ARGUMENT);
     }
+    const auto chosen = choose(value, IntRange{kSfloatExponentMin, kSfloatExponentMax},
+                               IntRange{kSfloatMantissaMin, kSfloatMantissaMax});
+    if (!chosen) {
+        return unexpected_status<std::int64_t>(chosen.error().status);
+    }
+    int mantissa = chosen.value().mantissa;
+    int exponent = chosen.value().exponent;
     if (mantissa < 0) {
-        mantissa += 1 << 12;
+        mantissa += 1 << kSfloatMantissaBits;
     }
     if (exponent < 0) {
-        exponent += 1 << 4;
+        exponent += 1 << kSfloatExponentBits;
     }
-    const auto packed =
-        (static_cast<std::int64_t>(mantissa) & 0x0FFF) | ((static_cast<std::int64_t>(exponent) & 0x0F) << 12);
+    const auto packed = (static_cast<std::int64_t>(mantissa) & kSfloatMantissaMask) |
+                        ((static_cast<std::int64_t>(exponent) & kSfloatExponentMask) << kSfloatMantissaBits);
     if (sfloat_special(packed)) {
-        return false;
+        return unexpected_status<std::int64_t>(BTSIG_OUT_OF_RANGE);
     }
-    *raw = packed;
-    return true;
+    return packed;
 }
 
-bool decode_medfloat32(std::int64_t raw, double* value) {
+expected<double> decode_medfloat32(std::int64_t raw) {
     if (float_special(raw)) {
-        return false;
+        return unexpected_status<double>(BTSIG_OUT_OF_RANGE);
     }
     // Signed exponent octet, then signed 24-bit mantissa (GHS, Section 1.5).
-    const int mantissa = sign_extend(static_cast<int>(raw & 0x00FFFFFF), 24);
-    const int exponent = sign_extend(static_cast<int>((raw >> 24) & 0xFF), 8);
-    *value = static_cast<double>(mantissa) * decade_power(exponent);
-    return std::isfinite(*value);
+    const int mantissa = sign_extend(static_cast<int>(raw & kFloatMantissaMask), kFloatMantissaBits);
+    const int exponent =
+        sign_extend(static_cast<int>((raw >> kFloatMantissaBits) & kFloatExponentMask), kFloatExponentBits);
+    const double value = static_cast<double>(mantissa) * decade_power(exponent);
+    if (!std::isfinite(value)) {
+        return unexpected_status<double>(BTSIG_OUT_OF_RANGE);
+    }
+    return value;
 }
 
-bool encode_medfloat32(double value, std::int64_t* raw) {
-    int mantissa = 0;
-    int exponent = 0;
-    if (!choose(value, kFloatExponentMin, kFloatExponentMax, kFloatMantissaMin, kFloatMantissaMax, &mantissa,
-                &exponent)) {
-        return false;
+expected<std::int64_t> encode_medfloat32(double value) {
+    if (!std::isfinite(value)) {
+        return unexpected_status<std::int64_t>(BTSIG_INVALID_ARGUMENT);
     }
+    const auto chosen =
+        choose(value, IntRange{kFloatExponentMin, kFloatExponentMax}, IntRange{kFloatMantissaMin, kFloatMantissaMax});
+    if (!chosen) {
+        return unexpected_status<std::int64_t>(chosen.error().status);
+    }
+    int mantissa = chosen.value().mantissa;
+    int exponent = chosen.value().exponent;
     if (mantissa < 0) {
-        mantissa += 1 << 24;
+        mantissa += 1 << kFloatMantissaBits;
     }
     if (exponent < 0) {
-        exponent += 1 << 8;
+        exponent += 1 << kFloatExponentBits;
     }
-    const auto packed =
-        (static_cast<std::int64_t>(mantissa) & 0x00FFFFFF) | ((static_cast<std::int64_t>(exponent) & 0xFF) << 24);
+    const auto packed = (static_cast<std::int64_t>(mantissa) & kFloatMantissaMask) |
+                        ((static_cast<std::int64_t>(exponent) & kFloatExponentMask) << kFloatMantissaBits);
     if (float_special(packed)) {
-        return false;
+        return unexpected_status<std::int64_t>(BTSIG_OUT_OF_RANGE);
     }
-    *raw = packed;
-    return true;
+    return packed;
 }
 
 } // namespace btsig::wire::detail

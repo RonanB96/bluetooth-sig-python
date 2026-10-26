@@ -5,30 +5,30 @@
 
 namespace btsig::wire {
 
-bool decode_real(wire_type type, std::int64_t raw, double* value) {
+expected<double> decode_real(wire_type type, std::int64_t raw) {
     if (type == wire_type::medfloat16) {
-        return detail::decode_medfloat16(raw, value);
+        return detail::decode_medfloat16(raw);
     }
     if (type == wire_type::medfloat32) {
-        return detail::decode_medfloat32(raw, value);
+        return detail::decode_medfloat32(raw);
     }
     if (type == wire_type::float32) {
-        return detail::decode_binary32(raw, value);
+        return detail::decode_binary32(raw);
     }
-    return false;
+    return unexpected_status<double>(BTSIG_INVALID_ARGUMENT);
 }
 
-bool encode_real(wire_type type, double value, std::int64_t* raw) {
+expected<std::int64_t> encode_real(wire_type type, double value) {
     if (type == wire_type::medfloat16) {
-        return detail::encode_medfloat16(value, raw);
+        return detail::encode_medfloat16(value);
     }
     if (type == wire_type::medfloat32) {
-        return detail::encode_medfloat32(value, raw);
+        return detail::encode_medfloat32(value);
     }
     if (type == wire_type::float32) {
-        return detail::encode_binary32(value, raw);
+        return detail::encode_binary32(value);
     }
-    return false;
+    return unexpected_status<std::int64_t>(BTSIG_INVALID_ARGUMENT);
 }
 
 } // namespace btsig::wire
