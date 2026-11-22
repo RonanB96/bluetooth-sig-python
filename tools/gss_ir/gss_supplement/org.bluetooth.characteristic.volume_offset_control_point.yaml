@@ -1,0 +1,35 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Volume Offset Control Service 1.0.1, Section 3.3 Volume Offset Control Point (Tables 3.4–3.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.volume_offset_control_point
+  name: Volume Offset Control Point
+  description: |-
+    The Volume Offset Control Point characteristic is used to request a specific procedure to be executed by the server when a value is written to it.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Opcode
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.volume_offset_control_point/field/opcode}
+    - field: Change_Counter
+      type: uint8
+      size: "1"
+      description: |-
+        Allowed range is 0x00 to 0xFF.
+    - field: Volume_Offset
+      type: sint16
+      size: "0 or 2"
+      description: |-
+        Unit is unitless.
+        Allowed range is -255 to 255.
+        Present if Op Code is 0x01
+  fields:
+    - name: Opcode
+      description: The values of this field are defined below.
+      section_title: Volume Offset Control Point procedure requirements
+      table_caption: Volume Offset Control Point procedure requirements
+      values:
+        - opcode_value: "0x01"
+          opcode: Set Volume Offset
+          requirement: M
+          operand: Change_Counter, Volume_Offset

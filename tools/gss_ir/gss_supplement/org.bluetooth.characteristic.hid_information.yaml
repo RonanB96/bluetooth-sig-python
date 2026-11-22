@@ -1,0 +1,51 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HID Service Specification 1.1, 2.10 HID Information characteristic, Table 2.16.
+characteristic:
+  identifier: org.bluetooth.characteristic.hid_information
+  name: HID Information
+  description: |-
+    The HID Information characteristic is used to hold a set of values known as the HID Device’s HID Attributes. The HID Information characteristic is also used to hold flags that expose optional features of the HID Device.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: bcdHID
+      type: uint16
+      size: "2"
+      description: |-
+        16-bit unsigned integer representing version number of base USB HID Specification implemented by HID Device.
+        See Section 6.1.1 of Device Class Definition for Human Interface Devices (USB HID Specification), Version 1.11 [2].
+    - field: bCountryCode
+      type: uint8
+      size: "1"
+      description: |-
+        8-bit integer identifying country HID Device hardware is localized for. Most hardware is not localized (value 0x00).
+        See Section 6.2.1 of Device Class Definition for Human Interface Devices (USB HID Specification), Version 1.11 [2].
+    - field: Flags
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.hid_information/field/flags}.
+  fields:
+    - name: Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            RemoteWake - Boolean value indicating whether HID Device is capable of sending a wake-signal to a HID Host.
+            0 = FALSE
+            1 = TRUE
+        - bit: "1"
+          description: |-
+            NormallyConnectable - Boolean value indicating whether HID Device will be advertising when bonded but not connected.
+            0 = FALSE
+            1 = TRUE
+        - bit: "2"
+          description: |-
+            SCI Supported - Boolean value indicating whether HID Device supports the HID SCI feature.
+            0 = FALSE
+            1 = TRUE
+        - bit: "3"
+          description: |-
+            SCI Low Power mode supported - Boolean value indicating whether HID Device supports the low power mode.
+            0 = FALSE
+            1 = TRUE
+        - bit: 4–7
+          description: Reserved for Future Use

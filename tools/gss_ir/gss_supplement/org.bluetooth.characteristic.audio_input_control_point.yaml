@@ -1,0 +1,50 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Audio Input Control Service 1.0.1, Section 3.5 (Tables 3.5–3.10).
+characteristic:
+  identifier: org.bluetooth.characteristic.audio_input_control_point
+  name: Audio Input Control Point
+  description: |-
+    The Audio Input Control Point characteristic is used to request a specific procedure to be executed by the server when a value is written to it.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Opcode
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.audio_input_control_point/field/opcode}
+    - field: Change_Counter
+      type: uint8
+      size: "1"
+      description: |-
+        Allowed range is 0x00 to 0xFF.
+    - field: Gain_Setting
+      type: sint8
+      size: "0 or 1"
+      description: |-
+        Allowed range is -128 to 127.
+        Present if Op Code is 0x01
+  fields:
+    - name: Opcode
+      description: The values of this field are defined below.
+      section_title: Audio Input Control Point procedure requirements
+      table_caption: Audio Input Control Point procedure requirements
+      values:
+        - opcode_value: "0x01"
+          opcode: Set Gain Setting
+          requirement: M
+          operand: Change_Counter, Gain_Setting
+        - opcode_value: "0x02"
+          opcode: Unmute
+          requirement: M
+          operand: Change_Counter
+        - opcode_value: "0x03"
+          opcode: Mute
+          requirement: M
+          operand: Change_Counter
+        - opcode_value: "0x04"
+          opcode: Set Manual Gain Mode
+          requirement: M
+          operand: Change_Counter
+        - opcode_value: "0x05"
+          opcode: Set Automatic Gain Mode
+          requirement: M
+          operand: Change_Counter

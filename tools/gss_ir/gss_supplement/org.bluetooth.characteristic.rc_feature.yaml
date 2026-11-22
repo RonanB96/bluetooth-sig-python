@@ -1,0 +1,77 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Reconnection Configuration Service 1.0.1, Section 3.1 RC Feature (Tables 3.2–3.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.rc_feature
+  name: RC Feature
+  description: |-
+    The RC Feature characteristic shall be used to describe the supported features of the Reconnection Configuration server.
+    Support for this characteristic is mandatory.
+    Reserved for Future Use (RFU) bits in the RC Feature characteristic value shall be set to 0.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: E2E-CRC
+      type: uint16
+      size: "2"
+      description: |-
+        If the device supports E2E-safety (E2E-CRC Supported bit is set in RC Feature), the RC Feature field shall be protected by a CRC calculated over all data but the CRC field itself. See \autoref{sec:crc_calculation} for details.
+        If the device does not support E2E-safety, this E2E-CRC field shall be set to 0xFFFF.
+        A value of 0xFFFF represents "E2E-safety is not supported".
+        If E2E-safety is supported and an error occurs, the error codes as defined in Section 1.7 shall be used.
+    - field: RC Feature
+      type: boolean[24]
+      size: 3+n*
+      description: |-
+        The bits of the RC Feature field shall be static during a connection.
+        When the Reconnection Configuration server supports a feature, the associated bit of the RC Feature characteristic shall be set to 1 (Feature supported), otherwise, the associated bit shall be set to 0 (Feature not supported).
+        See \autoref{sec:org.bluetooth.characteristic.rc_feature/field/rc_feature}.
+        If Feature Extension bit(s) is set to "1", the number of octets increases.
+  fields:
+    - name: RC Feature
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: E2E-CRC Supported
+        - bit: "1"
+          description: Enable Disconnect Supported
+        - bit: "2"
+          description: Ready for Disconnect Supported
+        - bit: "3"
+          description: Propose Reconnection Timeout Supported
+        - bit: "4"
+          description: Propose Connection Interval Supported
+        - bit: "5"
+          description: Propose Peripheral Latency Supported
+        - bit: "6"
+          description: Propose Supervision Timeout Supported
+        - bit: "7"
+          description: Propose Advertisement Interval Supported
+        - bit: "8"
+          description: Propose Advertisement Count Supported
+        - bit: "9"
+          description: Propose Advertisement Repetition Time Supported
+        - bit: "10"
+          description: Advertisement Configuration 1 Supported
+        - bit: "11"
+          description: Advertisement Configuration 2 Supported
+        - bit: "12"
+          description: Advertisement Configuration 3 Supported
+        - bit: "13"
+          description: |-
+            Advertisement Configuration 4 Supported
+            If Advertisement Configuration 4 is supported, compatibility to Bluetooth Core Specification, v4.1 is Mandatory.
+        - bit: "14"
+          description: |-
+            Upgrade to LESC Only Supported
+            If Upgrade to LESC Only is supported, compatibility to Bluetooth Core Specification, v4.2 is Mandatory.
+        - bit: "15"
+          description: Next Pairing OOB Supported
+        - bit: "16"
+          description: Use of Filter Accept List Supported
+        - bit: "17"
+          description: Limited Access Supported
+        - bit: 18–22
+          description: RFU
+        - bit: "23"
+          description: |-
+            Feature Extension
+            If the Feature Extension bit (bit 23) is set, an additional octet is attached (bit 24 .. bit 31), where bit 31 shall be used as Feature Extension bit in the same way. If this bit is set, then another octet is attached (bit 32 .. bit 39) and so on. This is defined to allow future extension of the characteristic.

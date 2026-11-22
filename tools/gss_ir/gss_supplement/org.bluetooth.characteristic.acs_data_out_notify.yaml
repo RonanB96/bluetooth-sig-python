@@ -1,0 +1,62 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Authorization Control Service 1.0, 4.3 ACS Data Out Notify (Tables 4.8–4.10; 4.1.1.1 Table 4.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.acs_data_out_notify
+  name: ACS Data Out Notify
+  description: |-
+    The ACS Data Out Notify characteristic shall be used by the AC Server to send secure responses from protected GATT resources as notifications. The ACS Data Out Notify characteristic is used for a secure response when the protected resource issues a notification or a read response.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Segmentation_Header
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.acs_data_out_notify/field/segmentation_header}.
+    - field: Payload
+      type: struct
+      size: Variable
+      description: See \autoref{sec:org.bluetooth.characteristic.acs_data_out_notify/field/payload}.
+  fields:
+    - name: Segmentation_Header
+      description: |-
+        The Segmentation_Header field includes information to assist with flow control.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            First Segment
+            If this bit is set to a value of 1, this segment of the segmented payload is the first segment.
+        - bit: "1"
+          description: |-
+            Last Segment
+            If this bit is set to a value of 1, this segment of the segmented payload is the last segment.
+        - bit: 2–7
+          description: |-
+            Rolling Segment Counter
+            These bits represent an unsigned integer value between 0 to 63 and count segments. The Rolling Segment Counter is incremented by one continuously with each segment. If the Rolling Segment Counter is equal to 63, it rolls over to 0 when it is next incremented.
+    - name: Payload
+      description: The structure of this field is defined below.
+      values:
+        - field: Information_Security_Configuration_ID
+          data_type: uint16
+          size: "2"
+          description: |-
+            The Information_Security_Configuration_ID field value defines the ID of the information security configuration that describes the order and the type of security controls used within the Secure_Data field of the Payload field.
+        - field: Secure_Data
+          data_type: struct
+          size: Variable
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_data_out_notify/field/secure_data}.
+    - name: Secure_Data
+      description: |-
+        The Secure_Data field consists of the secure data exchanged where the order and the type of the included security controls are defined in the Information_Security_Configuration_ID field.
+        When the information security control is any of the protected resource request or response type security controls, the structure of this field is defined below.
+      values:
+        - field: Protected_Resource_Handle
+          data_type: uint16
+          size: "2"
+          description: The Protected_Resource_Handle field value defines the protected resource to which the secure request is intended or the source of the secure response.
+        - field: Request_Or_Response
+          data_type: struct
+          size: Variable
+          description: |-
+            The Request_Or_Response field value consists of the secure write request for, or the secure response from, the protected resource. A secure write request or secure response consists of the payload for the protected resource and applicable information security controls as defined by the information security configuration descriptor.
+            Present if the value is a secure response from the protected resource or a secure write request to the protected resource value

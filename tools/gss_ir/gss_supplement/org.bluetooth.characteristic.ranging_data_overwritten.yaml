@@ -1,0 +1,15 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Ranging Service 1.0, Section 3.5 Ranging Data Overwritten (Table 3.15).
+characteristic:
+  identifier: org.bluetooth.characteristic.ranging_data_overwritten
+  name: Ranging Data Overwritten
+  description: |-
+    The Ranging Data Overwritten characteristic shall be used when the RAS Server is configured to operate in the On-demand Ranging Data mode and pending unread Ranging Data is overwritten by new Ranging Data.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Ranging Counter
+      type: uint16
+      size: "2"
+      description: |-
+        Ranging Counter of the CS Ranging Data that was overwritten.
+        If the RAS Server supports the read operation for the Ranging Data Overwritten characteristic, then the Ranging Counter value shall be the Ranging Counter of the most recent CS Procedure for which Ranging Data was overwritten. If no Ranging Data was overwritten during the connection, then the Ranging Counter value shall be 0.

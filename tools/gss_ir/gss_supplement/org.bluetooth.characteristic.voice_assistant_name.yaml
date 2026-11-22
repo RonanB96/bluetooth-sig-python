@@ -1,0 +1,15 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Voice Assistant Service 1.0, Section 3.1.
+characteristic:
+  identifier: org.bluetooth.characteristic.voice_assistant_name
+  name: Voice Assistant Name
+  description: |-
+    The Voice Assistant Name characteristic is configured by the VA. The VA vendor is responsible for selecting the value. For example, this characteristic could have the string, "Norman's Voice Assistant".
+    The characteristic is an 8-bit UCS/UTF-8 encoded, human-readable text string.
+    The Voice Assistant Name characteristic shall be a non-empty value for each instance of VAS.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Voice Assistant Name
+      type: utf8s
+      size: variable
+      description: UTF-8 string

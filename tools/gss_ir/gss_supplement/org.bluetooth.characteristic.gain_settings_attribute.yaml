@@ -1,0 +1,27 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Audio Input Control Service 1.0.1, Section 3.2 Gain Setting Properties (Table 3.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.gain_settings_attribute
+  name: Gain Settings Attribute
+  description: |-
+    The Gain Setting Properties characteristic shall be set to a value that reflects the limits and units of the Gain_Setting field value.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Gain_Setting_Units
+      type: uint8
+      size: "1"
+      description: |-
+        Unit is decibel with a resolution of 0.1.
+        Size of a single increment or decrement of the Gain_Setting value.
+    - field: Gain_Setting_Minimum
+      type: sint8
+      size: "1"
+      description: |-
+        Minimum allowable value of the Gain_Setting field value of this service, including the value of the operand used in Section 3.5.2.1.
+        The Gain_Setting_Minimum field value shall be less than or equal to the Gain_Setting_Maximum field value.
+    - field: Gain_Setting_Maximum
+      type: sint8
+      size: "1"
+      description: |-
+        Maximum allowable value of the Gain_Setting field value of this service, including the value of the operand used in Section 3.5.2.1.
+        The Gain_Setting_Maximum field value shall be greater than or equal to the Gain_Setting_Minimum field value.

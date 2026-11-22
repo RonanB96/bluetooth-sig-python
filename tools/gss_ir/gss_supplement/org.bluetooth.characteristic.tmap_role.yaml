@@ -1,0 +1,49 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Telephony and Media Audio Profile 1.0.2, 4.7.1 TMAP Role (Tables 4.3–4.4).
+characteristic:
+  identifier: org.bluetooth.characteristic.tmap_role
+  name: TMAP Role
+  description: |-
+    The TMAP Role characteristic exposes the TMAP role(s) supported by the TMA Server.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Role
+      type: boolean[16]
+      size: "2"
+      description: See \autoref{sec:org.bluetooth.characteristic.tmap_role/field/role}.
+  fields:
+    - name: Role
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Call Gateway (CG)
+            0 = Server does not support CG
+            1 = Server supports CG
+        - bit: "1"
+          description: |-
+            Call Terminal (CT)
+            0 = Server does not support CT
+            1 = Server supports CT
+        - bit: "2"
+          description: |-
+            Unicast Media Sender (UMS)
+            0 = Server does not support UMS
+            1 = Server supports UMS
+        - bit: "3"
+          description: |-
+            Unicast Media Receiver (UMR)
+            0 = Server does not support UMR
+            1 = Server supports UMR
+        - bit: "4"
+          description: |-
+            Broadcast Media Sender (BMS)
+            0 = Server does not support BMS
+            1 = Server supports BMS
+        - bit: "5"
+          description: |-
+            Broadcast Media Receiver (BMR)
+            0 = Server does not support BMR
+            1 = Server supports BMR
+        - bit: 6–15
+          description: Reserved for Future Use

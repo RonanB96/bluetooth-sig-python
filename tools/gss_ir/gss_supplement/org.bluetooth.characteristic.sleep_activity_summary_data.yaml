@@ -1,0 +1,278 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Physical Activity Monitor Service 1.0, Section 3.8.
+characteristic:
+  identifier: org.bluetooth.characteristic.sleep_activity_summary_data
+  name: Sleep Activity Summary Data
+  description: |-
+    The Sleep Activity Summary Data characteristic is used to send session/sub-session summary-type data to the client (see the definition of summary data in Section 2.2). The data is related to measurements that are typically supported by physical activity monitors that have sleep-monitoring capabilities.
+    The characteristic value is of variable length, ranging up to 68 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Header
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.sleep_activity_summary_data/field/header}.
+    - field: Flags
+      type: boolean[24]
+      size: 0 or 3
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.sleep_activity_summary_data/field/flags}.
+        Mandatory if no segmentation into multiple indications is used.
+        Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+    - field: Session ID
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Session ID field represents the physical activity session identifier to which the data is related.
+        Mandatory if no segmentation into multiple indications is used.
+        Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+    - field: Sub-session ID
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Sub-session ID field represents the physical activity sub-session identifier to which the data is related. The value 0xFFFF is reserved to denote that the data in the characteristic relates to an entire session (i.e., including all its sub-sessions).
+        Mandatory if no segmentation into multiple indications is used.
+        Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+    - field: Relative Timestamp
+      type: uint32
+      size: 0 or 4
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Relative Timestamp field represents the data time stamp that is included in the Sleep Activity Summary Data characteristic. The time stamp is represented as the elapsed number of seconds since the start of the physical activity session that is denoted in the Session ID field.
+        Mandatory if no segmentation into multiple indications is used.
+        Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+    - field: Sequence Number
+      type: uint32
+      size: 0 or 4
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Sequence Number field represents the data sequence number that is included in the Sleep Activity Summary Data characteristic.
+        Sequence Number field values are assigned by the server in an implementation-specific manner that facilitates the correct data organization on the client side. Sequence Number field values should be incremented by 1 every time their respective data characteristic is updated and should roll over to 0x00000000 after the maximum value 0xFFFFFFFF is reached.
+        Mandatory if no segmentation into multiple indications is used.
+        Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+    - field: Total Sleep Time
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Total Sleep Time field represents the amount of time the user was sleeping during the (sleep) physical activity session/sub-session.
+        Present if bit 0 of Flags field is set to 1
+    - field: Total Wake Time
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Total Wake Time field represents the amount of time the user was awake during the (sleep) physical activity session/sub-session.
+        Present if bit 1 of Flags field is set to 1
+    - field: Total Bed Time
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Total Bed Time field represents the amount of time the user was in bed during the (sleep) physical activity session/sub-session.
+        Present if bit 2 of Flags field is set to 1
+    - field: Number of Awakenings
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Number of Awakenings field represents the number of awakenings the user experienced during the (sleep) physical activity session/sub-session.
+        Present if bit 3 of Flags field is set to 1
+    - field: Sleep Latency
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Sleep Latency field represents the amount of time the user required to fall asleep during the (sleep) physical activity session/sub-session.
+        Present if bit 4 of Flags field is set to 1
+    - field: Sleep Efficiency
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Unit: org.bluetooth.unit.percentage
+        The Sleep Efficiency field represents the ratio of total sleep time compared to total bed time during the (sleep) physical activity session/sub-session.
+        Present if bit 5 of Flags field is set to 1
+    - field: Snooze Time
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Snooze Time field represents the amount of time during which the wake-up alarm repetition was delayed during the (sleep) physical activity session/sub-session.
+        Present if bit 6 of Flags field is set to 1
+    - field: Number of Toss-&-turn Events
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Number of Toss-&-turn Events field represents the number of times the user changed posture in bed attempting to fall asleep during the (sleep) physical activity session/sub-session.
+        Present if bit 7 of Flags field is set to 1
+    - field: Time of Awakening After Alarm
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Time of Awakening After Alarm represents the amount of time the user spent in bed after the wake-up alarm during the (sleep) physical activity session/sub-session.
+        Present if bit 8 of Flags field is set to 1
+    - field: Minimum Visible Light Level
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Base Unit: org.bluetooth.unit.illuminance.lux
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 0.01 lux
+        The Minimum Visible Light Level field represents the minimum amount of visible light to which the user was exposed during the (sleep) physical activity session/sub-session.
+        Present if bit 9 of Flags field is set to 1
+    - field: Maximum Visible Light Level
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Base Unit: org.bluetooth.unit.illuminance.lux
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 0.01 lux
+        The Maximum Visible Light Level field represents the maximum amount of visible light to which the user was exposed during the (sleep) physical activity session/sub-session.
+        Present if bit 10 of Flags field is set to 1
+    - field: Average Visible Light Level
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Base Unit: org.bluetooth.unit.illuminance.lux
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 0.01 lux
+        The Average Visible Light Level field represents the average amount of visible light to which the user was exposed during the (sleep) physical activity session/sub-session.
+        Present if bit 11 of Flags field is set to 1
+    - field: Minimum UV Light Level
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Base Unit: org.bluetooth.unit.illuminance.lux
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 0.01 lux
+        The Minimum UV Light Level field represents the minimum amount of UV light to which the user was exposed during the (sleep) physical activity session/sub-session.
+        Present if bit 12 of Flags field is set to 1
+    - field: Maximum UV Light Level
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Base Unit: org.bluetooth.unit.illuminance.lux
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 0.01 lux
+        The Maximum UV Light Level field represents the maximum amount of UV light to which the user was exposed during the (sleep) physical activity session/sub-session.
+        Present if bit 13 of Flags field is set to 1
+    - field: Average UV Light Level
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Base Unit: org.bluetooth.unit.illuminance.lux
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 0.01 lux
+        The Average UV Light Level field represents the average amount of UV light to which the user was exposed during the (sleep) physical activity session/sub-session.
+        Present if bit 14 of Flags field is set to 1
+    - field: Minimum IR Light Level
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Base Unit: org.bluetooth.unit.illuminance.lux
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 0.01 lux
+        The Minimum IR Light Level field represents the minimum amount of IR light to which the user was exposed during the (sleep) physical activity session/sub-session.
+        Present if bit 15 of Flags field is set to 1
+    - field: Maximum IR Light Level
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Base Unit: org.bluetooth.unit.illuminance.lux
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 0.01 lux
+        The Maximum IR Light Level field represents the maximum amount of IR light to which the user was exposed during the (sleep) physical activity session/sub-session.
+        Present if bit 16 of Flags field is set to 1
+    - field: Average IR Light Level
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Base Unit: org.bluetooth.unit.illuminance.lux
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 0.01 lux
+        The Average IR Light Level field represents the average amount of IR light to which the user was exposed during the (sleep) physical activity session/sub-session.
+        Present if bit 17 of Flags field is set to 1
+    - field: Average Sleeping Heart Rate
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        The Average Sleeping Heart Rate field represents the user's average heart rate during sleep in the (sleep) physical activity session/sub-session.
+        Present if bit 18 of Flags field is set to 1
+    - field: Worn Duration
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Worn Duration field represents the total amount of time within the physical activity session/sub-session that the user has worn the Physical Activity Monitor (as detected and calculated by the Physical Activity Monitor).
+        Present if bit 19 of Flags field is set to 1
+  fields:
+    - name: Header
+      description: |-
+        The Header field and its use are described in Section 2.4.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            First Segment
+            The First Segment bit identifies the first segment of a segmented Data Record.
+        - bit: "1"
+          description: |-
+            Last Segment
+            The Last Segment bit identifies the last segment of a segmented Data Record.
+        - bit: 2–7
+          description: |-
+            Rolling Segment Counter
+            The Rolling Segment Counter bits are used to enable the client to correctly reconstruct a segmented Data Record.
+    - name: Flags
+      description: |-
+        When the server includes a given data field, the associated bit of the Flags field shall be set to 1 (field present); otherwise, the associated bit shall be set to 0 (field not present).
+        If a given bit in the Physical Activity Monitor Features characteristic is set to 0, then the corresponding Flags field bit(s) shall be set to 0 and the associated field(s) shall not be present in the Sleep Activity Summary Data characteristic.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Total Sleep Time Present
+        - bit: "1"
+          description: Total Wake Time Present
+        - bit: "2"
+          description: Total Bed Time Present
+        - bit: "3"
+          description: Number of Awakenings Present
+        - bit: "4"
+          description: Sleep Latency Present
+        - bit: "5"
+          description: Sleep Efficiency Present
+        - bit: "6"
+          description: Snooze Time Present
+        - bit: "7"
+          description: Number of Toss-&-turn Events Present
+        - bit: "8"
+          description: Time of Awakening After Alarm Present
+        - bit: "9"
+          description: Minimum Visible Light Level Present
+        - bit: "10"
+          description: Maximum Visible Light Level Present
+        - bit: "11"
+          description: Average Visible Light Level Present
+        - bit: "12"
+          description: Minimum UV Light Level Present
+        - bit: "13"
+          description: Maximum UV Light Level Present
+        - bit: "14"
+          description: Average UV Light Level Present
+        - bit: "15"
+          description: Minimum IR Light Level Present
+        - bit: "16"
+          description: Maximum IR Light Level Present
+        - bit: "17"
+          description: Average IR Light Level Present
+        - bit: "18"
+          description: Average Sleeping Heart Rate Present
+        - bit: "19"
+          description: Worn Duration Present
+        - bit: 20–23
+          description: RFU

@@ -1,0 +1,27 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Authorization Control Service 1.0, 4.2 ACS Status (Tables 4.6–4.7).
+characteristic:
+  identifier: org.bluetooth.characteristic.acs_status
+  name: ACS Status
+  description: |-
+    The ACS Status characteristic describes the status of the AC Server. The ACS Status characteristic includes the status flag (i.e., security control status, security establishment status) and current restriction map ID.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Status_Flags
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.acs_status/field/status_flags}.
+    - field: Current_Restriction_Map_ID
+      type: uint16
+      size: "2"
+      description: The ID of the current (i.e., at this point in time active) restriction map.
+  fields:
+    - name: Status_Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Security Controls Switch
+        - bit: "1"
+          description: Security Established
+        - bit: 2–7
+          description: Reserved for Future Use

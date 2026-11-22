@@ -1,0 +1,96 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Physical Activity Monitor Service 1.0, Section 3.11 (Tables 3.33–3.34).
+characteristic:
+  identifier: org.bluetooth.characteristic.physical_activity_session_descriptor
+  name: Physical Activity Session Descriptor
+  description: |-
+    The Physical Activity Session Descriptor characteristic is used to send information related to a session/sub-session that is not necessarily the session currently running.
+    The characteristic value is of variable length, ranging up to 17 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Flags
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.physical_activity_session_descriptor/field/flags}.
+    - field: Session ID
+      type: uint16
+      size: "2"
+      description: |-
+        Unit is unitless.
+        The Session ID field represents the identifier of the described physical activity session.
+    - field: Session Start Base Time
+      type: uint32
+      size: "0 or 4"
+      description: |-
+        Unit is second.
+        The value represents the base time of a synchronized time source in seconds since midnight of January 1, 2000 (00:00:00 January 1, 2000).
+        Present if bit 0 of Flags field is set to 1
+    - field: Session Start Time Offset
+      type: sint16
+      size: "0 or 2"
+      description: |-
+        Unit is minute.
+        Present if bit 0 of Flags field is set to 1
+    - field: Session End Base Time
+      type: uint32
+      size: "0 or 4"
+      description: |-
+        Unit is second.
+        Present if bit 0 of Flags field is set to 1 and bit 1 of Flags field is set to 0
+    - field: Session End Time Offset
+      type: sint16
+      size: "0 or 2"
+      description: |-
+        Unit is minute.
+        Present if bit 0 of Flags field is set to 1 and bit 1 of Flags field is set to 0
+    - field: Sub-session ID
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit is unitless.
+        Present if bit 0 of Flags field is set to 0
+    - field: Sub-session Start Base Time
+      type: uint32
+      size: "0 or 4"
+      description: |-
+        Unit is second.
+        Present if bit 0 of Flags field is set to 0
+    - field: Sub-session Start Time Offset
+      type: sint16
+      size: "0 or 2"
+      description: |-
+        Unit is minute.
+        Present if bit 0 of Flags field is set to 0
+    - field: Sub-session End Base Time
+      type: uint32
+      size: "0 or 4"
+      description: |-
+        Unit is second.
+        Present if bit 0 of Flags field is set to 0 and bit 1 of Flags field is set to 0
+    - field: Sub-session End Time Offset
+      type: sint16
+      size: "0 or 2"
+      description: |-
+        Unit is minute.
+        Present if bit 0 of Flags field is set to 0 and bit 1 of Flags field is set to 0
+  fields:
+    - name: Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Describes Session
+            0 = Characteristic describes a sub-session
+            1 = Characteristic describes a session
+        - bit: "1"
+          description: |-
+            Session/Sub-session Running
+            0 = Session/sub-session is not running
+            1 = Session/sub-session is currently running
+        - bit: "2"
+          description: |-
+            Deleted Session
+            0 = Session has not been deleted
+            1 = Characteristic describes (or refers to) a session that has been deleted
+        - bit: 3–7
+          description: Reserved for Future Use

@@ -1,0 +1,47 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Telephone Bearer Service 1.0, Section 3.14.
+characteristic:
+  identifier: org.bluetooth.characteristic.termination_reason
+  name: Termination Reason
+  description: |-
+    The Termination Reason characteristic is 2 octets, with the first octet being the Call Index of the call that was terminated and the second octet containing a Reason Code that describes the way a call was terminated from the remote end or from the server. The format of the characteristic is shown in Table 3.13 and the Reason Codes are defined in Table 3.14.
+    When the call is ended, the server shall populate the Termination Reason characteristic. If the value of the Client Characteristic Configuration descriptor is configured for notification, then the server shall send a notification to the client when there is a change in the characteristic value.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Call Index
+      type: uint8
+      size: "1"
+      description: |-
+        Identifies the call that was terminated.
+        Allowed range is: 1 to 255.
+        A value of 0 is reserved.
+    - field: Reason Code
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.termination_reason/field/reason_code}.
+  fields:
+    - name: Reason Code
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: The URI value used to originate a call was formed improperly.
+        - value: "0x01"
+          description: The call failed.
+        - value: "0x02"
+          description: The remote party ended the call.
+        - value: "0x03"
+          description: The call ended from the server.
+        - value: "0x04"
+          description: The line was busy.
+        - value: "0x05"
+          description: Network congestion.
+        - value: "0x06"
+          description: The client terminated the call.
+        - value: "0x07"
+          description: No service.
+        - value: "0x08"
+          description: No answer.
+        - value: "0x09"
+          description: Unspecified.
+        - value: 0x0A–0xFF
+          description: RFU

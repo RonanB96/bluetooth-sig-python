@@ -1,0 +1,24 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Core Specification 4.0, Vol 3, Part C, 12.3 Peripheral Privacy Flag characteristic (Table 12.4).
+# Note: removed from the GAP Service characteristic set in Core Specification 4.2 and later (including 6.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.gap.peripheral_privacy_flag
+  name: Peripheral Privacy Flag
+  description: |-
+    The Peripheral Privacy Flag characteristic defines whether privacy is currently in use within this device.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Peripheral Privacy Flag
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.gap.peripheral_privacy_flag/field/peripheral_privacy_flag}.
+  fields:
+    - name: Peripheral Privacy Flag
+      description: The values of this field are defined below.
+      values:
+        - value: "0"
+          description: privacy is disabled in this device
+        - value: "1"
+          description: privacy is enabled in this device
+        - value: 2–255
+          description: Reserved

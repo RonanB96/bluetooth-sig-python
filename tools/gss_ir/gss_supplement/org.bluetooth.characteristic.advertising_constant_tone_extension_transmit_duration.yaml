@@ -1,0 +1,17 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Constant Tone Extension Service 1.0, 3.4 Advertising Constant Tone Extension Transmit Duration (Table 3.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.advertising_constant_tone_extension_transmit_duration
+  name: Advertising Constant Tone Extension Transmit Duration
+  description: |-
+    The Advertising Constant Tone Extension Transmit Duration characteristic is a control-point attribute that stores the duration for which the server transmits packets containing a Constant Tone Extension on the advertising channels.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Advertising Constant Tone Extension Transmit Duration
+      type: uint8
+      size: "1"
+      description: |-
+        The time duration for which the server transmits packets containing a Constant Tone Extension on the advertising channels is given by the value 1.1\textsuperscript{N-64} in seconds, with N being the raw 8-bit value.
+        Range: 0 to 255
+        Time Range: 2467 µs to 80,538,375 s
+        A raw value of 0 means an indefinite time duration.

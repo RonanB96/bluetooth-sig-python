@@ -1,0 +1,16 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, Section 3.9.
+characteristic:
+  identifier: org.bluetooth.characteristic.seeking_speed
+  name: Seeking Speed
+  description: |-
+    The Seeking Speed characteristic exposes the seeking speed of the current track. The value of this characteristic shall be a signed 8-bit integer, which is the current multiple of the real-time playback speed at which the track is being fast forwarded or fast rewound. ("Real-time" is the point at which p=0 in the Playback Speed characteristic calculation.) Fast forward is a positive current track-seeking speed. Fast rewind is a negative current track-seeking speed. If the media player is not seeking, the value of this characteristic shall be 0. During seeking, the current track audio may not be used, and the track position is handled as described in Section 3.7.1.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Seeking Speed
+      type: sint8
+      size: "1"
+      description: |-
+        Current multiple of the real-time playback speed at which the track is being fast forwarded or fast rewound.
+        Fast forward is a positive current track-seeking speed. Fast rewind is a negative current track-seeking speed.
+        A value of 0 represents "not seeking".

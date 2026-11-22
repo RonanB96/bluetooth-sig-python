@@ -1,0 +1,554 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Insulin Delivery Service 1.0.2, 4.5 IDD Status Reader Control Point (Tables 4.13–4.34).
+characteristic:
+  identifier: org.bluetooth.characteristic.idd_status_reader_control_point
+  name: IDD Status Reader Control Point
+  description: |-
+    This control point is used with a service to provide the ability to read detailed therapy relevant status information from an Insulin Delivery Device.
+    The Server shall confirm the end of an executed procedure by indicating the IDD Status Reader Control Point.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Op Code
+      type: uint16
+      size: "2"
+      description: See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/op_code_and_operand}.
+    - field: Operand
+      type: struct
+      size: 0 to 15
+      description: See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/op_code_and_operand}.
+    - field: E2E-Counter
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+    - field: E2E-CRC
+      type: uint16
+      size: 0 or 2
+      description: |-
+        CRC calculated over all fields of the characteristic payload, including the E2E-Counter field, except for the E2E-CRC field itself.
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+  fields:
+    - name: Op Code and Operand
+      description: The values of these fields are defined below.
+      section_title: IDD Status Reader CP Op Codes
+      table_caption: IDD Status Reader CP Op Codes
+      values:
+        - op_code_value: 0x0000–0x00FF
+          definition: Prohibited
+          operand_section: N/A
+          description: Reserved for IDD RACP and therefore prohibited
+        - op_code_value: 0x0100–0x0302
+          definition: Prohibited
+          operand_section: N/A
+          description: Prohibited to keep Hamming distance of CP Op Codes in Insulin Delivery Service
+        - op_code_value: "0x0303"
+          definition: Response Code
+          operand_section: 4.5.2.1
+          description: See Section 4.5.2.1
+        - op_code_value: "0x030C"
+          definition: Reset Status
+          operand_section: 4.5.2.2
+          description: Resets the status exposed by the IDD Status Changed characteristic. The response to this control point is Response Code.
+        - op_code_value: "0x0330"
+          definition: Get Active Bolus IDs
+          operand_section: N/A
+          description: Gets the IDs of all Active Boluses (up to 7 Bolus IDs can be retrieved). The normal response to this control point is Get Active Bolus IDs Response. For error conditions, the response is Response Code.
+        - op_code_value: "0x033F"
+          definition: Get Active Bolus IDs Response
+          operand_section: 4.5.2.4
+          description: This is the normal response to Get Active Bolus IDs.
+        - op_code_value: "0x0356"
+          definition: Get Active Bolus Delivery
+          operand_section: 4.5.2.5
+          description: Gets information about an Active Bolus identified by the given ID. The normal response to this control point is Get Active Bolus Delivery Response. For error conditions, the response is Response Code.
+        - op_code_value: "0x0359"
+          definition: Get Active Bolus Delivery Response
+          operand_section: 4.5.2.6
+          description: This is the normal response to Get Active Bolus Delivery.
+        - op_code_value: "0x0365"
+          definition: Get Active Basal Rate Delivery
+          operand_section: N/A
+          description: Gets the current active basal rate setting, including the TBR. The normal response to this control point is Get Active Basal Rate Delivery Response. For error conditions, the response is Response Code.
+        - op_code_value: "0x036A"
+          definition: Get Active Basal Rate Delivery Response
+          operand_section: 4.5.2.8
+          description: This is the normal response to Get Active Basal Rate Delivery.
+        - op_code_value: "0x0395"
+          definition: Get Total Daily Insulin Status
+          operand_section: N/A
+          description: Gets the total daily delivered bolus and basal insulin from midnight until now. When the day is done and as soon as midnight is reached, the total daily delivered amounts are reset. The normal response to this control point is Get Total Daily Insulin Status Response. For error conditions, the response is Response Code.
+        - op_code_value: "0x039A"
+          definition: Get Total Daily Insulin Status Response
+          operand_section: 4.5.2.10
+          description: This is the normal response to Get Total Daily Insulin Status.
+        - op_code_value: "0x03A6"
+          definition: Get Counter
+          operand_section: 4.5.2.11
+          description: Gets the value about an internal counter of the Insulin Delivery Device (e.g., the remaining warranty). The normal response to this control point is Get Counter Response. For error conditions, the response is Response Code.
+        - op_code_value: "0x03A9"
+          definition: Get Counter Response
+          operand_section: 4.5.2.12
+          description: This is the normal response to procedure Get Counter.
+        - op_code_value: "0x03C0"
+          definition: Get Delivered Insulin
+          operand_section: 4.5.2.13
+          description: Gets the delivered amount of bolus and basal insulin since the last rollover of these amounts. The Server rollover behavior shall be defined per Service. The normal response to this control point is Get Delivered Insulin Response. For error conditions, the response is Response Code.
+        - op_code_value: "0x03CF"
+          definition: Get Delivered Insulin Response
+          operand_section: 4.5.2.14
+          description: This is the normal response to procedure Get Delivered Insulin.
+        - op_code_value: "0x03F3"
+          definition: Get Insulin On Board
+          operand_section: N/A
+          description: Gets the insulin on board, which has been delivered by the Insulin Delivery Device. The normal response to this control point is Get Insulin On Board Response. For error conditions, the response is Response Code.
+        - op_code_value: "0x03FC"
+          definition: Get Insulin On Board Response
+          operand_section: 4.5.2.15
+          description: This is the normal response to procedure Get Insulin On Board.
+        - op_code_value: 0x03FD–0x0504
+          definition: Prohibited
+          operand_section: N/A
+          description: Prohibited to keep Hamming distance of CP Op Codes in Insulin Delivery Service
+        - op_code_value: 0x0505–0x0F3C
+          definition: RFU
+          operand_section: N/A
+          description: Hamming code values reserved for IDD Status Reader CP
+        - op_code_value: 0x0F3D–0x0F54
+          definition: Prohibited
+          operand_section: N/A
+          description: Prohibited to keep Hamming distance of CP Op Codes in Insulin Delivery Service
+        - op_code_value: 0x0F55–0x1B7D
+          definition: Prohibited
+          operand_section: N/A
+          description: Reserved for IDD Command CP and therefore prohibited
+        - op_code_value: All not already defined Hamming code values within 0x0000 and 0xFFFF
+          definition: RFU
+          operand_section: N/A
+          description: All values in this table which are not defined above and do match a Hamming code value in the range of 0x0000 and 0xFFFF are reserved for future use.
+        - op_code_value: All other values
+          definition: Prohibited
+          operand_section: N/A
+          description: All values not defined above are prohibited.
+    - name: Response Code Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Request Op Code
+          data_type: uint16
+          size: "2"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/op_code_and_operand}.
+        - field: Response Code Value
+          data_type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/response_code_values}.
+    - name: Response Code Values
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Success
+        - value: "0x70"
+          description: Op Code not supported
+        - value: "0x71"
+          description: Invalid Operand
+        - value: "0x72"
+          description: Procedure not completed
+        - value: "0x73"
+          description: Parameter out of range
+        - value: "0x74"
+          description: Procedure not applicable
+        - value: All not already defined values with a Hamming distance of 4 bits to 0x0F
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Reset Status Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          data_type: boolean[16]
+          size: "2"
+          description: Refer to the IDD Status Changed characteristic in \autoref{sec:org.bluetooth.characteristic.idd_status_changed}.
+    - name: Get Active Bolus Delivery Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Bolus ID
+          data_type: uint16
+          size: "2"
+          description: The Bolus ID field represents a unique identifier as a uint16 data type created by the Server Application for a programmed bolus.
+        - field: Bolus Value Selection
+          data_type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/bolus_value_selection}.
+    - name: Bolus Value Selection
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Programmed
+        - value: "0x33"
+          description: Remaining
+        - value: "0x3C"
+          description: Delivered
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Get Active Bolus IDs Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Number of Active Boluses
+          data_type: uint8
+          size: "1"
+          description: The number of currently Active Boluses.
+        - field: Bolus ID1
+          data_type: uint16
+          size: 0 or 2
+          description: Present if at least 1 bolus is active, otherwise excluded.
+        - field: Bolus ID2
+          data_type: uint16
+          size: 0 or 2
+          description: Present if at least 2 boluses are active, otherwise excluded.
+        - field: Bolus ID3
+          data_type: uint16
+          size: 0 or 2
+          description: Present if at least 3 boluses are active, otherwise excluded.
+        - field: Bolus ID4
+          data_type: uint16
+          size: 0 or 2
+          description: Present if at least 4 boluses are active, otherwise excluded.
+        - field: Bolus ID5
+          data_type: uint16
+          size: 0 or 2
+          description: Present if at least 5 boluses are active, otherwise excluded.
+        - field: Bolus ID6
+          data_type: uint16
+          size: 0 or 2
+          description: Present if at least 6 boluses are active, otherwise excluded.
+        - field: Bolus ID7
+          data_type: uint16
+          size: 0 or 2
+          description: Present if at least 7 boluses are active, otherwise excluded.
+    - name: Get Active Bolus Delivery Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          data_type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/get_active_bolus_delivery_response_operand_flags}.
+        - field: Bolus ID
+          data_type: uint16
+          size: "2"
+          description: The Bolus ID field represents a unique identifier as a uint16 data type created by the Server application for a programmed bolus.
+        - field: Bolus Type
+          data_type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/bolus_type}.
+        - field: Bolus Fast Amount
+          data_type: medfloat16
+          size: "2"
+          description: |-
+            Unit: IU (international unit).
+            The Bolus Fast Amount field shall be set to 0 if Bolus Type is set to "Extended".
+        - field: Bolus Extended Amount
+          data_type: medfloat16
+          size: "2"
+          description: |-
+            Unit: IU (international unit).
+            The Bolus Extended Amount field shall be set to 0 if Bolus Type is set to "Fast".
+        - field: Bolus Duration
+          data_type: uint16
+          size: "2"
+          description: |-
+            Unit is minutes.
+            The Bolus Duration field shall be set to 0 if Bolus Type is set to "Fast".
+        - field: Bolus Delay Time
+          data_type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if Bolus Delay Time Present bit of Flags field is set to 1, otherwise excluded.
+            A value of 0xFFFF represents "Bolus Delay Time is not applicable" when Bolus Value Selection Operand is set to Delivered.
+        - field: Bolus Template Number
+          data_type: uint8
+          size: 0 or 1
+          description: Present if Bolus Template Number Present bit of Flags field is set to 1, otherwise excluded.
+        - field: Bolus Activation Type
+          data_type: uint8
+          size: 0 or 1
+          description: |-
+            Present if Bolus Activation Type Present bit of Flags field is set to 1, otherwise excluded.
+            See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/bolus_activation_type}.
+    - name: Get Active Bolus Delivery Response Operand Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Bolus Delay Time Present
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            Bolus Template Number Present
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            Bolus Activation Type Present
+            0 = False
+            1 = True
+        - bit: "3"
+          description: |-
+            Bolus Delivery Reason Correction
+            0 = False
+            1 = True
+        - bit: "4"
+          description: |-
+            Bolus Delivery Reason Meal
+            0 = False
+            1 = True
+        - bit: 5–7
+          description: Reserved for Future Use
+    - name: Bolus Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined
+        - value: "0x33"
+          description: Fast
+        - value: "0x3C"
+          description: Extended
+        - value: "0x55"
+          description: Multiwave
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Bolus Activation Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined
+        - value: "0x33"
+          description: Manual Bolus
+        - value: "0x3C"
+          description: Recommended Bolus
+        - value: "0x55"
+          description: Manually Changed Recommended Bolus
+        - value: "0x5A"
+          description: Commanded Bolus
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Get Active Basal Rate Delivery Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          data_type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/get_active_basal_rate_delivery_response_operand_flags}.
+        - field: Active Basal Rate Profile Template Number
+          data_type: uint8
+          size: "1"
+          description: None
+        - field: Active Basal Rate Current Config Value
+          data_type: medfloat16
+          size: "2"
+          description: |-
+            Unit: IU/h (international unit per hour).
+            The Active Basal Rate Current Config Value field represents the configured basal rate value of the current active basal rate profile within the current active time block.
+        - field: TBR Type
+          data_type: uint8
+          size: 0 or 1
+          description: |-
+            Present if TBR Present bit of Flags field is set to 1, otherwise excluded.
+            See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/tbr_type}.
+        - field: TBR Adjustment Value
+          data_type: medfloat16
+          size: 0 or 2
+          description: |-
+            Unit is IU/h or None.
+            Present if TBR Present bit of Flags field is set to 1, otherwise excluded.
+        - field: TBR Duration Programmed
+          data_type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if TBR Present bit of Flags field is set to 1, otherwise excluded.
+        - field: TBR Duration Remaining
+          data_type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if TBR Present bit of Flags field is set to 1, otherwise excluded.
+        - field: TBR Template Number
+          data_type: uint8
+          size: 0 or 1
+          description: |-
+            Present if TBR Present bit and TBR Template Number Present bit of Flags field are set to 1, otherwise excluded.
+        - field: Basal Delivery Context
+          data_type: uint8
+          size: 0 or 1
+          description: |-
+            Present if Basal Delivery Context Present bit of Flags field is set to 1, otherwise excluded.
+            See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/basal_delivery_context}.
+    - name: Get Active Basal Rate Delivery Response Operand Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            TBR Present
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            TBR Template Number Present
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            Basal Delivery Context Present
+            0 = False
+            1 = True
+        - bit: 3–7
+          description: Reserved for Future Use
+    - name: TBR Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined
+        - value: "0x33"
+          description: Absolute
+        - value: "0x3C"
+          description: Relative
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Basal Delivery Context
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined
+        - value: "0x33"
+          description: Device Based
+        - value: "0x3C"
+          description: Remote Control
+        - value: "0x55"
+          description: Artificial Pancreas (AP) Controller
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Get Total Daily Insulin Status Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Total Daily Insulin Sum of Bolus Delivered
+          data_type: medfloat16
+          size: "2"
+          description: |-
+            Unit: IU (international unit).
+            This field shall be set to 0 if the Insulin Delivery Device does not support boluses.
+        - field: Total Daily Insulin Sum of Basal Delivered
+          data_type: medfloat16
+          size: "2"
+          description: |-
+            Unit: IU (international unit).
+            This field shall be set to 0 if the Insulin Delivery Device does not support a basal rate.
+        - field: Total Daily Insulin Sum of Bolus and Basal Delivered
+          data_type: medfloat16
+          size: "2"
+          description: |-
+            Unit: IU (international unit).
+            This field may not be the exact sum of Total Daily Insulin Sum of Bolus Delivered field and Total Daily Insulin Sum of Basal Delivered field due to SFLOAT limited precision and related rounding.
+    - name: Get Counter Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Counter Type
+          data_type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/counter_type}.
+        - field: Counter Value Selection
+          data_type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/counter_value_selection}.
+    - name: Counter Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: IDD Lifetime
+        - value: "0x33"
+          description: IDD Warranty Time
+        - value: "0x3C"
+          description: IDD Loaner Time
+        - value: "0x55"
+          description: Reservoir Insulin Operation Time
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Counter Value Selection
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Remaining
+        - value: "0x33"
+          description: Elapsed
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Get Counter Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Counter Type
+          data_type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/counter_type}.
+        - field: Counter Value Selection
+          data_type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/counter_value_selection}.
+        - field: Counter Value
+          data_type: sint32
+          size: "4"
+          description: Unit is minutes.
+    - name: Get Delivered Insulin Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Bolus Amount Delivered
+          data_type: float32
+          size: "4"
+          description: |-
+            Unit: IU (international unit).
+            The Bolus Amount Delivered field exposes the delivered bolus insulin since the last rollover of this amount. The Server rollover behavior shall be defined per Service.
+        - field: Basal Amount Delivered
+          data_type: float32
+          size: "4"
+          description: |-
+            Unit: IU (international unit).
+            The Basal Amount Delivered field exposes the delivered basal insulin since the last rollover of this amount. The Server rollover behavior shall be defined per Service.
+    - name: Get Insulin On Board Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          data_type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_status_reader_control_point/field/get_insulin_on_board_response_operand_flags}.
+        - field: Insulin On Board
+          data_type: medfloat16
+          size: "2"
+          description: Unit is IU (international unit).
+        - field: Remaining Duration
+          data_type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if Remaining Duration Present bit of Flags field is set to 1, otherwise excluded.
+    - name: Get Insulin On Board Response Operand Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Remaining Duration Present
+            0 = False
+            1 = True
+        - bit: 1–7
+          description: Reserved for Future Use

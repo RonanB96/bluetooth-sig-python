@@ -1,0 +1,330 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Device Time Service 1.0, 3.7 Device Time Control Point characteristic (Tables 3.14–3.22, 3.13).
+characteristic:
+  identifier: org.bluetooth.characteristic.device_time_control_point
+  name: Device Time Control Point
+  description: |-
+    The Device Time Control Point (DTCP) shall be used to execute a supported procedure on the Server.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: E2E_CRC
+      type: uint16
+      size: 0 or 2
+      description: |-
+        CRC calculated over all data fields except for the E2E_CRC field itself.
+        Mandatory if the E2E-CRC feature is supported, otherwise Excluded.
+    - field: Opcode
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.device_time_control_point/field/opcode}.
+    - field: Operand
+      type: struct
+      size: 0 to 17
+      description: |-
+        Mandatory if the Opcode requires an Operand, otherwise Excluded (see Table 3.15 ).
+        The Operand length depends on the procedure (see Table 3.15 ).
+        See \autoref{sec:org.bluetooth.characteristic.device_time_control_point/field/opcode}.
+  fields:
+    - name: Opcode
+      description: The values of this field are defined below.
+      section_title: DTCP procedure requirements
+      table_caption: DTCP procedure requirements
+      values:
+        - op_code_value: "0x02"
+          definition: Propose Time Update
+          requirement: M
+          operand: Operand for Time Update (see Table 3.16 )
+          remark: |-
+            The control point response to these opcodes is the DTCP Response.
+            These Opcodes may require authorization if the Server supports the Authorization Required feature.
+        - op_code_value: "0x03"
+          definition: Force Time Update
+          requirement: O
+          operand: Operand for Time Update (see Table 3.16 )
+          remark: |-
+            The control point response to these opcodes is the DTCP Response.
+            These Opcodes may require authorization if the Server supports the Authorization Required feature.
+        - op_code_value: "0x04"
+          definition: Propose Non-Logged Time Adjustment Limit
+          requirement: C.1
+          operand: Operand for Proposed Non-Logged Time Adjustment Limit (see Table 3.18 )
+          remark: N/A
+        - op_code_value: "0x05"
+          definition: Retrieve Active Time Adjustments
+          requirement: C.2
+          operand: None
+          remark: The control point response to this opcode is the Report Active Time Adjustments procedure.
+        - op_code_value: "0x07"
+          definition: Report Active Time Adjustments
+          requirement: C.2
+          operand: Operand for Report Active Time Adjustments (see Table 3.19 )
+          remark: This opcode is the control point response to the Retrieve Active Time Adjustments opcode.
+        - op_code_value: "0x09"
+          definition: DTCP Response
+          requirement: M
+          operand: Operand for Response (see Table 3.20 )
+          remark: |-
+            This opcode is the response to the Propose Time Update procedure, Force Time Update procedure, and the Propose Non-Logged Time Adjustment Limit procedure.
+            This opcode is also the failed response for Retrieve Active Time Adjustments.
+        - op_code_value: "0x00"
+          definition: Reserved for Future Use
+          requirement: N/A
+          operand: N/A
+          remark: N/A
+        - op_code_value: "0x01"
+          definition: Reserved for Future Use
+          requirement: N/A
+          operand: N/A
+          remark: N/A
+        - op_code_value: "0x06"
+          definition: Reserved for Future Use
+          requirement: N/A
+          operand: N/A
+          remark: N/A
+        - op_code_value: "0x08"
+          definition: Reserved for Future Use
+          requirement: N/A
+          operand: N/A
+          remark: N/A
+        - op_code_value: 0x0A–0xFF
+          definition: Reserved for Future Use
+          requirement: N/A
+          operand: N/A
+          remark: N/A
+    - name: Time Update Operand
+      description: The structure of the operand used for both of the Request Opcodes, Propose Time Update and Force Time Update, is defined below.
+      section_title: Time Update operand
+      table_caption: Structure of the Time Update Operand
+      values:
+        - field: Time_Update_Flags
+          data_type: boolean[16]
+          size: "2"
+          description: See \autoref{sec:org.bluetooth.characteristic.device_time_control_point/field/time_update_flags}.
+        - field: Base_Time_Update
+          data_type: uint32
+          size: "4"
+          description: |-
+            Unit is seconds.
+            The Base_Time_Update field is a 4-octet field, representing the seconds since January 1, 1900 at 00:00:00.0, unless the Time Update Flag indicates the Epoch Year 2000 is set to 1, then the Base_Time_Update seconds is the accumulated seconds since January 1, 2000; 00:00:00.
+        - field: Base_Time_Second_Fractions_Update
+          data_type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is 1/65,536 second.
+            For Servers that support the Base Time Second-Fractions feature, the Base_Time_Second_Fractions field is a 2-octet field, representing the fractions of a second of the Base_Time_Update of the synchronized time source.
+            Mandatory if the Base Time Second-Fractions feature is supported, otherwise Excluded.
+        - field: Time_Zone_Update
+          data_type: sint8
+          size: "1"
+          description: |-
+            Unit is 15 minutes.
+            Refer to the Time Zone characteristic in \autoref{sec:org.bluetooth.characteristic.time_zone}.
+        - field: DST_Offset_Update
+          data_type: uint8
+          size: "1"
+          description: Refer to the DST Offset characteristic in \autoref{sec:org.bluetooth.characteristic.dst_offset}.
+        - field: Time_Source_Update
+          data_type: uint8
+          size: "1"
+          description: Refer to the Time Source characteristic in \autoref{sec:org.bluetooth.characteristic.time_source}.
+        - field: Time_Accuracy_Update
+          data_type: uint8
+          size: "1"
+          description: |-
+            Unit is 1/8 second.
+            Refer to the Time Accuracy characteristic in \autoref{sec:org.bluetooth.characteristic.time_accuracy}.
+    - name: Time_Update_Flags
+      description: The bits of the Time_Update_Flags field are defined below.
+      table_caption: Time_Update_Flags field
+      values:
+        - bit: "0"
+          description: |-
+            UTC Aligned
+            The Base_Time_Update value(s) of the Time Update operand are synchronized with a source that is aligned with UTC.
+        - bit: "1"
+          description: |-
+            Qualified Local Time
+            The local time values provided in the Time Update operand, Time_Zone_Update and DST_Offset_Update, are synchronized with a qualified local source that has provided Qualified Local Time information.
+        - bit: "2"
+          description: |-
+            Adjust Reason; Manual Adjustment
+            Manual Time Update
+        - bit: "3"
+          description: |-
+            Adjust Reason; External Adjustment
+            External Reference Time Update
+        - bit: "4"
+          description: |-
+            Adjust Reason; Time Zone Adjustment
+            Time Zone change
+        - bit: "5"
+          description: |-
+            Adjust Reason; DST Offset Adjustment
+            DST Offset change
+        - bit: "6"
+          description: |-
+            Epoch Year 2000
+            The values expressed in this update use the Epoch Year 2000 when set to 1 and Epoch Year 1900 when set to 0.
+        - bit: "7"
+          description: |-
+            Second-Fractions Not Valid
+            The value of the Base_Time_Second_Fractions_Update field is not valid and can be ignored.
+        - bit: 8–15
+          description: Reserved for Future Use
+    - name: Propose Non-Logged Time Adjustment Limit Operand
+      description: The structure of the Operand used for the Propose Non-Logged Time Adjustment Limit Opcode is defined below.
+      section_title: Operand for Propose Non-Logged Time Adjustment Limit
+      table_caption: Operand requirements for Propose Non-Logged Time Adjustment Limit
+      values:
+        - field: Non_Logged_Time_Adjustment_Limit_New
+          data_type: uint16
+          size: "2"
+          description: |-
+            Unit is seconds.
+            The Non_Logged_Time_Adjustment_Limit_New field has the same definition as Non_Logged_Time_Adjustment_Limit field used in the DT Parameters characteristic.
+    - name: Report Active Time Adjustments Operand
+      description: The structure of the Operand for the Report Active Time Adjustments response is defined below.
+      section_title: Operand for Report Active Time Adjustments
+      table_caption: Operand requirements for Report Active Time Adjustments
+      values:
+        - field: Base_Time_Second_Fractions
+          data_type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is 1/65536 second.
+            Mandatory if the Base Time Second-Fractions feature is supported, otherwise Excluded.
+        - field: Base_Time
+          data_type: uint32
+          size: "4"
+          description: Unit is seconds.
+        - field: Active_Time_Adjustments
+          data_type: struct
+          size: 7 or 11
+          description: See \autoref{sec:org.bluetooth.characteristic.device_time_control_point/field/active_time_adjustments}.
+    - name: Active_Time_Adjustments
+      description: The structure of the Active_Time_Adjustments field is defined below.
+      section_title: Structure of Active_Time_Adjustments field
+      table_caption: Structure of Active_Time_Adjustments field
+      values:
+        - field: Accumulated_Non_Logged_Base_Time_Second_Fractions
+          data_type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is 1/65,536 second.
+            Mandatory if the Base Time Second-Fractions feature is supported, otherwise Excluded.
+        - field: Accumulated_Non_Logged_Base_Time_Seconds
+          data_type: uint16
+          size: "2"
+          description: Unit is seconds.
+        - field: Active_Time_Adjustments_Flags
+          data_type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.device_time_control_point/field/active_time_adjustments_flags}.
+        - field: Consolidated_Base_Time_Second_Fractions
+          data_type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is 1/65,536 second.
+            Mandatory if the Base Time Second-Fractions feature is supported, otherwise Excluded.
+        - field: Consolidated_Base_Time_Seconds
+          data_type: uint32
+          size: "4"
+          description: Unit is seconds.
+    - name: Active_Time_Adjustments_Flags
+      description: The bits of the Active_Time_Adjustments_Flags field are defined below.
+      table_caption: Active_Time_Adjustments sign and epoch flags
+      values:
+        - bit: "0"
+          description: |-
+            Sign of accumulated non-logged values
+            If set to 1, the value of accumulated non-logged Base_Time adjustments is negative.
+        - bit: 1–5
+          description: Reserved for Future Use
+        - bit: "6"
+          description: |-
+            Epoch Span
+            Applies to Servers that support both the Epoch Year 1900 feature and the Epoch Year 2000 feature.
+        - bit: "7"
+          description: |-
+            Sign of consolidated values
+            If set to 1, the value of consolidated Base_Time adjustments is negative.
+    - name: DTCP Response Operand
+      description: The structure of the DTCP Response operand is defined below.
+      section_title: Operand for DTCP Response
+      table_caption: Operand requirements for DTCP Response
+      values:
+        - field: Request_Opcode
+          data_type: uint8
+          size: "1"
+          description: See Table 3.15 .
+        - field: Response_Value
+          data_type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.device_time_control_point/field/dtcp_response_values}.
+        - field: Rejection_Flags
+          data_type: boolean[16]
+          size: 0 or 2
+          description: |-
+            See \autoref{sec:org.bluetooth.characteristic.device_time_control_point/field/rejection_flags}.
+            Mandatory if the Response_Value is Procedure Rejected, otherwise Excluded.
+    - name: DTCP Response_Values
+      description: The DTCP Response_Values for the DTCP Response_Opcode are defined below.
+      section_title: DTCP Response_Values
+      table_caption: DTCP Response_Values
+      values:
+        - value: "0x00"
+          definition: Reserved for Future Use
+          description: N/A
+        - value: "0x01"
+          definition: Success
+          description: Response to successful Time Update or Propose Non-Logged Time Adjustment Limit procedures
+        - value: "0x02"
+          definition: Opcode Not Supported
+          description: Response if unsupported Opcode is received
+        - value: "0x03"
+          definition: Invalid Operand
+          description: Response if Operand received does not meet the requirements of the service
+        - value: "0x04"
+          definition: Operation Failed
+          description: Response if unable to complete a procedure for any reason
+        - value: "0x05"
+          definition: Procedure Rejected
+          description: Response if the Opcode or Operand received does not meet requirements of the Server
+        - value: "0x06"
+          definition: Reserved for Future Use
+          description: N/A
+        - value: "0x07"
+          definition: Device Busy
+          description: Response if a procedure is already in progress or otherwise unavailable to execute the requested Opcode
+        - value: 0x08–0xFF
+          definition: Reserved for Future Use
+          description: N/A
+    - name: Rejection_Flags
+      description: The Rejection_Flags field for Time Update and Propose Non-Logged Time Adjustment Limit procedures is defined below.
+      section_title: Rejection_Flags for DTCP Response
+      table_caption: Structure of Rejection Flags field reported in DTCP Response Parameter
+      values:
+        - bit: "0"
+          description: The Base_Time_Update value is not realistic.
+        - bit: "1"
+          description: Requested procedure is not authorized.
+        - bit: "2"
+          description: A required field in the Operand is out of range.
+        - bit: "3"
+          description: Time source is not UTC aligned (and Server is aligned).
+        - bit: "4"
+          description: Time_Accuracy_Update (Client drift) is out of range or is unknown.
+        - bit: "5"
+          description: Time source is lower quality than presently synchronized time source (see Appendix A.5 and A.6 for additional time quality discussion).
+        - bit: "6"
+          description: Epoch Year flag is not aligned with implementation supported features.
+        - bit: "7"
+          description: Reserved for Future Use
+        - bit: "8"
+          description: Lack of precision (Base_Time_Second_Fractions_Update field not provided by Client).
+        - bit: "9"
+          description: The Base_Time_Update value(s) of the Time Update has been rejected but local time values of Time_Zone_Update and DST_Offset_Update were accepted.
+        - bit: "10"
+          description: The local time values of Time_Zone_Update and DST_Offset_Update from the Time Update were rejected but the Base_Time_Update value(s) were accepted.
+        - bit: 11–15
+          description: Reserved for Future Use

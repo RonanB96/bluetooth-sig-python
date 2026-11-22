@@ -1,0 +1,26 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Coordinated Set Identification Service 1.1, Section 5.3 (Table 5.4).
+characteristic:
+  identifier: org.bluetooth.characteristic.lock_characteristic
+  name: Set Member Lock
+  description: |-
+    The Set Member Lock characteristic allows clients to have exclusive access to the server to minimize race conditions that might occur when multiple clients are accessing multiple servers of the same Coordinated Set at the same time.
+    A higher-layer specification defines when the Set Member Lock characteristic may be used and which resources are subject to exclusive access.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Set Member Lock
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.lock_characteristic/field/set_member_lock}.
+  fields:
+    - name: Set Member Lock
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Reserved for Future Use
+        - value: "0x01"
+          description: Unlocked
+        - value: "0x02"
+          description: Locked
+        - value: 0x03–0xFF
+          description: Reserved for Future Use

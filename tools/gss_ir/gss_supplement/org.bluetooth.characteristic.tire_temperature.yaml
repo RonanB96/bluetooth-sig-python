@@ -1,0 +1,36 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Tire Pressure Monitoring System Service v1.0, Section 3.3 (Tables 3.4–3.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.tire_temperature
+  name: Tire Temperature
+  description: |-
+    The Tire Temperature characteristic represents the temperature in the tire.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Temperature
+      type: uint8
+      size: "1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.tire_temperature/field/temperature}.
+        A fixed offset of +60 is applied to enable representation of temperature in the range of -60 °C to +150 °C.
+    - field: Temperature Accuracy
+      type: uint8
+      size: "1"
+      description: |-
+        Unit is °C.
+        The Temperature Accuracy field specifies the expected measurement uncertainty of the reported temperature value in °C. The value represents a ± range corresponding to a 1‑sigma statistical variation.
+        If the Temperature field contains the value 0xFF (indicating that no valid temperature measurement is available), the Temperature Accuracy field is not defined and may be set to 0xFF or another value as determined by the implementation.
+  fields:
+    - name: Temperature
+      description: The values of this field are defined below.
+      values:
+        - value: "0"
+          description: The temperature measured by the TPMS Sensor is -60 °C or lower.
+        - value: 0x01–0xD2
+          description: The temperature measured by the TPMS Sensor in °C + 60.
+        - value: "0xD2"
+          description: The temperature measured by the TPMS Sensor is 150 °C or higher.
+        - value: 0xD3–0xFE
+          description: Reserved for Future Use
+        - value: "0xFF"
+          description: The TPMS Sensor cannot measure the temperature.

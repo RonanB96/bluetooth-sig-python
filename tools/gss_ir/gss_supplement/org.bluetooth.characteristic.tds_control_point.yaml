@@ -1,0 +1,84 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Transport Discovery Service 1.1, 4.1 TDS Control Point (Tables 4.2–4.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.tds_control_point
+  name: TDS Control Point
+  description: |-
+    The TDS Control Point characteristic is used to request activation of a transport. Additional Op Codes may be added in the future for other purposes.
+    Parameters larger than 18 octets are permitted if a larger MTU is negotiated.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Op Code
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.tds_control_point/field/op_code}
+    - field: Organization ID
+      type: uint8
+      size: "1"
+      description: |-
+        This field shall contain the relevant 1-octet Organization ID.
+        The format and values are defined in the Bluetooth SIG Assigned Numbers \RefRef{assigned_numbers}.
+    - field: Parameter
+      type: struct
+      size: 0 to 18
+      description: |-
+        This field shall contain relevant transport-specific data up to 18 octets (see Note 1).
+        See \autoref{sec:org.bluetooth.characteristic.tds_control_point/field/op_code}.
+        Parameters larger than 18 octets are permitted if a larger MTU is negotiated.
+  fields:
+    - name: Op Code
+      description: The values of this field are defined below.
+      section_title: TDS Control Point procedure requirements
+      table_caption: TDS Control Point procedure requirements
+      values:
+        - op_code_value: "0x00"
+          definition: Reserved for Future Use
+        - op_code_value: "0x01"
+          definition: Activate Transport
+          requirement: M
+          organization_id: This field shall contain the relevant 1-octet Organization ID.
+          parameter: This field shall contain relevant transport-specific data up to 18 octets (see Note 1).
+        - op_code_value: 0x02–0xFF
+          definition: Reserved for Future Use
+    - name: TDS Control Point Indication
+      description: The structure of this field is defined below.
+      section_title: Structure of TDS Control Point Indication
+      table_caption: Structure of TDS Control Point Indication
+      values:
+        - field: Requested Op Code
+          type: uint8
+          size: "1"
+          description: The Requested Op Code field shall be set to the value of the Op Code representing the requested procedure.
+        - field: Result Code
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.tds_control_point/field/result_code}
+        - field: Response Parameter
+          type: struct
+          size: 0 to 18
+          description: |-
+            The Response Parameter field, if present, shall contain the relevant 1-octet Organization ID followed by transport-specific data.
+            A Response Parameter larger than 18 octets is permitted if a larger MTU is negotiated.
+    - name: Result Code
+      description: The values of this field are defined below.
+      section_title: List of Result Codes associated with the TDS Control Point Indication
+      table_caption: List of Result Codes associated with the TDS Control Point Indication
+      values:
+        - value: "0x00"
+          definition: Success
+          description: Response for successful operation.
+        - value: "0x01"
+          definition: Op Code Not Supported
+          description: Response if unsupported or RFU Op Code is received.
+        - value: "0x02"
+          definition: Invalid Parameter
+          description: Response if Parameter received does not meet the requirements of the higher-level specification.
+        - value: "0x03"
+          definition: Unsupported Organization ID
+          description: Response if unsupported or RFU Organization ID is received.
+        - value: "0x04"
+          definition: Operation Failed
+          description: Response if the requested procedure failed for any reason other than those enumerated in this table.
+        - value: 0x05–0xFF
+          definition: Reserved For Future Use
+          description: N/A

@@ -1,0 +1,48 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HID Service Specification 1.1, Section 2.8.2. The value is an array of octets
+# whose meaning is the USB HID boot keyboard report.
+# USB HID 1.11, Appendix B.1, keyboard output report: 1 octet.
+# Bits 0 to 4 are LED states (0 = off, 1 = on). Bits 5 to 7 are constant.
+# The same appendix says a device may append bytes that the BIOS ignores, and
+# that a boot report must not exceed 8 octets. Those extra octets have no fields.
+# Nordic nrfconnect/sdk-nrf hids.h sets BT_HIDS_BOOT_KB_OUTPUT_REP_LEN to 1.
+# hids_boot_kb_outp_report_write rejects offset + len greater than 1. That matches
+# the defined octet and does not define the optional extension, so the extension
+# is not given LED names.
+characteristic:
+  identifier: org.bluetooth.characteristic.boot_keyboard_output_report
+  name: Boot Keyboard Output Report
+  description: |-
+    The Boot Keyboard Output Report characteristic is used to transfer fixed format and length Output Report data between a HID Host operating in Boot Protocol Mode and a HID Service corresponding to a boot keyboard.
+    The Boot Keyboard Output Report characteristic value is an array of octets whose meaning is defined in the USB HID Usage Tables.
+    USB HID 1.11, Appendix B.1, defines this boot report as 1 octet. A device may append further octets. The BIOS ignores those extensions. The report must not exceed 8 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: LEDs
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.boot_keyboard_output_report/field/leds}.
+    - field: Extension
+      type: uint8[n]
+      size: 0–7
+      description: |-
+        Appended octets. They have no named fields. The BIOS ignores them.
+        Present only when the report is longer than the LED octet. The whole report is at most 8 octets.
+  fields:
+    - name: LEDs
+      description: |-
+        Absolute LED states. 0 = off. 1 = on.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: NUM LOCK
+        - bit: "1"
+          description: CAPS LOCK
+        - bit: "2"
+          description: SCROLL LOCK
+        - bit: "3"
+          description: COMPOSE
+        - bit: "4"
+          description: KANA
+        - bit: 5–7
+          description: Constant

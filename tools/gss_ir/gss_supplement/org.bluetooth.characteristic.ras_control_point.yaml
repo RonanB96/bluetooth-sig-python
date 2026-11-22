@@ -1,0 +1,230 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Ranging Service 1.0, Section 3.3 RAS Control Point (Tables 3.9–3.12, 3.13).
+characteristic:
+  identifier: org.bluetooth.characteristic.ras_control_point
+  name: RAS Control Point
+  description: |-
+    The RAS Control Point characteristic allows the client to write commands to the RAS Server and to receive indications from the RAS Server. The On-demand Ranging Data can be retrieved using a Ranging Counter that is indicated beforehand by the RAS Server using the Ranging Data Ready indication. In addition, it allows the client to update the RAS Server that all the Ranging Data notifications have been received and to request retransmission of lost Ranging Data segments.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Op Code
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.ras_control_point/field/op_code_and_parameter}
+    - field: Parameter
+      type: struct
+      size: Variable
+      description: See \autoref{sec:org.bluetooth.characteristic.ras_control_point/field/op_code_and_parameter}
+  fields:
+    - name: Op Code and Parameter
+      description: The values of these fields are defined below.
+      section_title: RAS Control Point Op Codes and Parameters requirements
+      table_caption: RAS Control Point Ranging requirements for Operations Commands
+      values:
+        - op_code_value: "0x00"
+          definition: Get_Ranging_Data
+          op_code_requirement: M
+          parameter_1: uint16 Ranging Counter
+          parameter_2: –
+          parameter_3: –
+          description: N/A
+        - op_code_value: "0x01"
+          definition: ACK_Ranging_Data
+          op_code_requirement: M
+          parameter_1: uint16 Ranging Counter
+          parameter_2: –
+          parameter_3: –
+          description: N/A
+        - op_code_value: "0x02"
+          definition: Retrieve_Lost_Ranging_Data_Segments
+          op_code_requirement: O
+          parameter_1: uint16 Ranging Counter
+          parameter_2: uint8 First Segment Index
+          parameter_3: uint8 Last Segment Index
+          description: N/A
+        - op_code_value: "0x03"
+          definition: Abort_Operation
+          op_code_requirement: O
+          parameter_1: No Parameter used
+          parameter_2: –
+          parameter_3: –
+          description: N/A
+        - op_code_value: "0x04"
+          definition: Set_Filter
+          op_code_requirement: O
+          parameter_1: |-
+            uint16 Filter Configuration: Bits 0-1: Mode Bits 2-15: Filter bit mask (see Section 3.3.2.4 )
+          parameter_2: –
+          parameter_3: –
+          description: See \autoref{sec:org.bluetooth.characteristic.ras_control_point/field/filter_bits_for_each_step_mode_type}
+    - name: Op Code and Parameter
+      description: The values of these fields are defined below.
+      section_title: RAS Control Point Op Codes and Parameters requirements
+      table_caption: RAS Control Point Ranging requirements for Responses
+      values:
+        - op_code_value: "0x00"
+          definition: Complete Ranging Data Response
+          op_code_requirement: M
+          parameter_1: uint16 Ranging Counter
+          parameter_2: –
+          parameter_3: –
+          description: N/A
+        - op_code_value: "0x01"
+          definition: Complete Lost Ranging Data Segment Response
+          op_code_requirement: C.1
+          parameter_1: uint16 Ranging Counter
+          parameter_2: uint8 First Segment Index
+          parameter_3: uint8 Last Segment Index
+          description: If the Retrieve Lost Ranging Data Segments procedure is supported, then this Op Code is Mandatory.
+        - op_code_value: "0x02"
+          definition: Response Code
+          op_code_requirement: M
+          parameter_1: Response Code Value
+          parameter_2: –
+          parameter_3: –
+          description: See \autoref{sec:org.bluetooth.characteristic.ras_control_point/field/response_code_values}
+    - name: Response Code Values
+      description: The Response Code Values associated with Op Code 0x02 are defined below.
+      section_title: Response Code Values associated with Op Code 0x02
+      table_caption: Response Code Values associated with Op Code 0x02
+      values:
+        - response_code_value: "0x00"
+          definition: Reserved for Future Use
+          description: N/A
+        - response_code_value: "0x01"
+          definition: Success
+          description: Normal response for a successful operation
+        - response_code_value: "0x02"
+          definition: Op Code Not Supported
+          description: Normal response if an unsupported Op Code is received
+        - response_code_value: "0x03"
+          definition: Invalid Parameter
+          description: Normal response if Parameter received does not meet the requirements of the service
+        - response_code_value: "0x04"
+          definition: Success/Persisted
+          description: Normal response for a successful write operation where the values written to the RAS Control Point are being persisted
+        - response_code_value: "0x05"
+          definition: Abort Unsuccessful
+          description: Normal response if a request for Abort is unsuccessful
+        - response_code_value: "0x06"
+          definition: Procedure Not Completed
+          description: Normal response if unable to complete a procedure for any reason
+        - response_code_value: "0x07"
+          definition: Server Busy
+          description: Normal response if the Server is still busy with other requests
+        - response_code_value: "0x08"
+          definition: No Records Found
+          description: Normal response if the requested Ranging Counter is not found
+        - response_code_value: 0x09–0xFF
+          definition: Reserved for Future Use
+          description: N/A
+    - name: Filter bits for each Step mode type
+      description: The filter bits that can be set for each Step mode type are defined below.
+      section_title: Filter bits for each Step mode type
+      table_caption: Filter bits for each Step mode type
+      values:
+        - step_mode_type: "0"
+          bit: "0"
+          parameter_name: Packet_Quality
+        - step_mode_type: "0"
+          bit: "1"
+          parameter_name: Packet_RSSI
+        - step_mode_type: "0"
+          bit: "2"
+          parameter_name: Packet_Antenna
+        - step_mode_type: "0"
+          bit: "3"
+          parameter_name: Measured_Freq_Offset
+        - step_mode_type: "0"
+          bit: 4–13
+          parameter_name: RFU
+        - step_mode_type: "1"
+          bit: "0"
+          parameter_name: Packet_Quality
+        - step_mode_type: "1"
+          bit: "1"
+          parameter_name: Packet_NADM
+        - step_mode_type: "1"
+          bit: "2"
+          parameter_name: Packet_RSSI
+        - step_mode_type: "1"
+          bit: "3"
+          parameter_name: ToD_ToA
+        - step_mode_type: "1"
+          bit: "4"
+          parameter_name: Packet_Antenna
+        - step_mode_type: "1"
+          bit: "5"
+          parameter_name: Packet_PCT1
+        - step_mode_type: "1"
+          bit: "6"
+          parameter_name: Packet_PCT2
+        - step_mode_type: "1"
+          bit: 7–13
+          parameter_name: RFU
+        - step_mode_type: "2"
+          bit: "0"
+          parameter_name: Antenna_Permutation_Index
+        - step_mode_type: "2"
+          bit: "1"
+          parameter_name: Tone_PCT[k]
+        - step_mode_type: "2"
+          bit: "2"
+          parameter_name: Tone_Quality_Indicator[k]
+        - step_mode_type: "2"
+          bit: "3"
+          parameter_name: Antenna Path_1
+        - step_mode_type: "2"
+          bit: "4"
+          parameter_name: Antenna Path_2
+        - step_mode_type: "2"
+          bit: "5"
+          parameter_name: Antenna Path_3
+        - step_mode_type: "2"
+          bit: "6"
+          parameter_name: Antenna Path_4
+        - step_mode_type: "2"
+          bit: 7–13
+          parameter_name: RFU
+        - step_mode_type: "3"
+          bit: "0"
+          parameter_name: Packet_Quality
+        - step_mode_type: "3"
+          bit: "1"
+          parameter_name: Packet_NADM
+        - step_mode_type: "3"
+          bit: "2"
+          parameter_name: Packet_RSSI
+        - step_mode_type: "3"
+          bit: "3"
+          parameter_name: ToD_ToA
+        - step_mode_type: "3"
+          bit: "4"
+          parameter_name: Packet_Antenna
+        - step_mode_type: "3"
+          bit: "5"
+          parameter_name: Packet_PCT1
+        - step_mode_type: "3"
+          bit: "6"
+          parameter_name: Packet_PCT2
+        - step_mode_type: "3"
+          bit: "7"
+          parameter_name: Antenna_Permutation_Index
+        - step_mode_type: "3"
+          bit: "8"
+          parameter_name: Tone_PCT[k]
+        - step_mode_type: "3"
+          bit: "9"
+          parameter_name: Tone_Quality_Indicator[k]
+        - step_mode_type: "3"
+          bit: "10"
+          parameter_name: Antenna Path_1
+        - step_mode_type: "3"
+          bit: "11"
+          parameter_name: Antenna Path_2
+        - step_mode_type: "3"
+          bit: "12"
+          parameter_name: Antenna Path_3
+        - step_mode_type: "3"
+          bit: "13"
+          parameter_name: Antenna Path_4

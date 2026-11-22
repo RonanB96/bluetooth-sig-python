@@ -1,0 +1,29 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Gaming Audio Profile 1.0.1, 4.7.5 BGR Features (Tables 4.10–4.11).
+characteristic:
+  identifier: org.bluetooth.characteristic.bgr_features
+  name: BGR Features
+  description: |-
+    The BGR Features characteristic exposes the BGR features supported by the GMA Server.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Features
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.bgr_features/field/features}.
+  fields:
+    - name: Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            BGR Multisink feature support
+            0 = Not supported
+            1 = Supported
+        - bit: "1"
+          description: |-
+            BGR Multiplex feature support
+            0 = Not supported
+            1 = Supported
+        - bit: 2–7
+          description: RFU

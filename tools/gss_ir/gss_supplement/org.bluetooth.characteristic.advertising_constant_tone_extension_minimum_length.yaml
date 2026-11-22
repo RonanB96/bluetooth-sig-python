@@ -1,0 +1,28 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Constant Tone Extension Service 1.0, 3.2 Advertising Constant Tone Extension Minimum Length (Table 3.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.advertising_constant_tone_extension_minimum_length
+  name: Advertising Constant Tone Extension Minimum Length
+  description: |-
+    The Advertising Constant Tone Extension Minimum Length characteristic is a control-point attribute that stores the minimum length of Constant Tone Extension that the server transmits on the advertising channels.
+    The structure of this characteristic is defined below.
+  size_in_bits: true
+  structure:
+    - field: Advertising Constant Tone Extension Minimum Length
+      type: uint5
+      size: "5"
+      description: See \autoref{sec:org.bluetooth.characteristic.advertising_constant_tone_extension_minimum_length/field/advertising_constant_tone_extension_minimum_length}.
+    - field: Reserved for Future Use
+      type: uint3
+      size: "3"
+      description: Reserved for Future Use
+  fields:
+    - name: Advertising Constant Tone Extension Minimum Length
+      description: The values of this field are defined below.
+      values:
+        - value: 2–20
+          description: Minimum length of the Constant Tone Extension in 8 μs units
+        - value: 0–1
+          description: All other values are prohibited.
+        - value: 21–31
+          description: All other values are prohibited.

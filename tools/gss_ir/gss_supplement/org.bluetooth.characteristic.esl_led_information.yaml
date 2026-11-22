@@ -1,0 +1,46 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Electronic Shelf Label Service 1.0.1, Section 3.8 (Tables 3.4–3.6).
+characteristic:
+  identifier: org.bluetooth.characteristic.esl_led_information
+  name: ESL LED Information
+  description: |-
+    The ESL LED Information characteristic is an array of one or more octets in which each octet represents an LED that is supported by the ESL.
+    The two most significant bits of each octet identify the type of LED, as specified in Table 3.4. The remaining bits of the octet have a definition that depends on the LED type identified by bits 7 and 6.
+    In the characteristic value, the octet associated with the index value of 0 shall be located at the LSO position and the following octets, if any, shall be in order of increasing index value.
+    The structure of this characteristic is defined below.
+  size_in_bits: true
+  structure:
+    - field: LED Type
+      type: uint2
+      size: "2"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.esl_led_information/field/led_type}.
+        The sequence of fields from LED Type through Red is repeated for each LED octet in the array.
+    - field: Blue
+      type: uint2
+      size: "2"
+      description: |-
+        0b00 represents the minimum level and 0b11 represents the maximum level for the blue colour component.
+        For sRGB LED type this is the current colour; for Monochrome LED type this is the fixed colour.
+    - field: Green
+      type: uint2
+      size: "2"
+      description: |-
+        0b00 represents the minimum level and 0b11 represents the maximum level for the green colour component.
+        For sRGB LED type this is the current colour; for Monochrome LED type this is the fixed colour.
+    - field: Red
+      type: uint2
+      size: "2"
+      description: |-
+        0b00 represents the minimum level and 0b11 represents the maximum level for the red colour component.
+        For sRGB LED type this is the current colour; for Monochrome LED type this is the fixed colour.
+  fields:
+    - name: LED Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0b00"
+          description: sRGB
+        - value: "0b01"
+          description: Monochrome
+        - value: 0b10–0b11
+          description: Reserved for Future Use

@@ -1,0 +1,15 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Electronic Shelf Label Service v1.0.1, Section 3.6.1.
+characteristic:
+  identifier: org.bluetooth.characteristic.esl_image_information
+  name: ESL Image Information
+  description: |-
+    The ESL Image Information characteristic contains a single field, called Max_Image_Index, whose value is a 8-bit integer (uint8) in the range 0x00 to 0xFF.
+    When read, the ESL Image Information characteristic shall return the Max_Image_Index value equal to the numerically highest Image_Index value supported by the ESL.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Max_Image_Index
+      type: uint8
+      size: "1"
+      description: |-
+        Allowed range is: 0x00 to 0xFF.

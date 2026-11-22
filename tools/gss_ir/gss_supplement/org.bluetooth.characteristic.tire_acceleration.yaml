@@ -1,0 +1,27 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Tire Pressure Monitoring System Service v1.0, Section 3.4 (Table 3.6).
+characteristic:
+  identifier: org.bluetooth.characteristic.tire_acceleration
+  name: Tire Acceleration
+  description: |-
+    The Tire Acceleration characteristic represents the acceleration of the tire. The TPMS Sensor may report radial or tangential acceleration (see Section 3.5).
+    The Tire Acceleration characteristic value is 2 octets long. Special value 0xFFFF indicates that the TPMS Sensor could not perform a measurement.
+    The structure of this characteristic is defined below.
+  size_in_bits: true
+  structure:
+    - field: Measured Acceleration
+      type: uint15
+      size: "15"
+      description: |-
+        Acceleration measured by the TPMS Sensor in 1/16 g.
+        0 indicates no acceleration.
+        1 to 0x3FFE indicates measured positive acceleration of 1/16 g to 1,023 14/16 g.
+        0x3FFF indicates that measured acceleration is 1,023 15/16 g or higher.
+        0x4001 to 0x7FFF indicate measured negative acceleration of -1,023 15/16 g to -1/16 g.
+        0x4000 indicates that measured acceleration is -1,024 g or lower.
+    - field: Value might not be accurate
+      type: uint1
+      size: "1"
+      description: |-
+        0 = the value is accurate
+        1 = the value might not be accurate

@@ -1,0 +1,48 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Authorization Control Service 1.0, Section 4.3 (Tables 4.8–4.10) and Section 4.1.1.1 (Table 4.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.acs_data_out_indicate
+  name: ACS Data Out Indicate
+  description: |-
+    The ACS Data Out Indicate characteristic is used by the AC Server to send secure responses from protected GATT resources as indications. The ACS Data Out Indicate characteristic is used for a secure response when the protected resource issues an indication.
+    This service defines a common mechanism for segmenting the Payload field of a characteristic value into multiple parts. Whether or not the Payload field is actually segmented, each part of the payload is prefixed by a Segmentation_Header field, which identifies the First Segment of the payload, the Last Segment of the payload, and a Rolling Segment Counter.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Segmentation_Header
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.acs_data_out_indicate/field/segmentation_header}.
+    - field: Information_Security_Configuration_ID
+      type: uint16
+      size: "2"
+      description: |-
+        The Information_Security_Configuration_ID field value defines the ID of the information security configuration that describes the order and the type of security controls used within the Secure_Data field of the Payload field.
+    - field: Protected_Resource_Handle
+      type: uint16
+      size: "2"
+      description: |-
+        The Protected_Resource_Handle field value defines the protected resource to which the secure request is intended or the source of the secure response.
+    - field: Request_Or_Response
+      type: struct
+      size: Variable
+      description: |-
+        The Request_Or_Response field value consists of the secure write request for, or the secure response from, the protected resource. A secure write request or secure response consists of the payload for the protected resource and applicable information security controls as defined by the information security configuration descriptor (see Section 4.4.3.7).
+        Mandatory for a secure response from the protected resource. For a secure read request, the Request_Or_Response field is Excluded.
+  fields:
+    - name: Segmentation_Header
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            First Segment
+            0 = This segment is not the first segment of the segmented payload
+            1 = This segment of the segmented payload is the first segment
+        - bit: "1"
+          description: |-
+            Last Segment
+            0 = This segment is not the last segment of the segmented payload
+            1 = This segment of the segmented payload is the last segment
+        - bit: 2–7
+          description: |-
+            Rolling Segment Counter
+            These bits represent an unsigned integer value between 0 to 63 and count segments. The Rolling Segment Counter is incremented by one continuously with each segment. If the Rolling Segment Counter is equal to 63, it rolls over to 0 when it is next incremented.

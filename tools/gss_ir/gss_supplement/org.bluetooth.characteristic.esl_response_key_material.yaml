@@ -1,0 +1,20 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Electronic Shelf Label Service 1.0.1, Section 3.3.
+characteristic:
+  identifier: org.bluetooth.characteristic.esl_response_key_material
+  name: ESL Response Key Material
+  description: |-
+    The ESL Response Key Material characteristic value provides a key for use in the Encrypted Advertising Data feature described in the Bluetooth Core Specification [2]. The ESL Response Key Material value is intended to be different for each ESL in a system and enables ESL responses sent in the Synchronized state to be authenticated by the AP. Refer to a relevant profile specification where further details of the use of authentication in the Synchronized state may be specified.
+    The ESL Response Key Material characteristic is a 24-octet value that has the same format as the Encrypted Data Key Material characteristic defined in [Vol 3], Part C, Section 12.6 of the Bluetooth Core Specification [2].
+    The ESL Response Key Material is configured when an AP, acting as a Client, writes a value to the ESL Response Key Material characteristic.
+    The ESL Response Key Material characteristic enables the transfer of the session key and IV that are used by the ESL when the ESL sends responses to the AP.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Session Key
+      type: uint128
+      size: "16"
+      description: The shared session key.
+    - field: IV
+      type: uint64
+      size: "8"
+      description: The initialization vector.

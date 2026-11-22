@@ -1,0 +1,13 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Voice Assistant Service 1.0, Section 3.4.
+characteristic:
+  identifier: org.bluetooth.characteristic.installed_location
+  name: Installed Location
+  description: |-
+    The Installed Location characteristic is configured by the user and read by the client. For example, this characteristic could have the string, "Bedroom" or "Kitchen". The method for the VAS Server to provide a human-readable service name for the user is outside the scope of this specification. If an Installed Location characteristic is not configured, then the VAS Server shall initialize the Installed Location characteristic to an empty value.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Installed Location
+      type: utf8s
+      size: variable
+      description: UTF-8 string

@@ -1,0 +1,82 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Tire Pressure Monitoring System Service v1.0, Section 3.7 (Table 3.9).
+characteristic:
+  identifier: org.bluetooth.characteristic.tpms_position
+  name: TPMS Position
+  description: |-
+    The TPMS Sensor Position characteristic represents the position of the TPMS Sensor within a vehicle.
+    The TPMS Sensor position characteristic value is 1 octet long and can be set to the values defined in Table 3.9. For a single tire on each side of the axle, the inner position is used. Left and right sides in Table 3.9 are determined from the perspective of sitting in the driver's seat looking forward.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Position
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.tpms_position/field/position}.
+  fields:
+    - name: Position
+      description: The values of this field are defined below.
+      values:
+        - value: "0"
+          description: Not set
+        - value: "1"
+          description: Center front
+        - value: "2"
+          description: Center rear
+        - value: "3"
+          description: Spare tire 1
+        - value: "4"
+          description: Spare tire 2
+        - value: "5"
+          description: Spare tire 3
+        - value: "6"
+          description: Spare tire 4
+        - value: "7"
+          description: Axle 1 outer left
+        - value: "8"
+          description: Axle 1 inner left or single tire on left
+        - value: "9"
+          description: Axle 1 inner right or single tire on right
+        - value: "10"
+          description: Axle 1 outer right
+        - value: "11"
+          description: Axle 2 outer left
+        - value: "12"
+          description: Axle 2 inner left or single tire on left
+        - value: "13"
+          description: Axle 2 inner right or single tire on right
+        - value: "14"
+          description: Axle 2 outer right
+        - value: "15"
+          description: Axle 3 outer left
+        - value: "16"
+          description: Axle 3 inner left or single tire on left
+        - value: "17"
+          description: Axle 3 inner right or single tire on right
+        - value: "18"
+          description: Axle 3 outer right
+        - value: "19"
+          description: Axle 4 outer left
+        - value: "20"
+          description: Axle 4 inner left or single tire on left
+        - value: "21"
+          description: Axle 4 inner right or single tire on right
+        - value: "22"
+          description: Axle 4 outer right
+        - value: "23"
+          description: Axle 5 outer left
+        - value: "24"
+          description: Axle 5 inner left or single tire on left
+        - value: "25"
+          description: Axle 5 inner right or single tire on right
+        - value: "26"
+          description: Axle 5 outer right
+        - value: "27"
+          description: Axle 6 outer left
+        - value: "28"
+          description: Axle 6 inner left or single tire on left
+        - value: "29"
+          description: Axle 6 inner right or single tire on right
+        - value: "30"
+          description: Axle 6 outer right
+        - value: 31–255
+          description: Reserved for Future Use

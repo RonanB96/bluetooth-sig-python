@@ -1,0 +1,75 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HID Service Specification 1.1, Section 2.7.2. The value is an array of octets
+# whose meaning is the USB HID boot keyboard report.
+# USB HID 1.11, Appendix B.1, keyboard input report: 8 octets
+# (modifier, reserved, keycodes 1 to 6). Section 8.3 names the modifier bits.
+# The same appendix says a boot report must not exceed 8 octets.
+# Nordic nrfconnect/sdk-nrf include/bluetooth/services/hids.h sets
+# BT_HIDS_BOOT_KB_INPUT_REP_LEN to 8. bt_hids_boot_kb_inp_rep_send copies at most
+# 8 octets and zero-fills the remainder, which matches the appendix note that
+# unused fields should be zero. BTstack example/hog_boot_host_demo.c reads the
+# same octet order. Neither handler adds fields the appendix does not name.
+characteristic:
+  identifier: org.bluetooth.characteristic.boot_keyboard_input_report
+  name: Boot Keyboard Input Report
+  description: |-
+    The Boot Keyboard Input Report characteristic is used to transfer fixed format and length Input Report data between a HID Host operating in Boot Protocol Mode and a HID Service corresponding to a boot keyboard.
+    The Boot Keyboard Input Report characteristic value is an array of octets whose meaning is defined in the USB HID Usage Tables.
+    USB HID 1.11, Appendix B.1, defines this boot report as 8 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Modifier Keys
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.boot_keyboard_input_report/field/modifier_keys}.
+    - field: Reserved
+      type: uint8
+      size: "1"
+      description: |-
+        Constant. This byte is reserved for OEM use. Returning zero is recommended when the field is not used.
+    - field: Keycode 1
+      type: uint8
+      size: "1"
+      description: Key array index 1. Usage 0 to 255. The order of keycodes has no significance.
+    - field: Keycode 2
+      type: uint8
+      size: "1"
+      description: Key array index 2. Usage 0 to 255. The order of keycodes has no significance.
+    - field: Keycode 3
+      type: uint8
+      size: "1"
+      description: Key array index 3. Usage 0 to 255. The order of keycodes has no significance.
+    - field: Keycode 4
+      type: uint8
+      size: "1"
+      description: Key array index 4. Usage 0 to 255. The order of keycodes has no significance.
+    - field: Keycode 5
+      type: uint8
+      size: "1"
+      description: Key array index 5. Usage 0 to 255. The order of keycodes has no significance.
+    - field: Keycode 6
+      type: uint8
+      size: "1"
+      description: Key array index 6. Usage 0 to 255. The order of keycodes has no significance.
+  fields:
+    - name: Modifier Keys
+      description: |-
+        Bitmap of modifier keys. These usages are E0 to E7 and are not sent as array data.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: LEFT CTRL
+        - bit: "1"
+          description: LEFT SHIFT
+        - bit: "2"
+          description: LEFT ALT
+        - bit: "3"
+          description: LEFT GUI
+        - bit: "4"
+          description: RIGHT CTRL
+        - bit: "5"
+          description: RIGHT SHIFT
+        - bit: "6"
+          description: RIGHT ALT
+        - bit: "7"
+          description: RIGHT GUI

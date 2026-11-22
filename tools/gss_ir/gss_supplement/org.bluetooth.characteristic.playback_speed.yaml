@@ -1,0 +1,16 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, Section 3.8.
+characteristic:
+  identifier: org.bluetooth.characteristic.playback_speed
+  name: Playback Speed
+  description: |-
+    The Playback Speed characteristic exposes the current track playback speed. The value of this characteristic shall be a signed 8-bit integer (p) that is used to compute the multiple of the playback speed (s) by calculating the value of 2 to the power of p divided by 64:
+    s = 2^(p/64)
+    The equation results in playback speeds from .25x normal speed up to nearly 4x normal speed, as shown in Table 3.2.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Playback Speed
+      type: sint8
+      size: "1"
+      description: |-
+        Characteristic value p. The resultant multiple of playback speed is s = 2^(p/64).

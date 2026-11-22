@@ -1,0 +1,47 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Hearing Access Service 1.0.1, 3.1 Hearing Aid Features (Table 3.2).
+characteristic:
+  identifier: org.bluetooth.characteristic.hearing_aid_features
+  name: Hearing Aid Features
+  description: |-
+    The value of the Hearing Aid Features characteristic exposes the features of the Hearing Access Service supported by the server.
+    The format of the Hearing Aid Features characteristic is a one octet bitfield, described in Table 3.2.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Hearing Aid Features
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.hearing_aid_features/field/hearing_aid_features}.
+  fields:
+    - name: Hearing Aid Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: 0–1
+          description: |-
+            Hearing Aid Type
+            0b00 = Binaural Hearing Aid
+            0b01 = Monaural Hearing Aid
+            0b10 = Banded Hearing Aid
+            0b11 = RFU
+        - bit: "2"
+          description: |-
+            Preset Synchronization Support
+            0b0 = Preset Synchronization is not supported
+            0b1 = Preset Synchronization is supported
+        - bit: "3"
+          description: |-
+            Independent Presets
+            0b0 = The list of preset records on this server is identical to the list of preset records in the other server of the Coordinated Set
+            0b1 = The list of preset records on this server may be different from the list of preset records in the other server of the Coordinated Set
+        - bit: "4"
+          description: |-
+            Dynamic Presets
+            0b0 = the list of preset records does not change
+            0b1 = the list of preset records may change
+        - bit: "5"
+          description: |-
+            Writable Presets Support
+            0b0 = The server does not support writable preset records
+            0b1 = The server supports writable preset records
+        - bit: 6–7
+          description: RFU

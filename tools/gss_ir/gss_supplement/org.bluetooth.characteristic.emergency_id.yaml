@@ -1,0 +1,14 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Emergency Configuration Service 1.0, 3.1 Emergency ID.
+characteristic:
+  identifier: org.bluetooth.characteristic.emergency_id
+  name: Emergency ID
+  description: |-
+    The Emergency ID characteristic exposes an ID for each device.
+    This ID shall be a static 6-octet value to identify the device during alerting. The ID shall be the first 48 bits of a 128-bit random number generated using the requirements for random generation defined in the Bluetooth Core Specification [Vol 2] Part H, Section 2 [1]. The random number used for the ID should not be used for any other purpose by the device. The static Emergency ID can be generated during manufacturing or when power is first applied to the device.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Emergency ID
+      type: uint48
+      size: "6"
+      description: This ID shall be a static 6-octet value to identify the device during alerting.

@@ -1,0 +1,28 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Coordinated Set Identification Service 1.1, Section 5.1 (Table 5.2).
+characteristic:
+  identifier: org.bluetooth.characteristic.set_identity_resolving_key
+  name: Set Identity Resolving Key
+  description: |-
+    The Set Identity Resolving Key characteristic exposes the SIRK that is associated with the Coordinated Set. All servers that are part of the same Coordinated Set shall use the same SIRK.
+    The SIRK shall be a 128-bit long random number. A Coordinated Set is uniquely identified by the SIRK.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Type
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.set_identity_resolving_key/field/type}.
+    - field: Value
+      type: uint8
+      size: "16"
+      description: |-
+        When the Type field is 0x00 (Encrypted SIRK), the Value field contains the SIRK in encrypted form, calculated with the SIRK encryption function as specified in Section 4.5.
+        When the Type field is 0x01 (Plain text SIRK), the Value field contains the plain text SIRK.
+  fields:
+    - name: Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Encrypted SIRK
+        - value: "0x01"
+          description: Plain text SIRK

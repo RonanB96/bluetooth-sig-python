@@ -1,0 +1,194 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Object Transfer Service 1.0, 3.3 Object Action Control Point (Tables 3.8–3.11, 3.17).
+characteristic:
+  identifier: org.bluetooth.characteristic.object_action_control_point
+  name: Object Action Control Point
+  description: |-
+    The Object Action Control Point characteristic is used by a Client to control certain behaviors of the Server. With the exception of the Create procedure which creates a new object, the OACP procedures affect the Current Object only.
+    The gatt_uuid format type defines UUIDs of more than one size, including a large 128-bit UUID. This service supports all UUIDs that conform to the gatt_uuid format. However, note that it will only be possible to create objects with an Object Type represented by a 128-bit UUID via this control point if the Server is able to negotiate an ATT_MTU size with the Client that is 24 octets or larger or else by using the GATT Write Long Characteristic Values sub-procedure to write the value.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Op Code
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.object_action_control_point/field/op_code_and_parameter}
+    - field: Size
+      type: uint32
+      size: "4"
+      description: |-
+        Present if Op Code is 0x01
+    - field: Type
+      type: gatt_uuid
+      size: 2 or 16
+      description: |-
+        The term gatt_uuid is not a defined Data Type but is either a 16-bit UUID using the uint16 Data Type or a 128-bit UUID using the uint128 Data Type.
+        Present if Op Code is 0x01
+    - field: Offset
+      type: uint32
+      size: "4"
+      description: |-
+        Present if Op Code is 0x03 or 0x05 or 0x06
+    - field: Length
+      type: uint32
+      size: "4"
+      description: |-
+        Present if Op Code is 0x03 or 0x05 or 0x06
+    - field: Mode
+      type: boolean[8]
+      size: "1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.object_action_control_point/field/mode}
+        Present if Op Code is 0x06
+    - field: Execute Parameter
+      type: struct
+      size: variable
+      description: |-
+        Parameter may be defined by a higher-level specification; none otherwise.
+        Present if Op Code is 0x04
+    - field: Request Op Code
+      type: uint8
+      size: "1"
+      description: |-
+        Present if Op Code is 0x60
+    - field: Result Code
+      type: uint8
+      size: "1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.object_action_control_point/field/result_code}
+        Present if Op Code is 0x60
+    - field: Checksum
+      type: uint32
+      size: "4"
+      description: |-
+        Present if Op Code is 0x60 and Request Op Code is 0x03
+    - field: Execute Response Parameter
+      type: struct
+      size: variable
+      description: |-
+        Response Parameter may be defined by a higher-level specification; none otherwise.
+        Present if Op Code is 0x60 and Request Op Code is 0x04
+  fields:
+    - name: Op Code and Parameter
+      description: The values of these fields are defined below.
+      section_title: Object Action Control Point Procedure Requirements
+      table_caption: Object Action Control Point Procedure Requirements
+      values:
+        - op_code_value: "0x00"
+          definition: Reserved for Future Use
+          requirement: N/A
+          parameter: N/A
+          applicable_response_values: N/A
+          response_parameter: N/A
+        - op_code_value: "0x01"
+          definition: Create
+          requirement: O
+          parameter: Size (UINT32), Type (gatt_uuid) See Note 1.
+          applicable_response_values: Refer to Section 3.3.2.1 .
+          response_parameter: None
+        - op_code_value: "0x02"
+          definition: Delete
+          requirement: O
+          parameter: None
+          applicable_response_values: Refer to Section 3.3.2.2 .
+          response_parameter: None
+        - op_code_value: "0x03"
+          definition: Calculate Checksum
+          requirement: O
+          parameter: Offset (UINT32), Length (UINT32)
+          applicable_response_values: Refer to Section 3.3.2.3 .
+          response_parameter: Checksum (UINT32)
+        - op_code_value: "0x04"
+          definition: Execute
+          requirement: O
+          parameter: Parameter may be defined by a higher-level spec; none otherwise.
+          applicable_response_values: Refer to Section 3.3.2.4 .
+          response_parameter: Response Parameter may be defined by a higher-level spec; none otherwise.
+        - op_code_value: "0x05"
+          definition: Read
+          requirement: O
+          parameter: Offset (UINT32), Length (UINT32)
+          applicable_response_values: Refer to Section 3.3.2.5 .
+          response_parameter: None
+        - op_code_value: "0x06"
+          definition: Write
+          requirement: O
+          parameter: Offset (UINT32), Length (UINT32), Mode (8bit)
+          applicable_response_values: Refer to Section 3.3.2.6 .
+          response_parameter: None
+        - op_code_value: "0x07"
+          definition: Abort
+          requirement: C.1
+          parameter: None
+          applicable_response_values: Refer to Section 3.3.2.7 .
+          response_parameter: None
+        - op_code_value: 0x08–0x5F
+          definition: Reserved for Future Use
+          requirement: N/A
+          parameter: N/A
+          applicable_response_values: N/A
+          response_parameter: N/A
+        - op_code_value: "0x60"
+          definition: Response Code
+          requirement: M
+          parameter: OACP Response Value (see Table 3.10 )
+          applicable_response_values: N/A
+          response_parameter: N/A
+        - op_code_value: 0x61–0xFF
+          definition: Reserved for Future Use
+          requirement: N/A
+          parameter: N/A
+          applicable_response_values: N/A
+          response_parameter: N/A
+    - name: Result Code
+      description: The values of this field are defined below.
+      table_caption: List of OACP Result Codes
+      values:
+        - value: "0x00"
+          definition: Reserved For Future Use
+          description: N/A
+        - value: "0x01"
+          definition: Success
+          description: Response for successful operation.
+        - value: "0x02"
+          definition: Op Code Not Supported
+          description: Response if unsupported Op Code is received.
+        - value: "0x03"
+          definition: Invalid Parameter
+          description: Response if Parameter received does not meet the requirements of the service.
+        - value: "0x04"
+          definition: Insufficient Resources
+          description: Response if the number of octets requested via the value of the Length parameter or Size parameter (as applicable) exceeds the available memory or processing capabilities of the Server.
+        - value: "0x05"
+          definition: Invalid Object
+          description: Response if the requested OACP procedure cannot be performed because the Current Object is an Invalid Object.
+        - value: "0x06"
+          definition: Channel Unavailable
+          description: Response if the requested procedure could not be performed because an Object Transfer Channel was not available for use.
+        - value: "0x07"
+          definition: Unsupported Type
+          description: Response if the object type specified in the OACP procedure Type parameter is not supported by the Server.
+        - value: "0x08"
+          definition: Procedure Not Permitted
+          description: Response if the requested procedure is not permitted according to the properties of the Current Object (refer to Section 3.2.8 ).
+        - value: "0x09"
+          definition: Object Locked
+          description: Response if the Current Object is temporarily locked by the Server.
+        - value: "0x0A"
+          definition: Operation Failed
+          description: Response if the requested procedure failed for any reason other than those enumerated in this table.
+        - value: 0x0B–0xFF
+          definition: Reserved For Future Use
+          description: N/A
+    - name: Mode
+      description: The bits of this field are defined below.
+      table_caption: Mode Parameter for OACP Write Op Code
+      values:
+        - bit: "0"
+          description: Reserved For Future Use
+        - bit: "1"
+          description: |-
+            Truncate
+            0: False
+            1: True
+        - bit: 2–7
+          description: Reserved For Future Use (RFU)

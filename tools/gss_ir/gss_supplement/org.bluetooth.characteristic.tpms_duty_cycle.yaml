@@ -1,0 +1,88 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Tire Pressure Monitoring System Service v1.0, Section 3.6 (Table 3.8).
+characteristic:
+  identifier: org.bluetooth.characteristic.tpms_duty_cycle
+  name: TPMS Duty Cycle
+  description: |-
+    The TPMS Duty Cycle characteristic represents the durations of the Advertising State and Standby State of the TPMS Sensor under parked or normal driving conditions (i.e., when the TPMS Sensor detects rotation and no alert condition, such as rapid change of the tire pressure or temperature, is detected).
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Advertising State Duration
+      type: uint8
+      size: "1"
+      description: |-
+        Unit is 10 ms.
+        Duration of the Advertising State in 10-millisecond (ms) increments.
+        Valid range is 2–200 (20 ms–2 seconds).
+        All other values are RFU.
+    - field: Standby State Duration in Parked State
+      type: uint16
+      size: "2"
+      description: |-
+        Unit is seconds.
+        Duration of the Standby State while the TPMS Sensor is in the Parked state in seconds.
+        Valid range is 0–3,600 seconds.
+        Value 0xFFFF indicates that the TPMS Sensor does not switch to the Advertising State while in the Parked state.
+        All other values are RFU.
+    - field: Standby State Duration in Early Driving State
+      type: uint16
+      size: "2"
+      description: |-
+        Unit is seconds.
+        Duration of the Standby State while the TPMS Sensor is in the Early Driving state in seconds.
+        Valid range is 0–3,600 seconds.
+        Value 0 indicates that the TPMS Sensor does not support motion detection and never switches to the Early Driving state, Driving state, or Early Parked state.
+        All other values are RFU.
+    - field: Standby State Duration in Driving State
+      type: uint16
+      size: "2"
+      description: |-
+        Unit is seconds.
+        Duration of the Standby State while the TPMS Sensor is in the Driving state in seconds.
+        Valid range is 0–3,600 seconds.
+        Value 0 indicates that the TPMS Sensor does not support motion detection and never switches to the Early Driving state, Driving state, or Early Parked state.
+        All other values are RFU.
+    - field: Standby State Duration in Early Parked State
+      type: uint16
+      size: "2"
+      description: |-
+        Unit is seconds.
+        Duration of the Standby State while the TPMS Sensor is in the Early Parked state in seconds.
+        Valid range is 0–3,600 seconds.
+        Value 0 indicates that the TPMS Sensor does not support motion detection and never switches to the Early Driving state, Driving state, or Early Parked state.
+        All other values are RFU.
+    - field: Early Driving State Duration
+      type: uint8
+      size: "1"
+      description: |-
+        Unit is minutes.
+        Duration of the Early Driving state in minutes.
+        Valid range is 0–10 minutes.
+        Value 0 indicates that the TPMS Sensor does not support motion detection and never switches to the Early Driving state or Driving state.
+        All other values are RFU.
+    - field: Early Driving Primary Monitor Pairing State Duration
+      type: uint8
+      size: "1"
+      description: |-
+        Unit is minutes.
+        Duration of the Early Driving Primary Monitor Pairing state in minutes.
+        Valid range is 0–10 minutes.
+        Value 0 indicates that the TPMS Sensor does not support pairing in the Early Driving state.
+        All other values are RFU.
+    - field: Early Parked State Duration
+      type: uint8
+      size: "1"
+      description: |-
+        Unit is minutes.
+        Duration of the Early Parked state in minutes.
+        Valid range is 0–10 minutes.
+        Value 0 indicates that the TPMS Sensor does not support the Early Parked state.
+        All other values are RFU.
+    - field: Service State Duration
+      type: uint8
+      size: "1"
+      description: |-
+        Unit is seconds.
+        Duration of the Service state in seconds (i.e., how long the TPMS Sensor will be in Connectable mode after detecting a manufacturer-specific stimulus).
+        Valid range is 1–255 seconds.
+        All other values are RFU.

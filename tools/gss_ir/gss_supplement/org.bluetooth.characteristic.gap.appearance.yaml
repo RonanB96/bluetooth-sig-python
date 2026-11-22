@@ -1,0 +1,13 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Core Specification 6.3, Vol 3, Part C, 12.2 Appearance characteristic (Table 12.4); Core Specification Supplement 15, Part A, 1.12 Appearance (Table 1.13).
+characteristic:
+  identifier: org.bluetooth.characteristic.gap.appearance
+  name: Appearance
+  description: |-
+    The Appearance characteristic defines the representation of the external appearance of the device. This enables the discovering device to represent the device to the user using an icon, or a string, or similar.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Appearance
+      type: uint16
+      size: "2"
+      description: The Appearance value shall be the enumerated value as defined in the Bluetooth SIG Assigned Numbers \RefRef{assigned_numbers}.

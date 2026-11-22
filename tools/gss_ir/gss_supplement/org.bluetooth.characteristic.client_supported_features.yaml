@@ -1,0 +1,33 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Core Specification 6.3, Vol 3, Part G, 7.2 Client Supported Features (Tables 7.5–7.6).
+characteristic:
+  identifier: org.bluetooth.characteristic.client_supported_features
+  name: Client Supported Features
+  description: |-
+    The Client Supported Features characteristic is used by the client to inform the server which features are supported by the client.
+    If the characteristic exists on the server, the client may update the Client Supported Features bit field.
+    If a client feature bit is set by a client and the server supports that feature, the server shall fulfill all requirements associated with this feature when communicating with this client.
+    If a client feature bit is not set by a client, then the server shall not use any of the features associated with that bit when communicating with this client.
+    The Client Supported Features characteristic value is an array of octets, each of which is a bit field.
+    All bits not listed are reserved for future use.
+    The array should not have any trailing all-zero octets.
+    If any octet number in Table 7.6 does not appear in the attribute value because it is too short, the server shall behave as if that octet were present with a value of zero.
+    The default value for the Client Supported Features characteristic value shall be all bits set to zero.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Client Features
+      type: boolean[8]
+      size: Variable
+      description: See \autoref{sec:org.bluetooth.characteristic.client_supported_features/field/client_features}.
+  fields:
+    - name: Client Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Robust Caching
+        - bit: "1"
+          description: Enhanced ATT bearer
+        - bit: "2"
+          description: Multiple Handle Value Notifications
+        - bit: 3–7
+          description: Reserved for Future Use

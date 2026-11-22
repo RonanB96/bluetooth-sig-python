@@ -1,0 +1,17 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Indoor Positioning Service 1.0, Section 3.5.
+characteristic:
+  identifier: org.bluetooth.characteristic.local_east_coordinate
+  name: Local East Coordinate
+  description: |-
+    The Local East Coordinate Characteristic describes the East coordinate of the device using a local coordinate system.
+    The Local East Coordinate is relative to the east orientation of a predefined map downloaded prior to using the Indoor Positioning Service at the given location.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Local East Coordinate
+      type: sint16
+      size: "2"
+      description: |-
+        Unit is decimeters with a resolution of 1 decimeter.
+        Allowed range is: -32767 to 32767.
+        A value of 0x8000 represents "Local East Coordinate information is not configured".

@@ -1,0 +1,62 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Generic Health Sensor Service 1.0, Section 3.1.1 (Tables 3.2–3.6).
+characteristic:
+  identifier: org.bluetooth.characteristic.health_sensor_features
+  name: Health Sensor Features
+  description: |-
+    The Health Sensor Features characteristic has the format shown in Table 3.2.
+    When read or indicated, the Health Sensor Features characteristic gives a value that is used by a client to determine the supported features of the Generic Health Sensor.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Flags
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.health_sensor_features/field/flags}.
+    - field: Supported Observation Types Count
+      type: uint8
+      size: "1"
+      description: |-
+        The number of supported observation types.
+        See Table 3.4.
+    - field: Codes
+      type: uint32[Count]
+      size: Count * 4
+      description: |-
+        The concatenation of the 4-byte codes for the supported observations from IEEE 11073-10101.
+        See Table 3.4.
+    - field: Supported Device Specializations Count
+      type: uint8
+      size: 0 or 1
+      description: |-
+        The number of supported device specializations.
+        See Table 3.6.
+        Present if bit 0 of Flags field is set to 1
+    - field: Device Specializations
+      type: struct
+      size: 0 or Count * 3
+      description: |-
+        The concatenation of tuples consisting of the 2-byte codes for the supported device specializations from the infrastructure partition, partition 8, in IEEE 11073-10101 and their 1-byte version numbers.
+        See \autoref{sec:org.bluetooth.characteristic.health_sensor_features/field/device_specializations}.
+        Present if bit 0 of Flags field is set to 1
+  fields:
+    - name: Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Supported Device Specializations field present
+            0 = not present
+            1 = present
+        - bit: 1–7
+          description: Reserved for Future Use
+    - name: Device Specializations
+      description: The structure of each tuple is defined below. The sequence of fields from Device Specialization Code through Version is repeated Supported Device Specializations Count times.
+      values:
+        - field: Device Specialization Code
+          data_type: uint16
+          size: "2"
+          description: 2-byte term code for the supported device specialization from IEEE 11073-10101 partition 8.
+        - field: Version
+          data_type: uint8
+          size: "1"
+          description: 1-byte version number of the device specialization.

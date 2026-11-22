@@ -1,0 +1,179 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Physical Activity Monitor Service 1.0, Section 3.7.
+characteristic:
+  identifier: org.bluetooth.characteristic.sleep_activity_instantaneous_data
+  name: Sleep Activity Instantaneous Data
+  description: |-
+    The Sleep Activity Instantaneous Data characteristic is used to send session/sub-session-related data of an instantaneous nature (as defined in Section 2.2) to the client. The data is related to measurements that are typically supported by physical activity monitors that have sleep-monitoring capabilities.
+    Included in the characteristic value are a Header field and a set of conditional fields, as shown in Table 3.16.
+    The characteristic value is of variable length, ranging up to 28 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Header
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.sleep_activity_instantaneous_data/field/header}.
+    - field: Flags
+      type: boolean[16]
+      size: "0 or 2"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.sleep_activity_instantaneous_data/field/flags}.
+        Mandatory if no segmentation into multiple notifications is used.
+        Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Session ID
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Session ID field represents the identifier of the physical activity session to which the data is related.
+        Mandatory if no segmentation into multiple notifications is used.
+        Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Sub-session ID
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Sub-session ID field represents the identifier of the physical activity sub-session to which the data is related. The value 0xFFFF is reserved to denote that the data in the characteristic relates to an entire session (i.e., including all its sub-sessions).
+        Mandatory if no segmentation into multiple notifications is used.
+        Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Relative Timestamp
+      type: uint32
+      size: "0 or 4"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Relative Timestamp field represents the time stamp of the data included in the Sleep Activity Instantaneous Data characteristic. The time stamp is represented as the elapsed number of seconds since the start of the physical activity session that is denoted in the Session ID field.
+        Mandatory if no segmentation into multiple notifications is used.
+        Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Sequence Number
+      type: uint32
+      size: "0 or 4"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Sequence Number field represents the data sequence number included in the Sleep Activity Instantaneous Data characteristic.
+        Sequence Number field values are assigned by the server in an implementation-specific manner that facilitates the correct data organization on the client side. Sequence Number field values should be incremented by 1 every time their respective data characteristic is updated and should roll over to 0x00000000 after the maximum value 0xFFFFFFFF is reached.
+        Mandatory if no segmentation into multiple notifications is used.
+        Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Visible Light Level
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Base Unit: org.bluetooth.unit.illuminance.lux
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 0.01 lux
+        The Visible Light Level field may be included in the Sleep Activity Instantaneous Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Visible Light Level.
+        The Visible Light Level field represents the amount of visible light to which the user is exposed.
+        Present if bit 0 of Flags field is set to 1
+    - field: UV Light Level
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Base Unit: org.bluetooth.unit.illuminance.lux
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 0.01 lux
+        The UV Light Level field may be included in the Sleep Activity Instantaneous Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for UV Light Level.
+        The UV Light Level field represents the amount of UV light to which the user is exposed.
+        Present if bit 1 of Flags field is set to 1
+    - field: IR Light Level
+      type: uint24
+      size: 0 or 3
+      description: |-
+        Base Unit: org.bluetooth.unit.illuminance.lux
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 0.01 lux
+        The IR Light Level field may be included in the Sleep Activity Instantaneous Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for IR Light Level.
+        The IR Light Level field represents the amount of IR light to which the user is exposed.
+        Present if bit 2 of Flags field is set to 1
+    - field: Sleep Stage
+      type: boolean[24]
+      size: 0 or 3
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Sleep Stage field may be included in the Sleep Activity Instantaneous Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Sleep Stage.
+        The Sleep Stage field represents the user's sleep stage, as defined in Table 3.18.
+        Present if bit 3 of Flags field is set to 1
+        See \autoref{sec:org.bluetooth.characteristic.sleep_activity_instantaneous_data/field/sleep_stage}.
+    - field: Sleeping Heart Rate
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        The Sleeping Heart Rate field may be included in the Sleep Activity Instantaneous Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Sleeping Heart Rate.
+        The Sleeping Heart Rate field represents the user's heart rate during sleep.
+        Present if bit 4 of Flags field is set to 1
+  fields:
+    - name: Header
+      description: |-
+        The Header field and its use are described in Section 2.4.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            First Segment
+            The First Segment bit identifies the first segment of a segmented Data Record.
+        - bit: "1"
+          description: |-
+            Last Segment
+            The Last Segment bit identifies the last segment of a segmented Data Record.
+        - bit: 2–7
+          description: |-
+            Rolling Segment Counter
+            The Rolling Segment Counter bits are used to enable the client to correctly reconstruct a segmented Data Record.
+    - name: Flags
+      description: |-
+        When the server includes a given data field—in any of the segments, in case of Data Record segmentation—the associated bit of the Flags field shall be set to 1 (field present); otherwise, the associated bit shall be set to 0 (field not present).
+        If a given bit in the Physical Activity Monitor Features characteristic is set to 0, then the corresponding Flags field bit(s) shall be set to 0 and the associated field(s) shall not be present in the Sleep Activity Instantaneous Data characteristic.
+        If the Physical Activity Monitor Features characteristic denotes server support for the Device Worn feature, then the associated bit of the Flags field shall be set to 1 when the device is worn and shall be set to 0 when the device is not worn.
+        If the Physical Activity Monitor Features characteristic does not denote server support for the Device Worn feature, then the associated bit of the Flags field shall be set to 0.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Visible Light Level Present
+        - bit: "1"
+          description: UV Light Level Present
+        - bit: "2"
+          description: IR Light Level Present
+        - bit: "3"
+          description: Sleep Stage Present
+        - bit: "4"
+          description: Sleeping Heart Rate Present
+        - bit: 5–14
+          description: RFU
+        - bit: "15"
+          description: Device Worn
+    - name: Sleep Stage
+      description: |-
+        The associated bit of the sleep stages in Table 3.18 shall be set to 1 when the sleep stage is applicable and shall be set to 0 when not applicable. Multiple stages may be concurrently applicable.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Wake
+        - bit: "1"
+          description: Sleep. Maps to any of REM, N1, N2, N3, and N4
+        - bit: "2"
+          description: REM. Rapid Eye Movement (REM) stage
+        - bit: "3"
+          description: Non-REM. Non-REM stage; maps to any of N1, N2, N3, and N4
+        - bit: "4"
+          description: Light Sleep. Typically maps to any of N1 and N2
+        - bit: "5"
+          description: Deep Sleep. Typically maps to any of N3 and N4
+        - bit: "6"
+          description: N1. Non-REM stage 1
+        - bit: "7"
+          description: N2. Non-REM stage 2
+        - bit: "8"
+          description: N3. Non-REM stage 3
+        - bit: "9"
+          description: N4. Non-REM stage 4
+        - bit: "10"
+          description: Active Sleep. Applicable to infants
+        - bit: "11"
+          description: Quiet Sleep. Applicable to infants
+        - bit: "12"
+          description: Intermediate Sleep. Applicable to infants; typically a transitional stage
+        - bit: "13"
+          description: Arousal. Applicable to infants
+        - bit: 14–22
+          description: RFU
+        - bit: "23"
+          description: Unknown. Stage is unknown or undetermined

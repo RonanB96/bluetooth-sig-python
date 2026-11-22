@@ -1,0 +1,14 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Tire Pressure Monitoring System Service v1.0, Section 3.8.
+characteristic:
+  identifier: org.bluetooth.characteristic.tpms_signing_key
+  name: TPMS Signing Key
+  description: |-
+    The TPMS Signing Key characteristic allows TPMS Service advertising data to be signed and authenticated using the signing key.
+    The TPMS Signing Key characteristic is a 128-bit value that is used as a session key for signing the advertising data. Any random number with 128 bits of entropy may be used.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: TPMS Signing Key
+      type: uint128
+      size: "16"
+      description: 128-bit session key for signing the advertising data. Any random number with 128 bits of entropy may be used.

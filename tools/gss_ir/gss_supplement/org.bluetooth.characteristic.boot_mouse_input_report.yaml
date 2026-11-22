@@ -1,0 +1,58 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HID Service Specification 1.1, Section 2.9.2. The value is an array of octets
+# whose meaning is the USB HID boot mouse report.
+# USB HID 1.11, Appendix B.2. The Boot Report descriptor is 3 button bits, 5 constant
+# bits, then X and Y as 8-bit relative values with logical range -127 to 127.
+# The first 3 octets must follow that descriptor. Further octets are device-specific.
+# A boot report must not exceed 8 octets, so the tail is at most 5 octets.
+# The byte illustration in the same appendix labels bits 4 to 7 as device-specific
+# and does not mention bit 3. The descriptor marks those 5 bits Constant. The
+# appendix requires conformance to the descriptor, so bits 3 to 7 are Constant.
+# Nordic nrfconnect/sdk-nrf hids.h sets BT_HIDS_BOOT_MOUSE_REP_LEN to 3 and
+# bt_hids_boot_mouse_inp_rep_send writes buttons, X, then Y. That is the required
+# prefix with an empty tail.
+# BTstack example/hog_boot_host_demo.c reads a fourth octet as a scroll wheel.
+# Appendix B does not name a wheel. That name is not used.
+characteristic:
+  identifier: org.bluetooth.characteristic.boot_mouse_input_report
+  name: Boot Mouse Input Report
+  description: |-
+    The Boot Mouse Input Report characteristic is used to transfer fixed format and length Input Report data between a HID Host operating in Boot Protocol Mode and a HID Service corresponding to a boot mouse.
+    The Boot Mouse Input Report characteristic value is an array of octets whose meaning is defined in the USB HID Usage Tables.
+    USB HID 1.11, Appendix B.2, defines the first 3 octets. A device may append further octets. The BIOS ignores those extensions. The report must not exceed 8 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Buttons
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.boot_mouse_input_report/field/buttons}.
+    - field: X
+      type: sint8
+      size: "1"
+      description: |-
+        X displacement. Relative. Logical range -127 to 127.
+    - field: Y
+      type: sint8
+      size: "1"
+      description: |-
+        Y displacement. Relative. Logical range -127 to 127.
+    - field: Device-specific
+      type: uint8[n]
+      size: 0–5
+      description: |-
+        Appended octets. They have no named fields. The BIOS ignores them.
+        Present only when the report is longer than 3 octets. The whole report is at most 8 octets.
+  fields:
+    - name: Buttons
+      description: |-
+        Button states from the Boot Report descriptor. 0 = not pressed. 1 = pressed.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Button 1
+        - bit: "1"
+          description: Button 2
+        - bit: "2"
+          description: Button 3
+        - bit: 3–7
+          description: Constant

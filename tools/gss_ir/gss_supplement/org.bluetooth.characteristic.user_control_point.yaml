@@ -1,0 +1,148 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: User Data Service 1.1.1, Section 3.5 User Control Point (Tables 3.6–3.9).
+characteristic:
+  identifier: org.bluetooth.characteristic.user_control_point
+  name: User Control Point
+  description: |-
+    The User Control Point characteristic is used to request a specific function to be executed on the receiving device.
+    Where used, the format of the Consent Code is a UINT16 value in the range of 0x0000 to 0x270F (i.e., 0 to 9999). The values from 0x2710 to 0xFFFF are reserved for future use.
+    Where used, the format of the User Index value is the same as the format of the User Index characteristic defined in [2].
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Op Code
+      type: uint8
+      size: "1"
+      description: |-
+        Mandatory field.
+        See \autoref{sec:org.bluetooth.characteristic.user_control_point/field/op_code_and_parameter}.
+    - field: Parameter
+      type: struct
+      size: 0 to 18
+      description: See \autoref{sec:org.bluetooth.characteristic.user_control_point/field/op_code_and_parameter}.
+  fields:
+    - name: Op Code and Parameter
+      description: The values of these fields are defined below.
+      section_title: User Control Point procedure requirements
+      table_caption: User Control Point Procedure Requirements
+      values:
+        - op_code_value: "0x00"
+          requirement: N/A
+          definition: Reserved for future use
+          parameter_value: N/A
+          description: N/A
+        - op_code_value: "0x01"
+          requirement: M
+          definition: Register New User See Section 3.5.2.1
+          parameter_value: Consent Code (UINT16) See Section 3.5.2
+          description: |-
+            Initiates the procedure to register a new user. The Consent Code for that user is sent as parameter to this op code. The response to this control point is Op Code 0x20 followed by the appropriate Response Value including the User Index.
+        - op_code_value: "0x02"
+          requirement: M
+          definition: Consent See Section 3.5.2.2
+          parameter_value: User Index (UINT8), Consent Code (UINT16) See Section 3.5.2
+          description: |-
+            Initiate the procedure to allow a client to access the user data stored in the server (i.e., the user gives consent). The User Index and the Consent Code are sent as parameters to this op code. The response to this control point is Op Code 0x20 followed by the appropriate Response Value.
+        - op_code_value: "0x03"
+          requirement: M
+          definition: Delete User Data See Section 3.5.2.3
+          parameter_value: None
+          description: Deletes the user data of the current user as well as its Consent Code. The response to this control point is Op Code 0x20 followed by the appropriate Response Value.
+        - op_code_value: "0x04"
+          requirement: O
+          definition: List All Users
+          parameter_value: N/A
+          description: Initiate the procedure to list all users' profiles registered with UDS.
+        - op_code_value: "0x05"
+          requirement: O
+          definition: Delete User(s)
+          parameter_value: User Index or 0xFF (UINT8) See Section 3.5.2.5
+          description: Delete the indicated user or, when 0xFF, delete all users.
+        - op_code_value: 0x06–0x1F
+          requirement: N/A
+          definition: Reserved for future use
+          parameter_value: N/A
+          description: N/A
+        - op_code_value: "0x20"
+          requirement: M
+          definition: Response Code See Section 3.5.2.6
+          parameter_value: Request Op Code (UINT8) & Response value (UINT8) & Response parameter (variable) See Section 3.5.2.6
+          description: |-
+            Used to identify the response to this Control Point.
+            See \autoref{sec:org.bluetooth.characteristic.user_control_point/field/response_indication} and \autoref{sec:org.bluetooth.characteristic.user_control_point/field/response_code_values}.
+        - op_code_value: 0x21–0xFF
+          requirement: N/A
+          definition: Reserved for future use
+          parameter_value: N/A
+          description: N/A
+    - name: Response indication
+      description: The format of the response indication is defined below.
+      section_title: Procedure complete
+      table_caption: User Control Point characteristic – parameter value format of the response indication
+      values:
+        - field: Request Op Code
+          data_type: uint8
+          size: "1"
+          description: Repeats the Op Code from the procedure.
+        - field: Response Value
+          data_type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.user_control_point/field/response_code_values}.
+        - field: Response Parameter (if present)
+          data_type: struct
+          size: 0 to 17
+          description: See \autoref{sec:org.bluetooth.characteristic.user_control_point/field/response_code_values}.
+    - name: Response Code Values
+      description: The Response Values for the User Control Point are defined below.
+      section_title: Procedure complete
+      table_caption: User Control Point characteristic – response values
+      values:
+        - response_value: "0x00"
+          definition: Reserved For Future Use
+          request_op_code: N/A
+          response_parameter: N/A
+          description: N/A
+        - response_value: "0x01"
+          definition: Success
+          request_op_code: Register New User
+          response_parameter: User Index (UINT8)
+          description: N/A
+        - response_value: "0x01"
+          definition: Success
+          request_op_code: Consent, Delete User Data
+          response_parameter: None
+          description: N/A
+        - response_value: "0x01"
+          definition: Success
+          request_op_code: List All Users
+          response_parameter: Number of users (UINT8)
+          description: N/A
+        - response_value: "0x01"
+          definition: Success
+          request_op_code: Delete User(s)
+          response_parameter: User Index of the deleted user or 0xFF when all users are deleted (UINT8)
+          description: N/A
+        - response_value: "0x02"
+          definition: Op Code not supported
+          request_op_code: Unassigned Op Code (RFU)
+          response_parameter: None
+          description: N/A
+        - response_value: "0x03"
+          definition: Invalid Parameter
+          request_op_code: Register New User, Consent, Delete User(s)
+          response_parameter: None
+          description: N/A
+        - response_value: "0x04"
+          definition: Operation Failed
+          request_op_code: Register New User, Consent
+          response_parameter: None
+          description: N/A
+        - response_value: "0x05"
+          definition: User Not Authorized
+          request_op_code: Delete User Data, Consent
+          response_parameter: None
+          description: N/A
+        - response_value: 0x06–0xFF
+          definition: Reserved For Future Use
+          request_op_code: N/A
+          response_parameter: N/A
+          description: N/A

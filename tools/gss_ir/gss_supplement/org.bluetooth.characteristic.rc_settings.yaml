@@ -1,0 +1,64 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Reconnection Configuration Service 1.0.1, 3.2 RC Settings (Tables 3.4–3.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.rc_settings
+  name: RC Settings
+  description: |-
+    The RC Settings characteristic shall be used to both read and notify supported features on the Reconnection Configuration server.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Length
+      type: uint8
+      size: "1"
+      description: |-
+        The length field represents the size of the RC Settings characteristic. At minimum the size is 3 octets and is enlarged by more octets depending on the size of the Settings field and if the E2E-CRC field is attached. This enables an extension of the characteristic for adding new features.
+    - field: Settings
+      type: boolean[16]
+      size: "2"
+      description: See \autoref{sec:org.bluetooth.characteristic.rc_settings/field/settings}.
+    - field: E2E-CRC
+      type: uint16
+      size: 0 or 2
+      description: |-
+        CRC calculated over all data but the CRC field itself. See \autoref{sec:crc_calculation} for details.
+        Present if E2E-CRC Supported bit in RC Feature characteristic is set to 1
+  fields:
+    - name: Settings
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Reserved for Future Use
+        - bit: "1"
+          description: |-
+            LESC Only
+            When set to 1, the next pairings are done in Security Mode 1, Level 4
+        - bit: "2"
+          description: |-
+            Use OOB Pairing
+            When set to 1 the next pairings are done with request for OOB
+        - bit: "3"
+          description: Reserved for Future Use
+        - bit: "4"
+          description: |-
+            Ready for Disconnect
+            When set to 1 the Reconnection Configuration server is ready for disconnect. The Reconnection Configuration server shall set this bit if no procedures are running to notify the Reconnection Configuration client that it should disconnect now (e.g., the Upgrade to LESC Only is done).
+        - bit: "5"
+          description: |-
+            Limited Access
+            This bit is used to signal other Reconnection Configuration clients that the Service will be disabled (characteristics are read only) by the Reconnection Configuration client setting this bit. Only this Reconnection Configuration client is able to control the settings (write to characteristics). This bit should be used very carefully to not exclude Reconnection Configuration clients from further reconnections.
+        - bit: "6"
+          description: |-
+            Access Permitted
+            This bit is signaling the Reconnection Configuration client that it can control the settings when Limited Access is set. (This is needed to enable a future Authorization Control Service to be included in a simple way.) If the bit “Limited Access” is not set, this bit shall be ignored.
+        - bit: "7"
+          description: Reserved for Future Use
+        - bit: 8–9
+          description: |-
+            Advertisement Mode
+            These two bits describe the configuration of advertising:
+            0b00 = Connectable undirected advertising (ADV_IND) ( default )
+            0b01 = Scannable undirected advertising (ADV_SCAN_IND)
+            0b10 = Non-connectable undirected advertising (ADV_NONCONN_IND)
+            0b11 = Connectable low duty cycle directed advertising (ADV_DIRECT_IND, low duty cycle)
+        - bit: 10–15
+          description: Reserved for Future Use

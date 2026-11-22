@@ -1,0 +1,14 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Ranging Service 1.0, Section 3.4.1 (Table 3.14).
+characteristic:
+  identifier: org.bluetooth.characteristic.ranging_data_ready
+  name: Ranging Data Ready
+  description: |-
+    The Ranging Data Ready characteristic shall be used by the RAS Server to inform the client of the availability of Ranging Data. The Ranging Data Ready characteristic shall be used when the RAS Server is configured to operate in the On-demand Ranging Data mode.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Ranging Counter
+      type: uint16
+      size: "2"
+      description: |-
+        The Ranging Counter of the completed CS Procedure.

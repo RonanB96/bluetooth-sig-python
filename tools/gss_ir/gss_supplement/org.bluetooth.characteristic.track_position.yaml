@@ -1,0 +1,16 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, Section 3.7.
+characteristic:
+  identifier: org.bluetooth.characteristic.track_position
+  name: Track Position
+  description: |-
+    The Track Position characteristic exposes the current track position of the current track in 0.01-second resolution as a 32-bit signed integer. The Track Position characteristic exposes the offset from the start of the track to the current playing position. If the start of the track is not well defined (such as in a live stream), the server sets a starting position (where Track Position equals 0) or sets the value to UNAVAILABLE (0xFFFFFFFF).
+    The track position of the current track is not used to synchronize audio between multiple devices. It is only used to display the current track position to the user and to allow the track position to be quickly repositioned (for example, to support client bookmarks). If the media player has no current track, the Track Position characteristic value shall be 0xFFFFFFFF.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Track Position
+      type: sint32
+      size: "4"
+      description: |-
+        Unit is second with a resolution of 0.01 second.
+        A value of 0xFFFFFFFF represents "UNAVAILABLE".

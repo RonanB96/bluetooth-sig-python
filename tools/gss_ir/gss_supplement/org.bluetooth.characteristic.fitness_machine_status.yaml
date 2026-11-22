@@ -1,0 +1,293 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Fitness Machine Service 1.0.1, 4.17 Fitness Machine Status (Tables 4.25–4.27; 4.16; 4.16.2.15–4.16.2.18).
+characteristic:
+  identifier: org.bluetooth.characteristic.fitness_machine_status
+  name: Fitness Machine Status
+  description: |-
+    The Fitness Machine Status characteristic is used to send the status of the Server. Included in the characteristic value is a Fitness Machine Status field, and depending on the value of the Fitness Machine Status Field, a Parameter field may also be included.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Op Code
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.fitness_machine_status/field/op_code}.
+    - field: Control Information
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.fitness_machine_status/field/control_information}.
+        Present if Op Code is 0x02
+    - field: New Target Speed
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Base Unit: org.bluetooth.unit.velocity.kilometre_per_hour
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 1/100 of a kilometer per hour
+        Present if Op Code is 0x05
+    - field: New Target Incline
+      type: sint16
+      size: "0 or 2"
+      description: |-
+        Base Unit: org.bluetooth.unit.percentage
+        Represented values: M = 1, d = -1, b = 0
+        Unit is 1/10 of a percent
+        Present if Op Code is 0x06
+    - field: New Target Resistance Level
+      type: sint16
+      size: "0 or 2"
+      description: |-
+        Base Unit: org.bluetooth.unit.unitless
+        Represented values: M = 1, d = -1, b = 0
+        Unit is 1/10
+        Present if Op Code is 0x07
+    - field: New Target Power
+      type: sint16
+      size: "0 or 2"
+      description: |-
+        Unit: org.bluetooth.unit.power.watt
+        Present if Op Code is 0x08
+    - field: New Target Heart Rate
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        Present if Op Code is 0x09
+    - field: New Targeted Expended Energy
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit: org.bluetooth.unit.energy.kilogram_calorie
+        Present if Op Code is 0x0A
+    - field: New Targeted Number of Steps Value
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        Present if Op Code is 0x0B
+    - field: New Targeted Number of Strides
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        Present if Op Code is 0x0C
+    - field: New Targeted Distance
+      type: uint24
+      size: "0 or 3"
+      description: |-
+        Unit: org.bluetooth.unit.length.metre
+        Present if Op Code is 0x0D
+    - field: New Targeted Training Time
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        Present if Op Code is 0x0E
+    - field: New Targeted Time Array (Two Heart Rate Zones)
+      type: struct
+      size: 0 or 4
+      description: |-
+        The format of the field matches Table 4.17.
+        See \autoref{sec:org.bluetooth.characteristic.fitness_machine_status/field/new_targeted_time_array_two_heart_rate_zones}.
+        Present if Op Code is 0x0F
+    - field: New Targeted Time Array (Three Heart Rate Zones)
+      type: struct
+      size: 0 or 6
+      description: |-
+        The format of the field matches Table 4.18.
+        See \autoref{sec:org.bluetooth.characteristic.fitness_machine_status/field/new_targeted_time_array_three_heart_rate_zones}.
+        Present if Op Code is 0x10
+    - field: New Targeted Time Array (Five Heart Rate Zones)
+      type: struct
+      size: 0 or 10
+      description: |-
+        The format of the field matches Table 4.19.
+        See \autoref{sec:org.bluetooth.characteristic.fitness_machine_status/field/new_targeted_time_array_five_heart_rate_zones}.
+        Present if Op Code is 0x11
+    - field: New Indoor Bike Simulation Parameters
+      type: struct
+      size: 0 or 6
+      description: |-
+        The format of the field matches Table 4.20.
+        See \autoref{sec:org.bluetooth.characteristic.fitness_machine_status/field/new_indoor_bike_simulation_parameters}.
+        Present if Op Code is 0x12
+    - field: New Wheel Circumference
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Base Unit: org.bluetooth.unit.length.millimetre
+        Represented values: M = 1, d = -1, b = 0
+        Unit is 1/10 of a millimeter
+        Present if Op Code is 0x13
+    - field: Spin Down Status Value
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.fitness_machine_status/field/spin_down_status_value}.
+        Present if Op Code is 0x14
+    - field: New Targeted Cadence
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Base Unit: org.bluetooth.unit.angular_velocity.revolution_per_minute
+        Represented values: M = 1, d = 0, b = -1
+        Unit is 1/2 of a revolution per minute
+        Present if Op Code is 0x15
+  fields:
+    - name: Op Code
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Reserved for Future Use
+        - value: "0x01"
+          description: Reset
+        - value: "0x02"
+          description: Fitness Machine Stopped or Paused by the User
+        - value: "0x03"
+          description: Fitness Machine Stopped by Safety Key
+        - value: "0x04"
+          description: Fitness Machine Started or Resumed by the User
+        - value: "0x05"
+          description: Target Speed Changed
+        - value: "0x06"
+          description: Target Incline Changed
+        - value: "0x07"
+          description: Target Resistance Level Changed
+        - value: "0x08"
+          description: Target Power Changed
+        - value: "0x09"
+          description: Target Heart Rate Changed
+        - value: "0x0A"
+          description: Targeted Expended Energy Changed
+        - value: "0x0B"
+          description: Targeted Number of Steps Changed
+        - value: "0x0C"
+          description: Targeted Number of Strides Changed
+        - value: "0x0D"
+          description: Targeted Distance Changed
+        - value: "0x0E"
+          description: Targeted Training Time Changed
+        - value: "0x0F"
+          description: Targeted Time in Two Heart Rate Zones Changed
+        - value: "0x10"
+          description: Targeted Time in Three Heart Rate Zones Changed
+        - value: "0x11"
+          description: Targeted Time in Five Heart Rate Zones Changed
+        - value: "0x12"
+          description: Indoor Bike Simulation Parameters Changed
+        - value: "0x13"
+          description: Wheel Circumference Changed
+        - value: "0x14"
+          description: Spin Down Status
+        - value: "0x15"
+          description: Targeted Cadence Changed
+        - value: 0x16–0xFE
+          description: Reserved for Future Use
+        - value: "0xFF"
+          description: Control Permission Lost
+    - name: Control Information
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Reserved for Future Use
+        - value: "0x01"
+          description: Stop
+        - value: "0x02"
+          description: Pause
+        - value: 0x03–0xFF
+          description: Reserved for Future Use
+    - name: New Targeted Time Array (Two Heart Rate Zones)
+      description: The structure of this field is defined below.
+      values:
+        - field: Targeted Time in Fat Burn Zone
+          data_type: uint16
+          size: "2"
+          description: Unit is org.bluetooth.unit.time.second.
+        - field: Targeted Time in Fitness Zone
+          data_type: uint16
+          size: "2"
+          description: Unit is org.bluetooth.unit.time.second.
+    - name: New Targeted Time Array (Three Heart Rate Zones)
+      description: The structure of this field is defined below.
+      values:
+        - field: Targeted Time in Light Zone
+          data_type: uint16
+          size: "2"
+          description: Unit is org.bluetooth.unit.time.second.
+        - field: Targeted Time in Moderate Zone
+          data_type: uint16
+          size: "2"
+          description: Unit is org.bluetooth.unit.time.second.
+        - field: Targeted Time in Hard Zone
+          data_type: uint16
+          size: "2"
+          description: Unit is org.bluetooth.unit.time.second.
+    - name: New Targeted Time Array (Five Heart Rate Zones)
+      description: The structure of this field is defined below.
+      values:
+        - field: Targeted Time in Very Light Zone
+          data_type: uint16
+          size: "2"
+          description: Unit is org.bluetooth.unit.time.second.
+        - field: Targeted Time in Light Zone
+          data_type: uint16
+          size: "2"
+          description: Unit is org.bluetooth.unit.time.second.
+        - field: Targeted Time in Moderate Zone
+          data_type: uint16
+          size: "2"
+          description: Unit is org.bluetooth.unit.time.second.
+        - field: Targeted Time in Hard Zone
+          data_type: uint16
+          size: "2"
+          description: Unit is org.bluetooth.unit.time.second.
+        - field: Targeted Time in Maximum Zone
+          data_type: uint16
+          size: "2"
+          description: Unit is org.bluetooth.unit.time.second.
+    - name: New Indoor Bike Simulation Parameters
+      description: The structure of this field is defined below.
+      values:
+        - field: Wind Speed
+          data_type: sint16
+          size: "2"
+          description: |-
+            Base Unit: org.bluetooth.unit.velocity.metres_per_second
+            Represented values: M = 1, d = -3, b = 0
+            Unit is 1/1000 of a meter per second
+        - field: Grade
+          data_type: sint16
+          size: "2"
+          description: |-
+            Base Unit: org.bluetooth.unit.percentage
+            Represented values: M = 1, d = -2, b = 0
+            Unit is 1/100 of a percent
+        - field: Crr
+          data_type: uint8
+          size: "1"
+          description: |-
+            Base Unit: org.bluetooth.unit.unitless
+            Represented values: M = 1, d = -4, b = 0
+            Unit is 1/10000
+        - field: Cw
+          data_type: uint8
+          size: "1"
+          description: |-
+            Base Unit: org.bluetooth.unit.unitless
+            Represented values: M = 1, d = -2, b = 0
+            Unit is 1/100
+    - name: Spin Down Status Value
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Reserved for Future Use
+        - value: "0x01"
+          description: Spin Down Requested
+        - value: "0x02"
+          description: Success
+        - value: "0x03"
+          description: Error
+        - value: "0x04"
+          description: Stop Pedaling
+        - value: 0x05–0xFF
+          description: Reserved for Future Use

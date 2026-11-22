@@ -1,0 +1,32 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HTTP Proxy Service 1.0, 3.5 HTTP Status Code Characteristic (Tables 3.3–3.4).
+characteristic:
+  identifier: org.bluetooth.characteristic.http_status_code
+  name: HTTP Status Code
+  description: |-
+    The HTTP Status Code characteristic contains the Status-Code from the Status-Line of the first line of the HTTP Response message, followed by one octet indicating the Data Status bit field indicating the status of the data received as defined in Table 3.5.
+    The HTTP Status Code characteristic value is 3 octets in length with first two-octets representing the Status Code encoded as uint16 based on the HTTP Status Code [3] followed by 1 octet Data Status bit field.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Status Code
+      type: uint16
+      size: "2"
+      description: Encoded as uint16 based on the HTTP Status Code [3].
+    - field: Data Status
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.http_status_code/field/data_status}.
+  fields:
+    - name: Data Status
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Headers Received
+        - bit: "1"
+          description: Headers Truncated
+        - bit: "2"
+          description: Body Received
+        - bit: "3"
+          description: Body Truncated
+        - bit: 4–7
+          description: Reserved for Future Use

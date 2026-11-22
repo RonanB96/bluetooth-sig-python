@@ -1,0 +1,156 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Physical Activity Monitor Service 1.0, Section 3.4 (Tables 3.10–3.11).
+characteristic:
+  identifier: org.bluetooth.characteristic.cardiorespiratory_activity_instantaneous_data
+  name: CardioRespiratory Activity Instantaneous Data
+  description: |-
+    The CardioRespiratory Activity Instantaneous Data characteristic is used to send session/sub-session-related data of an instantaneous nature (as defined in Section 2.2) to the client. The data is related to measurements that are typically supported by physical activity monitors that have cardiovascular and/or respiratory monitoring capabilities.
+    Included in the characteristic value are a Header field and a set of conditional fields, as shown in Table 3.10.
+    The characteristic value is of variable length, ranging up to 24 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Header
+      type: boolean[8]
+      size: "1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.cardiorespiratory_activity_instantaneous_data/field/header}.
+    - field: Flags
+      type: boolean[16]
+      size: "2"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.cardiorespiratory_activity_instantaneous_data/field/flags}.
+        Mandatory if no segmentation into multiple notifications is used. Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Session ID
+      type: uint16
+      size: "2"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Session ID field represents the identifier of the physical activity session to which the data is related.
+        Mandatory if no segmentation into multiple notifications is used. Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Sub-session ID
+      type: uint16
+      size: "2"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Sub-session ID field represents the identifier of the physical activity sub-session to which the data is related.
+        A value of 0xFFFF is reserved to denote that the data in the characteristic relates to an entire session (i.e., including all its sub-sessions).
+        Mandatory if no segmentation into multiple notifications is used. Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Relative Timestamp
+      type: uint32
+      size: "4"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Relative Timestamp field represents the time stamp of the data included in the CardioRespiratory Activity Instantaneous Data characteristic. The time stamp is represented as the elapsed number of seconds since the start of the physical activity session that is denoted in the Session ID field.
+        Mandatory if no segmentation into multiple notifications is used. Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Sequence Number
+      type: uint32
+      size: "4"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Sequence Number field represents the data sequence number included in the CardioRespiratory Activity Instantaneous Data characteristic.
+        Sequence Number field values are assigned by the server in an implementation-specific manner that facilitates the correct data organization on the client side. Sequence Number field values should be incremented by 1 every time their respective data characteristic is updated and should roll over to 0x00000000 after the maximum value 0xFFFFFFFF is reached.
+        Mandatory if no segmentation into multiple notifications is used. Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: VO2 Max
+      type: uint8
+      size: "1"
+      description: |-
+        Unit: org.bluetooth.unit.transfer_rate.milliliter_per_kilogram_per_minute
+        The VO2 Max field may be included in the CardioRespiratory Activity Instantaneous Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for VO2 Max.
+        The VO2 Max field represents the user's aerobic capacity, expressed as the maximum amount of oxygen that the user utilizes during very intense exercise.
+        Present if bit 0 of Flags field is set to 1
+    - field: Heart Rate
+      type: uint8
+      size: "1"
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        The Heart Rate field may be included in the CardioRespiratory Activity Instantaneous Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Heart Rate.
+        The Heart Rate field represents the user's heart rate.
+        Present if bit 1 of Flags field is set to 1
+    - field: Pulse Inter-beat Interval
+      type: uint16
+      size: "2"
+      description: |-
+        Base Unit: org.bluetooth.unit.time.second
+        Represented values: M = 1, d = 0, b = -10
+        Unit is 1/1024 s.
+        The Pulse Inter-beat Interval field may be included in the CardioRespiratory Activity Instantaneous Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Pulse Inter-beat Interval.
+        The Pulse Inter-beat Interval field represents the interval between the user's heartbeats. It may be determined by measuring the time interval between two consecutive R-peaks in an electrocardiogram.
+        Present if bit 2 of Flags field is set to 1
+    - field: Resting Heart Rate
+      type: uint8
+      size: "1"
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        The Resting Heart Rate field may be included in the CardioRespiratory Activity Instantaneous Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Resting Heart Rate.
+        The Resting Heart Rate field represents the user's heart rate at rest.
+        Present if bit 3 of Flags field is set to 1
+    - field: Heart Rate Variability
+      type: uint16
+      size: "2"
+      description: |-
+        Base Unit: org.bluetooth.unit.time.second
+        Represented values: M = 1, d = 0, b = -10
+        Unit is 1/1024 s.
+        The Heart Rate Variability field may be included in the CardioRespiratory Activity Instantaneous Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Heart Rate Variability.
+        The Heart Rate Variability field represents the user's pulse inter-beat interval variation.
+        Present if bit 4 of Flags field is set to 1
+    - field: Respiration Rate
+      type: uint8
+      size: "1"
+      description: |-
+        Unit: org.bluetooth.unit.period.breaths_per_minute
+        The Respiration Rate field may be included in the CardioRespiratory Activity Instantaneous Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Respiration Rate.
+        The Respiration Rate field represents the user's breathing rate.
+        Present if bit 5 of Flags field is set to 1
+    - field: Resting Respiration Rate
+      type: uint8
+      size: "1"
+      description: |-
+        Unit: org.bluetooth.unit.period.breaths_per_minute
+        The Resting Respiration Rate field may be included in the CardioRespiratory Activity Instantaneous Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Resting Respiration Rate.
+        The Resting Respiration Rate field represents the user's breathing rate at rest.
+        Present if bit 6 of Flags field is set to 1
+  fields:
+    - name: Header
+      description: |-
+        The Header field and its use are described in Section 2.4.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            First Segment
+            The First Segment bit identifies the first segment of a segmented Data Record.
+        - bit: "1"
+          description: |-
+            Last Segment
+            The Last Segment bit identifies the last segment of a segmented Data Record.
+        - bit: 2–7
+          description: |-
+            Rolling Segment Counter
+            The Rolling Segment Counter bits are used to enable the client to correctly reconstruct a segmented Data Record.
+    - name: Flags
+      description: |-
+        When the server includes a given data field in any of the segments (in case of Data Record segmentation), the associated bit of the Flags field shall be set to 1 (field present); otherwise, the associated bit shall be set to 0 (field not present).
+        If a given bit in the Physical Activity Monitor Features characteristic is set to 0, then the corresponding Flags field bit(s) shall be set to 0 and the associated field(s) shall not be present in the CardioRespiratory Activity Instantaneous Data characteristic.
+        If the Physical Activity Monitor Features characteristic denotes server support for the Device Worn feature, then the associated bit of the Flags field shall be set to 1 when the device is worn and shall be set to 0 when the device is not worn.
+        If the Physical Activity Monitor Features characteristic does not denote server support for the Device Worn feature, then the associated bit of the Flags field shall be set to 0.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: VO2 Max Present
+        - bit: "1"
+          description: Heart Rate Present
+        - bit: "2"
+          description: Pulse Inter-beat Interval Present
+        - bit: "3"
+          description: Resting Heart Rate Present
+        - bit: "4"
+          description: Heart Rate Variability Present
+        - bit: "5"
+          description: Respiration Rate Present
+        - bit: "6"
+          description: Resting Respiration Rate Present
+        - bit: 7–14
+          description: RFU
+        - bit: "15"
+          description: Device Worn

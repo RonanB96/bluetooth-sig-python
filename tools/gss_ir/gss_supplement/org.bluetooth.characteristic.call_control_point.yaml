@@ -1,0 +1,69 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Telephone Bearer Service 1.0, Section 3.12 (Tables 3.8 and 3.9).
+characteristic:
+  identifier: org.bluetooth.characteristic.call_control_point
+  name: Call Control Point
+  description: |-
+    The Call Control Point characteristic varies in length, depending on which opcode is used. The first octet is an enumerated value known as the opcode. The parameter fields that follow the opcode have different content based on the opcode. The format and content are described in Table 3.8 and Table 3.9. Optional opcodes are listed in the Call Control Point Optional Opcodes characteristic (see Section 3.13). All other opcodes are mandatory.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Opcode
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.call_control_point/field/opcode}
+    - field: Call_Index
+      type: uint8
+      size: "1"
+      description: |-
+        Allowed range is 1 to 255.
+        A value of 0 is reserved.
+        Present if Opcode is 0x00 or 0x01 or 0x02 or 0x03
+    - field: URI
+      type: utf8s
+      size: variable
+      description: |-
+        UTF-8 string
+        The URI is comprised of the URI scheme followed by the Caller ID (this could be a telephone number or username).
+        Present if Opcode is 0x04
+    - field: List_of_Call_Indexes
+      type: uint8[n]
+      size: 0 or n*1
+      description: |-
+        Each octet is a Call_Index value.
+        Allowed range is 1 to 255 per Call_Index.
+        A value of 0 is reserved.
+        Present if Opcode is 0x05
+  fields:
+    - name: Opcode
+      description: The values of this field are defined below.
+      section_title: Call Control Point characteristic opcodes and parameters
+      table_caption: Call Control Point characteristic opcodes and parameters
+      values:
+        - opcode_value: "0x00"
+          opcode: Accept
+          parameter: Call_Index (1 octet)
+          description: Answer the incoming call identified by Call_Index.
+        - opcode_value: "0x01"
+          opcode: Terminate
+          parameter: Call_Index (1 octet)
+          description: End the active, alerting (outgoing), dialing (outgoing), incoming, or held (locally or remotely) call identified by Call_Index.
+        - opcode_value: "0x02"
+          opcode: Local Hold
+          parameter: Call_Index (1 octet)
+          description: Place the active or incoming call identified by Call_Index on local hold.
+        - opcode_value: "0x03"
+          opcode: Local Retrieve
+          parameter: Call_Index (1 octet)
+          description: Move a locally held call identified by Call_Index to an active call. Move a locally and remotely held call to a remotely held call.
+        - opcode_value: "0x04"
+          opcode: Originate
+          parameter: URI (URI length octets)
+          description: Initiate a call to the remote party identified by the URI.
+        - opcode_value: "0x05"
+          opcode: Join
+          parameter: List_of_Call_Indexes (Number of Call Indexes octets)
+          description: Put calls in the list that are not in the Remotely Held state to the active state and join the calls. Any calls in the Remotely Held or Locally and Remotely Held states move to the Remotely Held state and are joined with the other calls.
+        - opcode_value: 0x06–0xFF
+          opcode: –
+          parameter: RFU
+          description: –

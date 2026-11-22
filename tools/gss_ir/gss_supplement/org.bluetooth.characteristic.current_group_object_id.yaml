@@ -1,0 +1,14 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, 3.14 Current Group Object ID.
+characteristic:
+  identifier: org.bluetooth.characteristic.current_group_object_id
+  name: Current Group Object ID
+  description: |-
+    The Current Group Object ID characteristic is used to access a Group Object type as defined in Section 4.4. This characteristic identifies the current group as a group object in the included OTS. If the media player has not created a current group, the length of the characteristic shall be zero. If the media player has a current group, the length of the characteristic is six octets (the size of uint48) and the value of this characteristic shall be a uint48 value that is in the range of a valid Object ID as defined in OTS. If present, the value can be used in the Object ID characteristic in the included OTS to allow access to the tracks and/or other groups of a group.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Current Group Object ID
+      type: uint48
+      size: 0 or 6
+      description: |-
+        Allowed range is: 0x000000000100 to 0xFFFFFFFFFFFF.

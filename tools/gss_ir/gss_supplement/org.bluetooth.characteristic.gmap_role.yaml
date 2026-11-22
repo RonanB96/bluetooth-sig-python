@@ -1,0 +1,39 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Gaming Audio Profile 1.0.1, 4.7.1 GMAP Role (Tables 4.2–4.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.gmap_role
+  name: GMAP Role
+  description: |-
+    The GMAP Role characteristic exposes the GMAP role(s) supported by the GMA Server.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Role
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.gmap_role/field/role}.
+  fields:
+    - name: Role
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Unicast Game Gateway (UGG)
+            0 = Not supported
+            1 = Supported
+        - bit: "1"
+          description: |-
+            Unicast Game Terminal (UGT)
+            0 = Not supported
+            1 = Supported
+        - bit: "2"
+          description: |-
+            Broadcast Game Sender (BGS)
+            0 = Not supported
+            1 = Supported
+        - bit: "3"
+          description: |-
+            Broadcast Game Receiver (BGR)
+            0 = Not supported
+            1 = Supported
+        - bit: 4–7
+          description: RFU

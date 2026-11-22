@@ -1,0 +1,14 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, 3.2 Media Player Icon Object ID.
+characteristic:
+  identifier: org.bluetooth.characteristic.media_player_icon_object_id
+  name: Media Player Icon Object ID
+  description: |-
+    The Media Player Icon Object ID characteristic is used to access a Media Player Icon Object type as defined in Section 4.1. The Media Player Icon Object ID characteristic identifies the Object ID of an object containing an icon that can identify this media player to the user. If the media player has no icon, the length of the characteristic shall be zero. If the media player has an icon, the length of the characteristic is six octets (the size of uint48) and the value of this characteristic shall be a uint48 value that is in the range of a valid Object ID as defined in OTS. If present, this value can be used in the Object ID characteristic in the included OTS to allow access to the contents of the icon.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Media Player Icon Object ID
+      type: uint48
+      size: 0 or 6
+      description: |-
+        Allowed range is: 0x000000000100 to 0xFFFFFFFFFFFF.

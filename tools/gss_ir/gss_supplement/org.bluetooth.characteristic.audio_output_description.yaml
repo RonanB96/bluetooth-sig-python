@@ -1,0 +1,13 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Volume Offset Control Service 1.0.1, Section 3.4.
+characteristic:
+  identifier: org.bluetooth.characteristic.audio_output_description
+  name: Audio Output Description
+  description: |-
+    The Audio Output Description characteristic shall be set to a description of the audio output that the VOCS instance describes, for example “Left Speaker” or “Right Warehouse Speaker.” The characteristic value is a UTF-8 string of zero or more characters.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Audio Output Description
+      type: utf8s
+      size: variable
+      description: UTF-8 string

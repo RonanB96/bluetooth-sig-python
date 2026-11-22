@@ -1,0 +1,17 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Published Audio Capabilities Service 1.0.2, Section 3.4 (Table 3.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.source_audio_locations
+  name: Source Audio Locations
+  description: |-
+    The Source Audio Locations characteristic is used to expose the supported Audio Locations when the server supports transmission of audio data.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Source Audio Locations
+      type: uint32
+      size: "4"
+      description: |-
+        Device-wide bitmap of supported Audio Location values for PAC records where the server supports transmission of audio data.
+        Audio Location values are defined in Bluetooth SIG Assigned Numbers \RefRef{assigned_numbers}.
+        A value of 0x00000000 indicates that the server supports transmitting only mono audio (no specified Audio Location).
+        For all other values, the identified locations and mono are supported.

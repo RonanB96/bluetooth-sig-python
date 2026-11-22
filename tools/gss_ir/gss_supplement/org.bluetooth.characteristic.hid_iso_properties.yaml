@@ -1,0 +1,95 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HID Over GATT Profile 1.2, Section 6.5.1 (Tables 6.4–6.8).
+characteristic:
+  identifier: org.bluetooth.characteristic.hid_iso_properties
+  name: HID ISO Properties
+  description: |-
+    The HID ISO Properties characteristic is used to show the device’s HID ISO features, supported report intervals for HID ISO, and mapping of reports that will use the LE Isochronous Channels in the Hybrid Operation mode. The value of the HID ISO Properties shall be static during a connection.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Features
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.hid_iso_properties/field/features}.
+    - field: Supported Report Intervals
+      type: boolean[16]
+      size: "2"
+      description: See \autoref{sec:org.bluetooth.characteristic.hid_iso_properties/field/supported_report_intervals}.
+    - field: Max SDU Size for Input Reports
+      type: uint8
+      size: "1"
+      description: Maximum SDU size the HID Device can use to send ISO data to the HID Host. Maximized robustness with no impact on latency. The sum of the longest Input Report length and the HID ISO protocol header multiplied by the maximum number of repetitions.
+    - field: Preferred SDU Size for Input Reports
+      type: uint8
+      size: "1"
+      description: Preferred SDU size the HID Device will use to send ISO data to the HID Host. Most use cases experience no or minor performance impact. The sum of the most critical Input Report length and the HID ISO protocol header multiplied by the maximum number of repetitions.
+    - field: Max SDU Size for Output Reports
+      type: uint8
+      size: "1"
+      description: Maximum SDU size the HID Host can use to send ISO data to the HID Device. Maximized robustness with no impact on latency. The sum of the longest Output Report length and the HID ISO protocol header multiplied by the maximum number of repetitions.
+    - field: Preferred SDU Size for Output Reports
+      type: uint8
+      size: "1"
+      description: Preferred SDU size the HID Host can use to send ISO data to the HID Device. Most use cases experience no or minor performance impact. The sum of the most critical Output Report length and the HID ISO protocol header multiplied by the maximum number of repetitions.
+    - field: Hybrid Mode ISO Reports
+      type: struct
+      size: 2 to 12
+      description: |-
+        Array of structs describing each Report Type and Report ID combination that the HID Device may use for transmission over LE Isochronous Channels in the Hybrid Operation mode. One to six structs (struct[1-6]); each struct is 2 octets.
+        See \autoref{sec:org.bluetooth.characteristic.hid_iso_properties/field/hybrid_mode_iso_reports}.
+  fields:
+    - name: Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Device Mode Change Supported
+        - bit: 1–7
+          description: RFU
+    - name: Supported Report Intervals
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: 1 ms
+        - bit: "1"
+          description: 2 ms
+        - bit: "2"
+          description: 3 ms
+        - bit: "3"
+          description: 4 ms
+        - bit: "4"
+          description: 5 ms
+        - bit: "5"
+          description: 1.25 ms
+        - bit: "6"
+          description: 2.5 ms
+        - bit: "7"
+          description: 3.75 ms
+        - bit: "8"
+          description: 7.5 ms
+        - bit: 9–15
+          description: RFU
+    - name: Hybrid Mode ISO Reports
+      description: The structure of each array element is defined below. The sequence of fields from Report ID through Additional Info is repeated once per Hybrid Mode ISO Report (1 to 6 times).
+      values:
+        - field: Report ID
+          data_type: uint8
+          size: "1"
+          description: Report ID for the Input or Output report.
+        - field: Additional Info
+          data_type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.hid_iso_properties/field/additional_info}.
+    - name: Additional Info
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Report Type
+            When the value is 0, the report is an Input Report.
+            When the value is 1, the report is an Output Report.
+        - bit: "1"
+          description: Confirmation Supported
+        - bit: "2"
+          description: Repetition Supported
+        - bit: 3–7
+          description: RFU

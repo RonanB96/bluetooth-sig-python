@@ -1,0 +1,61 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, 3.19 Media Control Point Opcodes Supported (Table 3.9).
+characteristic:
+  identifier: org.bluetooth.characteristic.media_control_point_opcodes_supported
+  name: Media Control Point Opcodes Supported
+  description: |-
+    The Media Control Point Opcodes Supported characteristic exposes the currently supported media control opcodes on the server. The value of this characteristic is a bit field of 32 bits, where bit n is set to 1 when opcode n is supported; otherwise, the bit is set to 0. The opcodes and bit fields are shown in Table 3.9.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Media Control Point Opcodes Supported
+      type: boolean[32]
+      size: "4"
+      description: See \autoref{sec:org.bluetooth.characteristic.media_control_point_opcodes_supported/field/media_control_point_opcodes_supported}.
+  fields:
+    - name: Media Control Point Opcodes Supported
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Play
+        - bit: "1"
+          description: Pause
+        - bit: "2"
+          description: Fast Rewind
+        - bit: "3"
+          description: Fast Forward
+        - bit: "4"
+          description: Stop
+        - bit: "5"
+          description: Move Relative
+        - bit: "6"
+          description: Previous Segment
+        - bit: "7"
+          description: Next Segment
+        - bit: "8"
+          description: First Segment
+        - bit: "9"
+          description: Last Segment
+        - bit: "10"
+          description: Goto Segment
+        - bit: "11"
+          description: Previous Track
+        - bit: "12"
+          description: Next Track
+        - bit: "13"
+          description: First Track
+        - bit: "14"
+          description: Last Track
+        - bit: "15"
+          description: Goto Track
+        - bit: "16"
+          description: Previous Group
+        - bit: "17"
+          description: Next Group
+        - bit: "18"
+          description: First Group
+        - bit: "19"
+          description: Last Group
+        - bit: "20"
+          description: Goto Group
+        - bit: 21–31
+          description: Reserved for Future Use

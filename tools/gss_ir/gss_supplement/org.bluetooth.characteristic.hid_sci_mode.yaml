@@ -1,0 +1,33 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HID Service Specification 1.1, 2.13.2 HID SCI Mode characteristic value, Table 2.19.
+characteristic:
+  identifier: org.bluetooth.characteristic.hid_sci_mode
+  name: HID SCI Mode
+  description: |-
+    The HID SCI Mode characteristic is used to hold the value representing the SCI Mode being used by the HID Device. The HID SCI Mode characteristic allows the HID Host to determine the HID SCI mode and to be notified of HID SCI mode changes from the HID Device.
+    The HID SCI Mode characteristic value shall be set to None following connection establishment. This value indicates that HID SCI is not being used.
+    When the HID SCI mode being used by the device changes, the HID SCI Mode characteristic value shall change to the value representing the new HID SCI mode being used. The new value change shall occur after the HID SCI mode change between the HID Host and HID Device completes successfully. If the HID SCI mode change cannot be completed successfully, then the HID SCI Mode characteristic value shall not change.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: HID SCI Mode
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.hid_sci_mode/field/hid_sci_mode}.
+  fields:
+    - name: HID SCI Mode
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: None
+        - value: "0x01"
+          description: Reserved for Future Use
+        - value: "0x02"
+          description: SCI Default mode
+        - value: "0x03"
+          description: SCI Fast mode
+        - value: "0x04"
+          description: SCI Low Power mode
+        - value: "0x05"
+          description: SCI Full Range mode
+        - value: 0x06–0xFF
+          description: Reserved for Future Use

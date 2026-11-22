@@ -1,0 +1,31 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Tire Pressure Monitoring System Service v1.0, Section 3.5 (Table 3.7).
+characteristic:
+  identifier: org.bluetooth.characteristic.tpms_properties
+  name: TPMS Properties
+  description: |-
+    The TPMS Properties characteristic represents the properties of the TPMS Sensor.
+    The TPMS Properties characteristic is an 8-bit bitfield. The format of the characteristic is defined in Table 3.7.
+    When read, the TPMS Properties characteristic shall provide information to the client that assists with interpreting data in the Tire Acceleration characteristic and in the advertising data.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: TPMS Properties
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.tpms_properties/field/tpms_properties}.
+  fields:
+    - name: TPMS Properties
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Tire Acceleration Type
+            If Tire Acceleration characteristic (see Section 3.4) is present and if set to 1, the Server reports radial acceleration; if set to 0, the Server reports tangential acceleration.
+            If Tire Acceleration characteristic is absent and if set to 1, the Server supports motion detection; if set to 0, the Server does not support motion detection.
+        - bit: "1"
+          description: |-
+            MAC Type
+            If set to 1, the Server uses a hash-based Message Authentication Code algorithm to sign advertising data (see Section 3.3.9 in [6]).
+            If set to 0, the Server uses a cypher-based Message Authentication Code to sign advertising data (see Section 3.3.9 in [6]).
+        - bit: 2–7
+          description: RFU

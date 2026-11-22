@@ -1,0 +1,34 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Electronic Shelf Label Service v1.0.1, Section 3.1.1 (Figure 3.1).
+characteristic:
+  identifier: org.bluetooth.characteristic.esl_address
+  name: ESL Address
+  description: |-
+    Each ESL Address consists of 15 bits and is split into a Group_ID and an ESL_ID. The Group_ID is a 7‑bit value, and the ESL_ID is an 8-bit value, as shown in Figure 3.1.
+    The ESL Address is configured when the Client writes an ESL Address value to the ESL Address characteristic.
+    The structure of this characteristic is defined below.
+  size_in_bits: true
+  structure:
+    - field: ESL_ID
+      type: uint8
+      size: "8"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.esl_address/field/esl_id}.
+    - field: Group_ID
+      type: uint7
+      size: "7"
+      description: |-
+        Each ESL is a member of a group, identified by the Group_ID part of the ESL Address.
+        Allowed range is 0 to 127.
+    - field: RFU
+      type: uint1
+      size: "1"
+      description: Reserved for Future Use (RFU). Shall be set to 0.
+  fields:
+    - name: ESL_ID
+      description: The values of this field are defined below.
+      values:
+        - value: 0x00–0xFE
+          description: Valid ESL_ID
+        - value: "0xFF"
+          description: Broadcast Address

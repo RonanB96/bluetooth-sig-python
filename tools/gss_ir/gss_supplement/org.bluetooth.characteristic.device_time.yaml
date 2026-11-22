@@ -1,0 +1,102 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Device Time Service 1.0, 3.3 Device Time characteristic (Tables 3.6–3.7).
+characteristic:
+  identifier: org.bluetooth.characteristic.device_time
+  name: Device Time
+  description: |-
+    The Device Time characteristic (DT characteristic) is used to both read and indicate the Server's device time. The DT characteristic reveals the Server's time and time status.
+    The DT characteristic is 8 to 20 octets, depending on supported features.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: E2E_CRC
+      type: uint16
+      size: 0 or 2
+      description: |-
+        CRC calculated over all fields except for the E2E_CRC field itself.
+        Mandatory if the E2E-CRC feature is supported, otherwise Excluded.
+    - field: Base_Time
+      type: uint32
+      size: "4"
+      description: |-
+        Unit is seconds.
+        The Base_Time field represents the seconds since midnight of January 1, 1900 (00:00:00.0000 on January 1, 1900) when the DT_Status flag for Epoch Year 2000 is set to 0. When the DT_Status flag for Epoch Year 2000 is set to 1; then the Base_Time field represents the seconds since January 1, 2000; 00:00:00.
+        The range of valid Base_Time values is implementation-specific, and the server may restrict the range of Base_Time values for each supported epoch year.
+    - field: Time_Zone
+      type: sint8
+      size: "1"
+      description: |-
+        Unit is 15 minutes.
+        The Time_Zone field shall have the same formatting as defined by the Time Zone characteristic described in \autoref{sec:org.bluetooth.characteristic.time_zone}.
+    - field: DST_Offset
+      type: uint8
+      size: "1"
+      description: |-
+        The DST_Offset field shall have the same formatting as defined by the DST Offset characteristic described in \autoref{sec:org.bluetooth.characteristic.dst_offset}.
+    - field: DT_Status
+      type: boolean[16]
+      size: "2"
+      description: |-
+        The Device Time Status (DT_Status) field reveals the status of the current DT characteristic.
+        See \autoref{sec:org.bluetooth.characteristic.device_time/field/dt_status}.
+    - field: User_Time
+      type: uint32
+      size: 0 or 4
+      description: |-
+        Unit is seconds.
+        If the Separate User Timeline feature is supported, then the value of the User_Time field represents the number of seconds since the epoch date as declared in the Epoch Year 2000 DT_Status flag, which reflects the device's displayed user-facing time.
+        Mandatory if Separate User Timeline feature is supported, otherwise Excluded.
+    - field: Accumulated_RTC_Drift
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit is seconds.
+        The Accumulated_RTC_Drift field represents the present amount of accumulated drift (absolute value) in seconds that the RTC may have drifted from a qualified synchronized source since the last synchronization event.
+        Mandatory if the RTC Drift Tracking feature is supported, otherwise Excluded.
+    - field: Next_Sequence_Number
+      type: uint16
+      size: 0 or 2
+      description: |-
+        When the Server supports the Time Change Logging feature, this field shall hold the Sequence_Number of the next to-be-logged time change event.
+        Mandatory if the Time Change Logging feature is supported, otherwise Excluded.
+    - field: Base_Time_Second_Fractions
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit is 1/65,536 second.
+        When the Server supports the Base Time Second-Fractions feature the Base_Time_Second_Fractions field shall represent the Base Time fractions of a second of the synchronized time source in 1/65,536 seconds.
+        Mandatory if the Base Time Second-Fractions feature is supported, otherwise Excluded.
+  fields:
+    - name: DT_Status
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Time Fault
+            The Server is in a time-faulted state where the value of the device clock is not aligned with any external reference due to a discontinuous timeline.
+        - bit: "1"
+          description: |-
+            UTC Aligned
+            The Server is synchronized with a time source that is aligned with UTC.
+        - bit: "2"
+          description: |-
+            Qualified Local Time Synchronized
+            The Server is synchronized with a Qualified Local Time source. (Both Time_Zone and DST_Offset have been set by a source.)
+        - bit: "3"
+          description: |-
+            Propose Time Update Request
+            The Server wants a Client to initiate a Time Update procedure using the DTCP.
+        - bit: "4"
+          description: |-
+            Epoch Year 2000
+            0 = time values use the epoch year of 1900
+            1 = time values use the epoch year of 2000
+        - bit: "5"
+          description: |-
+            Non-Logged Time Change Active
+            The Server has applied one or more non-logged time adjustments to the Base_Time, the accumulated value of which is below the Non_Logged_Time_Adjustment_Limit.
+        - bit: "6"
+          description: |-
+            Log Consolidation Active
+            The Server has applied one or more consolidated time adjustments to the Base_Time that are not reflected by the most recent Time Change Log entry.
+        - bit: 7–15
+          description: Reserved for Future Use

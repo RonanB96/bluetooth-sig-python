@@ -1,0 +1,54 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Indoor Positioning Service 1.0, 3.1 Indoor Positioning Configuration Characteristic (Table 3.2).
+characteristic:
+  identifier: org.bluetooth.characteristic.indoor_positioning_configuration
+  name: Indoor Positioning Configuration
+  description: |-
+    The Indoor Positioning Configuration Characteristic describes the advertise information data embedded in the Indoor Positioning Service AD type [7] (see Section 2.2.2).
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Indoor Positioning Configuration
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.indoor_positioning_configuration/field/indoor_positioning_configuration}.
+  fields:
+    - name: Indoor Positioning Configuration
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Presence of coordinates in advertising packets
+            0 = coordinates are not present
+            1 = coordinates are present
+        - bit: "1"
+          description: |-
+            Coordinate system used in advertising packets
+            0 = WGS84 coordinate system
+            1 = Local coordinate system
+        - bit: "2"
+          description: |-
+            Presence of Tx Power field in advertising packets
+            0 = Tx Power is not present
+            1 = Tx Power is present
+        - bit: "3"
+          description: |-
+            Presence of Altitude field in advertising packets
+            0 = Altitude is not present
+            1 = Altitude is present
+        - bit: "4"
+          description: |-
+            Presence of Floor Number in advertising packets
+            0 = Floor Number is not present
+            1 = Floor Number is present
+        - bit: "5"
+          description: |-
+            Presence of Uncertainty in advertising packets
+            0 = Uncertainty is not present
+            1 = Uncertainty is present
+        - bit: "6"
+          description: |-
+            Location Name available in the GATT database
+            0 = Location Name is not present
+            1 = Location Name is present
+        - bit: "7"
+          description: Reserved for Future Use

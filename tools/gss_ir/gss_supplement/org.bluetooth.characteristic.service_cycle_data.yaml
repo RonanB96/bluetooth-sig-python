@@ -1,0 +1,101 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Industrial Measurement Device Service 1.0, Section 3.7 (Tables 3.25–3.28).
+characteristic:
+  identifier: org.bluetooth.characteristic.service_cycle_data
+  name: Service Cycle Data
+  description: |-
+    The Service Cycle Data characteristic provides values describing the service cycle of the IMD.
+    Some devices may not be capable of supporting all service cycle data (e.g., devices with single measurements do not count Use Time). The Flags field defines which of those fields are present.
+    The structure of this characteristic when read is defined below.
+    The structure of this characteristic when written is defined below.
+  structures:
+    read:
+      - field: Flags
+        type: boolean[16]
+        size: "2"
+        description: See \autoref{sec:org.bluetooth.characteristic.service_cycle_data/field/flags}.
+      - field: Service Cycle Status
+        type: uint8
+        size: 0 or 1
+        description: |-
+          The field describes whether the device requires service or not.
+          See \autoref{sec:org.bluetooth.characteristic.service_cycle_data/field/service_cycle_status}.
+          Present if bit 0 of Flags field is set to 1
+      - field: Next Service Date
+        type: uint16
+        size: 0 or 2
+        description: |-
+          The date by which the next service of the device should be performed, in number of days since 2000-01-01.
+          Present if bit 1 of Flags field is set to 1
+      - field: Max Use Time
+        type: uint24
+        size: 0 or 3
+        description: |-
+          The field specifies the amount of time in hours the IMD can be used until the next service should be performed.
+          Present if bit 2 of Flags field is set to 1
+      - field: Max Work Cycles Count
+        type: uint24
+        size: 0 or 3
+        description: |-
+          The field specifies the upper limit for the number of work cycles the IMD can execute until the next service should be performed.
+          Present if bit 3 of Flags field is set to 1
+      - field: Actual Use Time
+        type: uint24
+        size: 0 or 3
+        description: |-
+          The Actual Use Time field indicates the actual use time of the IMD in hours since the service has been performed. The value is set to zero when the service is performed.
+          Present if bit 4 of Flags field is set to 1
+      - field: Work Cycle Counter
+        type: uint24
+        size: 0 or 3
+        description: |-
+          A counter indicating the number of times the IMD executed a work cycle since the last service. The value of the counter is set to zero when the service is performed.
+          Present if bit 5 of Flags field is set to 1
+    write:
+      - field: Next Service Date
+        type: uint16
+        size: "2"
+        description: |-
+          The field identifies the date in number of days since 2000-01-01 when the next service should be performed.
+          Value of 0 specifies that the value is not set.
+      - field: Max Use Time
+        type: uint24
+        size: "3"
+        description: |-
+          The field specifies the amount of time in hours the IMD can be used until the next service should be performed.
+          Value of 0 specifies that the value is not set.
+      - field: Max Work Cycles Count
+        type: uint24
+        size: "3"
+        description: |-
+          The field specifies the number of work cycles the IMD can execute until the next service should be performed.
+          Value of 0 specifies that the value is not set.
+  fields:
+    - name: Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: If set, then the Service Cycle Status field is present.
+        - bit: "1"
+          description: If set, then the Next Service Date field is present.
+        - bit: "2"
+          description: If set, then the Max Use Time field is present.
+        - bit: "3"
+          description: If set, then the Max Work Cycles Count field is present.
+        - bit: "4"
+          description: If set, then the Actual Use Time field is present.
+        - bit: "5"
+          description: If set, then the Work Cycle Counter field is present.
+        - bit: 6–15
+          description: Reserved for Future Use
+    - name: Service Cycle Status
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: No service needed; the device operates under good conditions.
+        - value: "0x01"
+          description: Maintenance service is recommended because the device operates under suboptimal but still acceptable conditions.
+        - value: "0x02"
+          description: Maintenance service is required because the device operates under suboptimal conditions.
+        - value: 0x03–0xFF
+          description: Reserved for Future Use

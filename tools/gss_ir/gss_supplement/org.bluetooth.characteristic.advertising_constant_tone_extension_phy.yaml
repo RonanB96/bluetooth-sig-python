@@ -1,0 +1,23 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Constant Tone Extension Service 1.0, 3.6 Advertising Constant Tone Extension PHY (Table 3.7).
+characteristic:
+  identifier: org.bluetooth.characteristic.advertising_constant_tone_extension_phy
+  name: Advertising Constant Tone Extension PHY
+  description: |-
+    The Advertising Constant Tone Extension PHY characteristic is a control-point attribute that stores the type of PHY used by the server for transmitting Constant Tone Extension on the advertising channels.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Advertising Constant Tone Extension PHY
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.advertising_constant_tone_extension_phy/field/advertising_constant_tone_extension_phy}.
+  fields:
+    - name: Advertising Constant Tone Extension PHY
+      description: The values of this field are defined below.
+      values:
+        - value: "0"
+          description: LE 1M PHY
+        - value: "1"
+          description: LE 2M PHY
+        - value: 2–255
+          description: Reserved for Future Use

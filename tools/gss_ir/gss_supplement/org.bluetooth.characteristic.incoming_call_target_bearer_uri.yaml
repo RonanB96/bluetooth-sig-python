@@ -1,0 +1,19 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Telephone Bearer Service 1.0, Section 3.10.
+characteristic:
+  identifier: org.bluetooth.characteristic.incoming_call_target_bearer_uri
+  name: Incoming Call Target Bearer URI
+  description: |-
+    The Incoming Call Target Bearer URI characteristic returns the Call Index followed by the URI of the target of an incoming call. An example of the URI is “tel:+15025551212” and is formatted as a UTF-8 string.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Call Index
+      type: uint8
+      size: "1"
+      description: |-
+        Each telephone call is identified by a Call_Index value that is unique per service.
+        The Call_Index octet is a number chosen by the server to identify an active call.
+    - field: Incoming Call Target URI
+      type: utf8s
+      size: variable
+      description: UTF-8 string

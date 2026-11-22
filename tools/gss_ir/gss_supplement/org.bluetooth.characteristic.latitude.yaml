@@ -1,0 +1,17 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Indoor Positioning Service 1.0, Section 3.2.
+characteristic:
+  identifier: org.bluetooth.characteristic.latitude
+  name: Latitude
+  description: |-
+    The Latitude Characteristic describes the global WGS84 North coordinate [5] of the device.
+    Latitude is based on WGS84 [5] datum. The relation between the Latitude X in range [-90°, 90°] and the encoded (transmitted) number N is N = floor((X / 90) * 2^31), where N is bounded to the range -2^31 + 1 ≤ N ≤ 2^31 - 1. If N exceeds the bounds, the closest value within the bounds shall be used. The floor operation shall be performed according to [4].
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Latitude
+      type: signed_magnitude32
+      size: "4"
+      description: |-
+        Signed integer of size 32 bits encoded as signed magnitude.
+        Allowed range is: -2147483647 to 2147483647.
+        A value of 0x80000000 represents "Latitude characteristic is not configured".

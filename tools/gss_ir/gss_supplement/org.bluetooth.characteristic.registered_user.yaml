@@ -1,0 +1,77 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: User Data Service 1.1, Section 3.4 Registered User (Tables 3.2–3.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.registered_user
+  name: Registered User
+  description: |-
+    The Registered User characteristic may be used to communicate Registered User Data via one or more GATT indications.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Segmentation Header
+      type: boolean[8]
+      size: "1"
+      description: |-
+        Information on the segmentation of the data in multiple segments.
+        See \autoref{sec:org.bluetooth.characteristic.registered_user/field/segmentation_header}.
+    - field: Registered User Data
+      type: struct
+      size: 1.. (ATT_MTU-4)
+      description: |-
+        Compound value consisting of Flags, a Registered User Index and a Registered User Name.
+        See \autoref{sec:org.bluetooth.characteristic.registered_user/field/registered_user_data}.
+  fields:
+    - name: Segmentation Header
+      description: |-
+        The server shall use this structure to provide information to the client on the segments that need to be concatenated to get a complete Registered User Data value.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            First Segment: The characteristic contains the first segment of content that should be concatenated by the client.
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            Last Segment: The characteristic contains the last segment of content that should be concatenated by the client.
+            0 = False
+            1 = True
+        - bit: 2–7
+          description: |-
+            Rolling Segment Number: 0 to 63
+            When the Rolling Segment Number is equal to 63, the value is reset to 0 the next time it is incremented.
+    - name: Registered User Data
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          data_type: boolean[8]
+          size: "1"
+          description: |-
+            Mandatory field.
+            See \autoref{sec:org.bluetooth.characteristic.registered_user/field/flags}.
+        - field: Registered User Index
+          data_type: uint8
+          size: "1"
+          description: Mandatory field. The User Index of a registered user.
+        - field: Registered User Name
+          data_type: utf8s
+          size: 0…*
+          description: |-
+            UTF-8 string
+            The Registered User Name is composed of the First Name, a space (" "), and the Last Name, or a truncated part of this concatenation, as decided by the implementation.
+            The value is truncated if bit 1 of the Flags field is set to 1.
+            Present if bit 0 of the Flags field is set to 1
+    - name: Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Registered User Name present
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            User Name is truncated
+            0 = False
+            1 = True
+        - bit: 2–7
+          description: Reserved for Future Use

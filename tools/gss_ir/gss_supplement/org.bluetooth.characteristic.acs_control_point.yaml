@@ -1,0 +1,1456 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Authorization Control Service 1.0, Section 4.4 ACS Control Point (Tables 4.11–4.78).
+characteristic:
+  identifier: org.bluetooth.characteristic.acs_control_point
+  name: ACS Control Point
+  description: |-
+    The ACS Control Point (CP) provides procedures to assist the AC Client in determining the details of the information security controls and mapping information security controls to protected GATT resources and supported key exchange methods. The ACS CP also provides the AC Client the ability to invalidate the established security, to exchange a key, to request a list of restriction map IDs, to activate a restriction map, and/or to set the state of the security controls switch.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Segmentation_Header
+      type: struct
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/segmentation_header}.
+    - field: Opcode
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/opcode}.
+    - field: Operand
+      type: struct
+      size: Variable
+      description: |-
+        The Payload field is composed of the Opcode and Operand fields (see Table 4.12).
+        Present for the Opcode as defined in Table 4.13; otherwise excluded.
+        See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/acs_cp_procedure_requirements}.
+  fields:
+
+    - name: Segmentation_Header
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            First Segment
+            0 = This segment is not the first segment of the segmented payload.
+            1 = This segment of the segmented payload is the first segment.
+        - bit: "1"
+          description: |-
+            Last Segment
+            0 = This segment is not the last segment of the segmented payload.
+            1 = This segment of the segmented payload is the last segment.
+        - bit: 2–7
+          description: |-
+            Rolling Segment Counter
+            Unsigned integer value between 0 and 63; incremented by one with each segment; rolls over from 63 to 0.
+
+    - name: Opcode
+      description: The values of this field are defined below.
+      section_title: ACS CP Opcode values
+      table_caption: ACS CP Opcode values
+      values:
+        - op_code_value: "0x00"
+          definition: Response Code
+          operand_section: 4.4.4.1
+          description: General response from the ACS CP to state procedure errors. Also used for successful procedures if the response for the procedure does not require parameters specific to the request.
+        - op_code_value: "0x01"
+          definition: Get All Active Descriptors
+          operand_section: 4.4.4.2
+          description: Triggers the procedures that report ACS descriptors that are active in a single request.
+        - op_code_value: "0x02"
+          definition: Get Restriction Map Descriptor
+          operand_section: 4.4.4.3
+          description: Gets the restriction map based on the restriction map ID and filter criterion, if provided and as applicable.
+        - op_code_value: "0x03"
+          definition: Restriction Map Descriptor Response
+          operand_section: 4.4.4.4
+          description: Used by the AC Server to provide a restriction map.
+        - op_code_value: "0x04"
+          definition: Get Restriction Map ID List
+          operand_section: 4.4.4.5
+          description: Gets a list of restriction map IDs that identify all available restriction maps.
+        - op_code_value: "0x05"
+          definition: Restriction Map ID List Response
+          operand_section: 4.4.4.6
+          description: Used by the AC Server to provide the restriction map ID list.
+        - op_code_value: "0x06"
+          definition: Activate Restriction Map
+          operand_section: 4.4.4.7
+          description: Activates the restriction map identified by the included restriction map ID.
+        - op_code_value: "0x07"
+          definition: Get Resource Handle To UUID Map
+          operand_section: 4.4.4.8
+          description: Gets the map between Resource Handles and UUIDs.
+        - op_code_value: "0x08"
+          definition: Resource Handle To UUID Map Response
+          operand_section: 4.4.4.9
+          description: Used by the AC Server to provide the map between Resource Handles and UUIDs.
+        - op_code_value: "0x09"
+          definition: Get Service And Characteristic UUIDs For Characteristic Resource Handle
+          operand_section: 4.4.4.10
+          description: Gets the service and characteristic UUIDs for a requested resource handle.
+        - op_code_value: "0x0A"
+          definition: Service And Characteristic UUIDs For Characteristic Resource Handle Response
+          operand_section: 4.4.4.11
+          description: Used by the AC Server to provide the service and characteristic UUIDs for the request resource handle.
+        - op_code_value: "0x0B"
+          definition: Get Information Security Configuration Descriptor
+          operand_section: 4.4.4.12
+          description: Gets the information security configurations based on the filter criterion, if provided and as applicable.
+        - op_code_value: "0x0C"
+          definition: Information Security Configuration Descriptor Response
+          operand_section: 4.4.4.13
+          description: Used by the AC Server to provide the information security configurations.
+        - op_code_value: "0x0D"
+          definition: Get Key Descriptor
+          operand_section: 4.4.4.14
+          description: Requests the supported key exchange methods based on the filter criterion, if provided and as applicable.
+        - op_code_value: "0x0E"
+          definition: Key Descriptor Response
+          operand_section: 4.4.4.15
+          description: Used by the AC Server to provide the supported key exchange methods.
+        - op_code_value: "0x0F"
+          definition: Get Current Key List
+          operand_section: 4.4.4.16
+          description: Requests the list of key IDs that are valid.
+        - op_code_value: "0x10"
+          definition: Current Key List Response
+          operand_section: 4.4.4.17
+          description: Used by the AC Server to provide a list of the current keys.
+        - op_code_value: "0x11"
+          definition: Start Key Exchange
+          operand_section: 4.4.4.18
+          description: Requests the start of key exchange for the included key ID.
+        - op_code_value: "0x12"
+          definition: Key Exchange Response
+          operand_section: 4.4.4.19
+          description: Used by the AC Server to provide the results of the key exchange.
+        - op_code_value: "0x13"
+          definition: Invalidate All Established Security
+          operand_section: 4.4.4.20
+          description: Invalidates all of the established security for all AC Clients.
+        - op_code_value: "0x14"
+          definition: Invalidate Key
+          operand_section: 4.4.4.21
+          description: Invalidates one or more keys for the requesting AC Client.
+        - op_code_value: "0x15"
+          definition: Abort
+          operand_section: 4.4.4.22
+          description: Stops any ACS CP procedure that is in progress.
+        - op_code_value: "0x16"
+          definition: Set Security Controls Switch
+          operand_section: 4.4.4.23
+          description: Sets the state of the security controls switch to turn on or to turn off security controls provided by ACS.
+        - op_code_value: "0x17"
+          definition: Get Key URI
+          operand_section: 4.4.4.24
+          description: Requests the URI that can be used to get the AC Server key.
+        - op_code_value: "0x18"
+          definition: Key URI Response
+          operand_section: 4.4.4.25
+          description: Used by the AC Server to provide the key URI.
+        - op_code_value: "0x19"
+          definition: Get ACS Feature
+          operand_section: 4.4.4.26
+          description: Requests the features and capabilities supported by the AC Server.
+        - op_code_value: "0x1A"
+          definition: ACS Feature Response
+          operand_section: 4.4.4.27
+          description: Used by the AC Server to provide the supported features and capabilities.
+        - op_code_value: "0x1B"
+          definition: Key Exchange ECDH
+          operand_section: 4.4.4.28
+          description: Requests the exchange of public keys as part of the ECDH key agreement scheme.
+        - op_code_value: "0x1C"
+          definition: Key Exchange ECDH Response
+          operand_section: 4.4.4.29
+          description: Used by the AC Server to provide the AC Server public key as part of the ECDH key agreement scheme.
+        - op_code_value: "0x1D"
+          definition: Key Exchange ECDH Confirmation Code
+          operand_section: 4.4.4.30
+          description: Requests the exchange of confirmation codes to validate the exchanged key as part of the ECDH key agreement scheme.
+        - op_code_value: "0x1E"
+          definition: Key Exchange ECDH Confirmation Code Response
+          operand_section: 4.4.4.31
+          description: Used by the AC Server to provide the AC Server confirmation code as part of the ECDH key agreement scheme.
+        - op_code_value: "0x1F"
+          definition: Key Exchange ECDH Confirmation Random Number
+          operand_section: 4.4.4.32
+          description: Requests the exchange of random numbers generated to calculate the ECDH confirmation code as part of the ECDH key agreement scheme.
+        - op_code_value: "0x20"
+          definition: Key Exchange ECDH Confirmation Random Number Response
+          operand_section: 4.4.4.33
+          description: Used by the AC Server to provide the AC Server random number as part of the ECDH key agreement scheme.
+        - op_code_value: "0x21"
+          definition: Key Exchange KDF
+          operand_section: 4.4.4.34
+          description: Requests the exchange of keys using KDF or as part of the ECDH key agreement scheme.
+        - op_code_value: "0x22"
+          definition: Key Exchange KDF Response
+          operand_section: 4.4.4.35
+          description: Used by the AC Server to provide the KDF parameters.
+        - op_code_value: "0x23"
+          definition: Set AC Client Nonce Fixed
+          operand_section: 4.4.4.36
+          description: Sets the fixed part of the AC Client nonce.
+        - op_code_value: 0x24 – 0xDC
+          definition: RFU
+          operand_section: N/A
+          description: These values are reserved for future use.
+        - op_code_value: "0xDD"
+          definition: Get ATT_MTU
+          operand_section: 4.4.4.37
+          description: Requests the negotiated ATT_MTU size that can be used by the AC Client to optimize communication.
+        - op_code_value: "0xDE"
+          definition: ATT_MTU Response
+          operand_section: 4.4.4.38
+          description: Used by the AC Server to provide the negotiated ATT_MTU.
+        - op_code_value: "0xDF"
+          definition: Initiate Pairing
+          operand_section: 4.4.4.39
+          description: Requests the initiation of the pairing procedure by the AC Server.
+        - op_code_value: 0xE0 – 0xFF
+          definition: Manufacturer-specific Opcodes
+          operand_section: N/A
+          description: These values are reserved for manufacturer-specific use.
+
+    - name: ACS CP procedure requirements
+      description: The requirements of the opcodes and operands for the ACS CP procedures are defined below.
+      section_title: ACS Control Point procedure requirements
+      table_caption: ACS CP procedure requirements (Requests)
+      values:
+        - opcode: Get All Active Descriptors
+          procedure_section: 4.4.3.1
+          opcode_requirement: C.1
+          operand: N/A
+          operand_requirement: N/A
+          description: N/A
+        - opcode: Get Restriction Map Descriptor
+          procedure_section: 4.4.3.2
+          opcode_requirement: C.1
+          operand: Restriction_Map_ID Resource_Handle_Filter
+          operand_requirement: M
+          description: N/A
+        - opcode: Get Restriction Map ID List
+          procedure_section: 4.4.3.3
+          opcode_requirement: C.1
+          operand: N/A
+          operand_requirement: N/A
+          description: N/A
+        - opcode: Activate Restriction Map
+          procedure_section: 4.4.3.4
+          opcode_requirement: C.2
+          operand: Restriction_Map_ID
+          operand_requirement: M
+          description: N/A
+        - opcode: Get Resource Handle To UUID Map
+          procedure_section: 4.4.3.5
+          opcode_requirement: C.3
+          operand: N/A
+          operand_requirement: N/A
+          description: N/A
+        - opcode: Get Service And Characteristic UUIDs For Characteristic Resource Handle
+          procedure_section: 4.4.3.6
+          opcode_requirement: C.3
+          operand: Characteristic_Resource_Handle
+          operand_requirement: M
+          description: N/A
+        - opcode: Get Information Security Configuration Descriptor
+          procedure_section: 4.4.3.7
+          opcode_requirement: C.1
+          operand: Information_Security_Configuration_ID_Filter
+          operand_requirement: M
+          description: N/A
+        - opcode: Get Key Descriptor
+          procedure_section: 4.4.3.8
+          opcode_requirement: C.4
+          operand: Key_ID_Filter
+          operand_requirement: M
+          description: N/A
+        - opcode: Get Current Key List
+          procedure_section: 4.4.3.9
+          opcode_requirement: C.4
+          operand: N/A
+          operand_requirement: N/A
+          description: N/A
+        - opcode: Start Key Exchange
+          procedure_section: 4.4.3.10
+          opcode_requirement: C.5
+          operand: Key_ID Selected_Confirmation_Method Selected_Confirmation_Action
+          operand_requirement: M
+          description: N/A
+        - opcode: Invalidate All Established Security
+          procedure_section: 4.4.3.11
+          opcode_requirement: C.6
+          operand: N/A
+          operand_requirement: N/A
+          description: N/A
+        - opcode: Invalidate Key
+          procedure_section: 4.4.3.12
+          opcode_requirement: C.5 and C.6
+          operand: Key_ID
+          operand_requirement: M
+          description: N/A
+        - opcode: Abort
+          procedure_section: 4.4.3.13
+          opcode_requirement: C.7
+          operand: N/A
+          operand_requirement: N/A
+          description: N/A
+        - opcode: Set Security Controls Switch
+          procedure_section: 4.4.3.14
+          opcode_requirement: C.8
+          operand: Switch_State
+          operand_requirement: M
+          description: N/A
+        - opcode: Get Key URI
+          procedure_section: 4.4.3.15
+          opcode_requirement: C.9
+          operand: Key_ID
+          operand_requirement: N/A
+          description: N/A
+        - opcode: Get ACS Feature
+          procedure_section: 4.4.3.16
+          opcode_requirement: M
+          operand: N/A
+          operand_requirement: N/A
+          description: N/A
+        - opcode: Key Exchange ECDH
+          procedure_section: 4.4.3.17.1.1
+          opcode_requirement: C.10
+          operand: Key_ID AC_Client_Public_Key
+          operand_requirement: M
+          description: N/A
+        - opcode: Key Exchange ECDH Confirmation Code
+          procedure_section: 4.4.3.17.1.2
+          opcode_requirement: C.10
+          operand: Key_ID AC_Client_Confirmation_Code
+          operand_requirement: M
+          description: N/A
+        - opcode: Key Exchange ECDH Confirmation Random Number
+          procedure_section: 4.4.3.17.1.3
+          opcode_requirement: C.10
+          operand: Key_ID AC_Client_Confirmation_Random_Number
+          operand_requirement: M
+          description: N/A
+        - opcode: Key Exchange KDF
+          procedure_section: 4.4.3.17.2.1
+          opcode_requirement: C.5
+          operand: Key_ID
+          operand_requirement: M
+          description: N/A
+        - opcode: Set AC Client Nonce Fixed
+          procedure_section: 4.4.3.18
+          opcode_requirement: C.13
+          operand: Key_ID AC_Client_Nonce_Fixed_Value
+          operand_requirement: M
+          description: N/A
+        - opcode: Get ATT_MTU
+          procedure_section: 4.4.3.19
+          opcode_requirement: C.11
+          operand: N/A
+          operand_requirement: N/A
+          description: N/A
+        - opcode: Initiate Pairing
+          procedure_section: 4.4.3.20
+          opcode_requirement: C.12
+          operand: N/A
+          operand_requirement: N/A
+          description: N/A
+
+    - name: ACS CP procedure requirements
+      description: The requirements of the opcodes and operands for the ACS CP procedures are defined below.
+      section_title: ACS Control Point procedure requirements
+      table_caption: ACS CP procedure requirements (Responses)
+      values:
+        - opcode: Response Code
+          procedure_section: N/A
+          opcode_requirement: M
+          operand: Request_Opcode Response_Code_Value
+          operand_requirement: M
+          description: N/A
+        - opcode: Restriction Map Descriptor Response
+          procedure_section: 4.4.3.2
+          opcode_requirement: C.1
+          operand: Array of Restriction_Map_Records
+          operand_requirement: M
+          description: N/A
+        - opcode: Restriction Map ID List Response
+          procedure_section: 4.4.3.3
+          opcode_requirement: C.1
+          operand: Array of Restriction_ Map_ID_List_Entries
+          operand_requirement: M
+          description: N/A
+        - opcode: Resource Handle To UUID Map Response
+          procedure_section: 4.4.3.5
+          opcode_requirement: C.3
+          operand: Array of Resource_Handle_To_UUID_Map_Records
+          operand_requirement: M
+          description: N/A
+        - opcode: Service And Characteristic UUIDs For Characteristic Resource Handle Response
+          procedure_section: 4.4.3.6
+          opcode_requirement: C.3
+          operand: Service_UUID_Size Service_UUID Characteristic_UUID_Size Characteristic_UUID
+          operand_requirement: M
+          description: N/A
+        - opcode: Information Security Configuration Descriptor Response
+          procedure_section: 4.4.3.7
+          opcode_requirement: C.1
+          operand: Array of Information_Security_Configuration_Records
+          operand_requirement: M
+          description: N/A
+        - opcode: Key Descriptor Response
+          procedure_section: 4.4.3.8
+          opcode_requirement: C.4
+          operand: Array of Key_Records
+          operand_requirement: M
+          description: N/A
+        - opcode: Current Key List Response
+          procedure_section: 4.4.3.9
+          opcode_requirement: C.4
+          operand: Number_Of_Key_IDs Array of Key_IDs
+          operand_requirement: M
+          description: N/A
+        - opcode: Key Exchange Response
+          procedure_section: 4.4.3.10
+          opcode_requirement: C.5
+          operand: Key_ID Response_Code
+          operand_requirement: M
+          description: N/A
+        - opcode: Key URI Response
+          procedure_section: 4.4.3.15
+          opcode_requirement: C.9
+          operand: Key_ID Key_URI
+          operand_requirement: M
+          description: N/A
+        - opcode: ACS Feature Response
+          procedure_section: 4.4.3.16
+          opcode_requirement: M
+          operand: Features Protection_Methods OOB_Key_Exchange_Capabilities Confirmation_Static_OOB_Number_Capabilities Confirmation_Input_OOB_Number_Maximum_Value Confirmation_Input_OOB_Number_Capabilities Confirmation_Output_OOB_Number_Maximum_Value Confirmation_Output_OOB_Number_Capabilities
+          operand_requirement: M
+          description: N/A
+        - opcode: Key Exchange ECDH Response
+          procedure_section: 4.4.3.17.1.1
+          opcode_requirement: C.10
+          operand: Key_ID AC_Server_Public_Key
+          operand_requirement: M
+          description: N/A
+        - opcode: Key Exchange ECDH Confirmation Code Response
+          procedure_section: 4.4.3.17.1.2
+          opcode_requirement: C.10
+          operand: Key_ID AC_Server_Confirmation_Code
+          operand_requirement: M
+          description: N/A
+        - opcode: Key Exchange ECDH Confirmation Random Number Response
+          procedure_section: 4.4.3.17.1.3
+          opcode_requirement: C.10
+          operand: Key_ID AC_Server_Confirmation_Random_Number
+          operand_requirement: M
+          description: N/A
+        - opcode: Key Exchange KDF Response
+          procedure_section: 4.4.3.17.2.1
+          opcode_requirement: C.5
+          operand: Key_ID KDF_Salt_Size KDF_Salt KDF_Info_Size KDF_Info
+          operand_requirement: M
+          description: N/A
+        - opcode: ATT_MTU Response
+          procedure_section: 4.4.3.19
+          opcode_requirement: C.11
+          operand: ATT_MTU_Size
+          operand_requirement: M
+          description: N/A
+
+    - name: Response Code Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Request_Opcode
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/opcode}.
+        - field: Response_Code_Value
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/response_code_value}.
+
+    - name: Response_Code_Value
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: RFU
+        - value: "0x01"
+          description: Success
+        - value: "0x02"
+          description: Opcode Not Supported
+        - value: "0x03"
+          description: Invalid Operand
+        - value: "0x04"
+          description: Procedure Not Completed
+        - value: "0x05"
+          description: Parameter Out Of Range
+        - value: "0x06"
+          description: Procedure Not Applicable
+        - value: "0x07"
+          description: Abort Unsuccessful
+        - value: "0x08"
+          description: No Records Found
+        - value: "0x09"
+          description: Invalid Key Exchange Confirmation Code
+        - value: "0x0A"
+          description: Invalid Public Key
+        - value: 0x0B–0xFF
+          description: RFU
+
+    - name: Get Restriction Map Descriptor Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Restriction_Map_ID
+          type: uint16
+          size: "2"
+          description: Identifies the requested restriction map.
+        - field: Resource_Handle_Filter
+          type: uint16
+          size: "2"
+          description: Resource Handle filter; 0xFFFF requests the complete restriction map descriptor.
+
+    - name: Restriction Map Descriptor Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Restriction_Map_Records
+          type: struct
+          size: "Variable"
+          description: Array of restriction map records. Each record is composed of Type_ID, Type_Value, Data_Size, and conditional Data per Section 4.1.1.2 and Table 4.5.
+
+    - name: Restriction Map Record Type_ID
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Restriction Map ID
+        - value: "0x01"
+          description: Default Security Configuration
+        - value: "0x02"
+          description: Protected Characteristic
+        - value: "0x03"
+          description: Protected Control Point
+        - value: 0x04–0xFF
+          description: RFU
+
+    - name: Restriction Map Record Data Entry
+      description: The structure of this field is defined below.
+      values:
+        - field: Opcode
+          type: uint16
+          size: "2"
+          description: ATT opcode or control point procedure opcode.
+        - field: Information_Security_Configuration_ID
+          type: uint16
+          size: "2"
+          description: Information Security Configuration ID for the protected resource.
+
+    - name: Restriction Map ID List Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Restriction_Map_ID_List_Entries
+          type: struct
+          size: "Variable"
+          description: Array of entries; each entry is Restriction_Map_ID (uint16, 2 octets) and Information_Security_Configuration_ID (uint16, 2 octets) per Table 4.22.
+
+    - name: Activate Restriction Map Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Restriction_Map_ID
+          type: uint16
+          size: "2"
+          description: Identifies the restriction map to be activated.
+
+    - name: Resource Handle To UUID Map Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Resource_Handle_To_UUID_Map_Records
+          type: struct
+          size: "Variable"
+          description: Array of records per Table 4.25.
+
+    - name: Resource_Handle_To_UUID_Map_Record
+      description: The structure of this field is defined below.
+      values:
+        - field: Attribute_Type
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/resource_handle_to_uuid_map_record_attribute_type}.
+        - field: Resource_Handle
+          type: uint16
+          size: "2"
+          description: Resource Handle assigned by the AC Server.
+        - field: UUID_Size
+          type: uint8
+          size: "1"
+          description: Size of the UUID field in octets (2, 4, or 16).
+        - field: UUID
+          type: struct
+          size: "Variable"
+          description: 16-bit, 32-bit, or 128-bit UUID per UUID_Size.
+        - field: Number_Of_Sub-Attributes
+          type: uint8
+          size: "0 or 1"
+          description: Present if Attribute_Type requires sub-attributes per Table 4.26; otherwise excluded.
+        - field: Resource_Handle_To_UUID_Map_Records
+          type: struct
+          size: "0 or Variable"
+          description: Present if Attribute_Type requires sub-attributes per Table 4.26; recursive structure per Section 4.4.4.9.1.
+
+    - name: Resource_Handle_To_UUID_Map_Record Attribute_Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Primary Service
+        - value: "0x01"
+          description: Secondary Service
+        - value: "0x02"
+          description: Characteristic Value
+        - value: 0x03–0xFF
+          description: RFU
+
+    - name: Get Service And Characteristic UUIDs For Characteristic Resource Handle Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Characteristic_Resource_Handle
+          type: uint16
+          size: "2"
+          description: AC Server-assigned Resource Handle for a characteristic.
+
+    - name: Service And Characteristic UUIDs For Characteristic Resource Handle Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Service_UUID_Size
+          type: uint8
+          size: "1"
+          description: Size of the Service_UUID field in octets.
+        - field: Service_UUID
+          type: struct
+          size: "Variable"
+          description: Service UUID.
+        - field: Characteristic_UUID_Size
+          type: uint8
+          size: "1"
+          description: Size of the Characteristic_UUID field in octets.
+        - field: Characteristic_UUID
+          type: struct
+          size: "Variable"
+          description: Characteristic UUID.
+
+    - name: Get Information Security Configuration Descriptor Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Information_Security_Configuration_ID_Filter
+          type: uint16
+          size: "2"
+          description: Filter criterion; 0xFFFF requests all available records.
+
+    - name: Information Security Configuration Descriptor Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Information_Security_Configuration_Records
+          type: struct
+          size: "Variable"
+          description: Array of descriptor records per Section 4.1.1.2.
+
+    - name: Information Security Configuration ID Additional Parameters
+      description: The structure of this field is defined below.
+      values:
+        - field: Number_Of_Information_Security_Controls
+          type: uint8
+          size: "1"
+          description: Number of controls in Information_Security_Controls; shall not be 0.
+        - field: Information_Security_Controls
+          type: uint8
+          size: "Variable"
+          description: Array of enumerated security control values per Table 4.33.
+        - field: Key_ID
+          type: uint16
+          size: "0 or 2"
+          description: Present if Information_Security_Controls requires a key ID; otherwise excluded.
+
+    - name: Information_Security_Controls
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Nonce
+        - value: "0x01"
+          description: Authenticated Protected Resource Request Or Response
+        - value: "0x02"
+          description: Encrypted Protected Resource Request Or Response
+        - value: "0x03"
+          description: Authenticated And Encrypted Protected Resource Request Or Response
+        - value: "0x04"
+          description: Authenticated And Encrypted Protected Resource Request Or Response With Associated Data
+        - value: "0x05"
+          description: Unencrypted Protected Resource Request Or Response
+        - value: "0x06"
+          description: MAC
+        - value: 0x07–0xDF
+          description: RFU
+        - value: 0xE0–0xFF
+          description: Manufacturer-specific Security Control Type
+
+    - name: Get Key Descriptor Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID_Filter
+          type: uint16
+          size: "2"
+          description: Key filter; 0xFFFF requests all available key descriptor records.
+
+    - name: Key Descriptor Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_Records
+          type: struct
+          size: "Variable"
+          description: Array of key records per Section 4.4.4.15.1.
+
+    - name: Key Exchange Record Type_ID
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: OOB Key Exchange
+        - value: "0x01"
+          description: ECDH Key Exchange
+        - value: "0x02"
+          description: KDF Key Exchange
+        - value: "0x03"
+          description: AES-128-CMAC
+        - value: "0x04"
+          description: AES-128-CCM
+        - value: "0x05"
+          description: AES-128-EAX
+        - value: "0x06"
+          description: AES-128-GCM
+        - value: "0x07"
+          description: AES-128-GMAC
+        - value: 0x08–0xDF
+          description: RFU
+        - value: 0xE0–0xFF
+          description: Manufacturer-specific Type
+
+    - name: Information Security Configuration Record Type_ID
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Information Security Configuration ID
+        - value: 0x01–0xFF
+          description: RFU
+
+    - name: Descriptor Record
+      description: The structure of this field is defined below.
+      values:
+        - field: Type_ID
+          type: uint8
+          size: "1"
+          description: Record type.
+        - field: Type_Value
+          type: uint16
+          size: "2"
+          description: Type-specific value.
+        - field: Data_Size
+          type: uint8
+          size: "1"
+          description: Total size of the Data field in octets.
+        - field: Data
+          type: struct
+          size: "0 or Variable"
+          description: Present if the record type requires Data and Data_Size is not 0; otherwise excluded.
+
+    - name: OOB Key Exchange Additional Parameters
+      description: The structure of this field is defined below.
+      values:
+        - field: OOB_Method
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/oob_method}.
+        - field: AC_Server_Public_Key_Format
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/ac_server_public_key_format}.
+        - field: AC_Client_Public_Key_Format
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/ac_client_public_key_format}.
+        - field: Elliptic_Curve
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/elliptic_curve}.
+        - field: Key_Derivation_Function
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/key_derivation_function}.
+
+    - name: ECDH Key Exchange Additional Parameters
+      description: The structure of this field is defined below.
+      values:
+        - field: AC_Server_Public_Key_Format
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/ac_server_public_key_format}.
+        - field: AC_Client_Public_Key_Format
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/ac_client_public_key_format}.
+        - field: Elliptic_Curve
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/elliptic_curve}.
+        - field: Key_Derivation_Function
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/key_derivation_function}.
+
+    - name: KDF Key Exchange Additional Parameters
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: Parent key descriptor record reference.
+        - field: Key_Derivation_Function
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/key_derivation_function}.
+
+    - name: Security Algorithm Additional Parameters
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: Referenced key descriptor record.
+        - field: Message_Type
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/message_type}.
+        - field: MAC_Size
+          type: uint8
+          size: "1"
+          description: MAC field size in octets.
+        - field: Nonce_Type
+          type: uint8
+          size: "0 or 1"
+          description: Present for AES-128-CCM, AES-128-EAX, AES-128-GCM, or AES-128-GMAC record types; otherwise excluded.
+        - field: Nonce_Variable_Size
+          type: uint8
+          size: "0 or 1"
+          description: Present for AES-128-CCM, AES-128-EAX, AES-128-GCM, or AES-128-GMAC record types; otherwise excluded.
+        - field: Nonce_Fixed_Size
+          type: uint8
+          size: "0 or 1"
+          description: Present for AES-128-CCM, AES-128-EAX, AES-128-GCM, or AES-128-GMAC record types; otherwise excluded.
+        - field: AC_Server_Nonce_Fixed_Value
+          type: struct
+          size: "0 or Variable"
+          description: Present if Nonce_Fixed_Size is greater than 0; otherwise excluded.
+
+    - name: OOB_Method
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Manufacturer-specific
+        - value: "0x01"
+          description: URI
+        - value: "0x02"
+          description: 2D Machine-readable Code
+        - value: "0x03"
+          description: Bar Code
+        - value: "0x04"
+          description: NFC
+        - value: 0x05–0xFF
+          description: RFU
+
+    - name: AC_Server_Public_Key_Format
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Uncompressed Plain
+        - value: "0x01"
+          description: X.509 DER-encoded
+        - value: 0x02–0xDF
+          description: RFU
+        - value: 0xE0–0xFF
+          description: Manufacturer-specific Key Formats
+
+    - name: AC_Client_Public_Key_Format
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Uncompressed Plain
+        - value: "0x01"
+          description: X.509 DER-encoded
+        - value: 0x02–0xDF
+          description: RFU
+        - value: 0xE0–0xFF
+          description: Manufacturer-specific Key Formats
+
+    - name: Elliptic_Curve
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Curve P-256
+        - value: "0x01"
+          description: Curve P-384
+        - value: "0x02"
+          description: Curve P-521
+        - value: "0x03"
+          description: Curve25519
+        - value: 0x04–0xFF
+          description: RFU
+
+    - name: Key_Derivation_Function
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: HKDF SHA-256 128-bit
+        - value: "0x01"
+          description: HKDF SHA-256 128-bit With Additional KDF Info Concatenation
+        - value: "0x02"
+          description: HKDF SHA-384 128-bit
+        - value: "0x03"
+          description: HKDF SHA-384 128-bit With Additional KDF Info Concatenation
+        - value: "0x04"
+          description: HKDF SHA-512 128-bit
+        - value: "0x05"
+          description: HKDF SHA-512 128-bit With Additional KDF Info Concatenation
+        - value: 0x06–0xFF
+          description: RFU
+
+    - name: Message_Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Profile Defined Parameter
+        - value: "0x01"
+          description: Protected Resource Value
+        - value: 0x02–0xFF
+          description: RFU
+
+    - name: Nonce_Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Profile Defined Parameter
+        - value: "0x01"
+          description: Sequence Number Even-Odd
+        - value: "0x02"
+          description: Sequence Number Different Fixed Parts
+        - value: 0x03–0xFF
+          description: RFU
+
+    - name: Current Key List Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Number_Of_Key_IDs
+          type: uint8
+          size: "1"
+          description: Total number of current key IDs.
+        - field: Key_IDs
+          type: uint16
+          size: "0 or Variable"
+          description: Array of key IDs; present if Number_Of_Key_IDs is not 0; otherwise excluded.
+
+    - name: Start Key Exchange Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: Key ID about to be exchanged.
+        - field: Selected_Confirmation_Method
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/selected_confirmation_method}.
+        - field: Selected_Confirmation_Action
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/selected_confirmation_action}.
+
+    - name: Selected_Confirmation_Method
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: No Confirmation OOB Method Used
+        - value: "0x01"
+          description: Confirmation Output OOB Number Action Used
+        - value: "0x02"
+          description: Confirmation Input OOB Number Action Used
+        - value: "0x03"
+          description: Confirmation Static OOB Number Used
+        - value: 0x04–0xFF
+          description: RFU
+
+    - name: Selected_Confirmation_Action
+      description: The values of this field depend on Selected_Confirmation_Method.
+      values:
+        - value: "0xFF"
+          description: |-
+            Used when Selected_Confirmation_Method is No Confirmation OOB Method Used, Confirmation Static OOB Number Used, or as Prohibited in the output and input action tables.
+    - name: Selected_Confirmation_Action Output
+      description: Output action values when Selected_Confirmation_Method is Confirmation Output OOB Number Action Used.
+      values:
+        - value: "0x00"
+          description: RFU
+        - value: "0x01"
+          description: Beep
+        - value: "0x02"
+          description: RFU
+        - value: "0x03"
+          description: Output Numeric
+        - value: 0x04–0xFE
+          description: RFU
+        - value: "0xFF"
+          description: Prohibited
+    - name: Selected_Confirmation_Action Input
+      description: Input action values when Selected_Confirmation_Method is Confirmation Input OOB Number Action Used.
+      values:
+        - value: "0x00"
+          description: Push
+        - value: "0x01"
+          description: RFU
+        - value: "0x02"
+          description: Input Numeric
+        - value: 0x03–0xFE
+          description: RFU
+        - value: "0xFF"
+          description: Prohibited
+
+    - name: Key Exchange Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: Successfully exchanged key ID.
+        - field: Response_Code
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/key_exchange_response_code}.
+
+    - name: Key_Exchange_Response_Code
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Key Exchange Successful
+        - value: "0x01"
+          description: Key Exchange Failed
+        - value: 0x02–0xFF
+          description: RFU
+
+    - name: Invalidate Key Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: Key ID assigned by the AC Server.
+
+    - name: Set Security Controls Switch Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Switch_State
+          type: boolean
+          size: "1"
+          description: 1 turns on the security controls switch; 0 turns it off. LSB of the octet; remaining bits padding 0.
+
+    - name: Get Key URI Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: Key ID assigned by the AC Server.
+
+    - name: Key URI Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: Key ID from the Get Key URI request.
+        - field: Key_URI
+          type: utf8s
+          size: "variable"
+          description: UTF-8 string URI of the key.
+
+    - name: ACS Feature Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Features
+          type: boolean[32]
+          size: "4"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/features}.
+        - field: Protection_Methods
+          type: boolean[16]
+          size: "2"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/protection_methods}.
+        - field: OOB_Key_Exchange_Capabilities
+          type: boolean[16]
+          size: "2"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/oob_key_exchange_capabilities}.
+        - field: Confirmation_Static_OOB_Number_Capabilities
+          type: boolean[16]
+          size: "2"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/confirmation_static_oob_number_capabilities}.
+        - field: Confirmation_Input_OOB_Number_Maximum_Value
+          type: uint32
+          size: "4"
+          description: Maximum Input OOB Number value.
+        - field: Confirmation_Input_OOB_Number_Capabilities
+          type: boolean[16]
+          size: "2"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/confirmation_input_oob_number_capabilities}.
+        - field: Confirmation_Output_OOB_Number_Maximum_Value
+          type: uint32
+          size: "4"
+          description: Maximum Output OOB Number value.
+        - field: Confirmation_Output_OOB_Number_Capabilities
+          type: boolean[16]
+          size: "2"
+          description: See \autoref{sec:org.bluetooth.characteristic.acs_control_point/field/confirmation_output_oob_number_capabilities}.
+
+    - name: Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Set Security Controls Switch Supported
+        - bit: "1"
+          description: Descriptors Supported
+        - bit: "2"
+          description: Multiple Restriction Maps Supported
+        - bit: "3"
+          description: Resource Handle To UUID Map Supported
+        - bit: "4"
+          description: Initiation of Pairing Supported
+        - bit: "5"
+          description: OOB Key Exchange Supported
+        - bit: "6"
+          description: ECDH Key Exchange Supported
+        - bit: "7"
+          description: KDF Key Exchange Supported
+        - bit: "8"
+          description: Key URI Supported
+        - bit: "9"
+          description: Invalidate Established Security Supported
+        - bit: "10"
+          description: ATT_MTU Supported
+        - bit: "11"
+          description: Protected Resource Uses Write Request
+        - bit: "12"
+          description: Protected Resource Uses Read Request
+        - bit: "13"
+          description: Protected Resource Uses Notification
+        - bit: "14"
+          description: Protected Resource Uses Indication
+        - bit: "15"
+          description: Key Format AC Server Manufacturer-specific Supported
+        - bit: "16"
+          description: Key Format AC Client Manufacturer-specific Supported
+        - bit: "17"
+          description: Key Format AC Server Uncompressed Plain Supported
+        - bit: "18"
+          description: Key Format AC Client Uncompressed Plain Supported
+        - bit: "19"
+          description: Key Format AC Server X.509 Supported
+        - bit: "20"
+          description: Key Format AC Client X.509 Supported
+        - bit: 21–32
+          description: RFU
+
+    - name: Protection_Methods
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Confidentiality Supported
+        - bit: "1"
+          description: Integrity Supported
+        - bit: "2"
+          description: Authentication Supported
+        - bit: "3"
+          description: Authorization Supported
+        - bit: "4"
+          description: Non-repudiation Supported
+        - bit: "5"
+          description: Manufacturer-specific Controls Used
+        - bit: 6–15
+          description: RFU
+
+    - name: OOB_Key_Exchange_Capabilities
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Other
+        - bit: "1"
+          description: URI
+        - bit: "2"
+          description: 2D Machine-readable Code
+        - bit: "3"
+          description: Bar Code
+        - bit: "4"
+          description: NFC
+        - bit: "5"
+          description: Number
+        - bit: "6"
+          description: String
+        - bit: "7"
+          description: X.509 Certificate
+        - bit: "11"
+          description: On Box
+        - bit: "12"
+          description: Inside Box
+        - bit: "13"
+          description: On Piece Of Paper
+        - bit: "14"
+          description: Inside Manual
+        - bit: "15"
+          description: On Device
+        - bit: 8–10
+          description: RFU
+
+    - name: Confirmation_Static_OOB_Number_Capabilities
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Other
+        - bit: "1"
+          description: URI
+        - bit: "2"
+          description: 2D Machine-readable Code
+        - bit: "3"
+          description: Bar Code
+        - bit: "4"
+          description: NFC
+        - bit: "5"
+          description: Number
+        - bit: "6"
+          description: String
+        - bit: "7"
+          description: X.509 Certificate
+        - bit: "11"
+          description: On Box
+        - bit: "12"
+          description: Inside Box
+        - bit: "13"
+          description: On Piece Of Paper
+        - bit: "14"
+          description: Inside Manual
+        - bit: "15"
+          description: On Device
+        - bit: 8–10
+          description: RFU
+
+    - name: Confirmation_Input_OOB_Number_Capabilities
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Push
+        - bit: "1"
+          description: RFU
+        - bit: "2"
+          description: Input Numeric
+        - bit: 3–15
+          description: RFU
+
+    - name: Confirmation_Output_OOB_Number_Capabilities
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: RFU
+        - bit: "1"
+          description: Beep
+        - bit: "2"
+          description: RFU
+        - bit: "3"
+          description: Output Numeric
+        - bit: 4–15
+          description: RFU
+
+    - name: Key Exchange ECDH Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: ECDH key descriptor record reference.
+        - field: AC_Client_Public_Key
+          type: struct
+          size: "Variable"
+          description: Uncompressed plain structure per Table 4.66 or X.509 DER-encoded structure per Table 4.67, depending on AC_Client_Public_Key_Format in the key descriptor.
+
+    - name: AC_Client_Public_Key Uncompressed Plain
+      description: The structure of this field is defined below.
+      values:
+        - field: AC_Client_Public_Key_X_Size
+          type: uint8
+          size: "1"
+          description: Size of AC_Client_Public_Key_X in octets.
+        - field: AC_Client_Public_Key_X
+          type: struct
+          size: "Variable"
+          description: X component of the AC Client public key.
+        - field: AC_Client_Public_Key_Y_Size
+          type: uint8
+          size: "1"
+          description: Size of AC_Client_Public_Key_Y in octets.
+        - field: AC_Client_Public_Key_Y
+          type: struct
+          size: "0 or Variable"
+          description: Present if AC_Client_Public_Key_Y_Size is not 0; otherwise excluded.
+
+    - name: AC_Client_Public_Key X.509 DER-encoded
+      description: The structure of this field is defined below.
+      values:
+        - field: AC_Client_Public_Key_X509_Size
+          type: uint16
+          size: "2"
+          description: Size of AC_Client_Public_Key_X509 in octets.
+        - field: AC_Client_Public_Key_X509
+          type: struct
+          size: "Variable"
+          description: X.509 DER-encoded AC Client public key.
+
+    - name: Key Exchange ECDH Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: ECDH key descriptor record reference.
+        - field: AC_Server_Public_Key
+          type: struct
+          size: "Variable"
+          description: Uncompressed plain structure per Table 4.69 or X.509 DER-encoded structure per Table 4.70, depending on AC_Server_Public_Key_Format in the key descriptor.
+
+    - name: AC_Server_Public_Key Uncompressed Plain
+      description: The structure of this field is defined below.
+      values:
+        - field: AC_Server_Public_Key_X_Size
+          type: uint8
+          size: "1"
+          description: Size of AC_Server_Public_Key_X in octets.
+        - field: AC_Server_Public_Key_X
+          type: struct
+          size: "Variable"
+          description: X component of the AC Server public key.
+        - field: AC_Server_Public_Key_Y_Size
+          type: uint8
+          size: "1"
+          description: Size of AC_Server_Public_Key_Y in octets.
+        - field: AC_Server_Public_Key_Y
+          type: struct
+          size: "0 or Variable"
+          description: Present if AC_Server_Public_Key_Y_Size is not 0; otherwise excluded.
+
+    - name: AC_Server_Public_Key X.509 DER-encoded
+      description: The structure of this field is defined below.
+      values:
+        - field: AC_Server_Public_Key_X509_Size
+          type: uint16
+          size: "2"
+          description: Size of AC_Server_Public_Key_X509 in octets.
+        - field: AC_Server_Public_Key_X509
+          type: struct
+          size: "Variable"
+          description: X.509 DER-encoded AC Server public key.
+
+    - name: Key Exchange ECDH Confirmation Code Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: ECDH key descriptor record reference.
+        - field: AC_Client_Confirmation_Code
+          type: struct
+          size: "32"
+          description: AC Client confirmation code.
+
+    - name: Key Exchange ECDH Confirmation Code Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: ECDH key descriptor record reference.
+        - field: AC_Server_Confirmation_Code
+          type: struct
+          size: "32"
+          description: AC Server confirmation code.
+
+    - name: Key Exchange ECDH Confirmation Random Number Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: ECDH key descriptor record reference.
+        - field: AC_Client_Confirmation_Random_Number
+          type: struct
+          size: "32"
+          description: AC Client confirmation random number.
+
+    - name: Key Exchange ECDH Confirmation Random Number Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: ECDH key descriptor record reference.
+        - field: AC_Server_Confirmation_Random_Number
+          type: struct
+          size: "32"
+          description: AC Server confirmation random number.
+
+    - name: Key Exchange KDF Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: KDF key descriptor record reference.
+
+    - name: Key Exchange KDF Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: Key ID from the Key Exchange KDF request.
+        - field: KDF_Salt_Size
+          type: uint8
+          size: "1"
+          description: Size of KDF_Salt in octets.
+        - field: KDF_Salt
+          type: struct
+          size: "0 or Variable"
+          description: Present if KDF_Salt_Size is greater than 0; otherwise excluded.
+        - field: KDF_Info_Size
+          type: uint8
+          size: "1"
+          description: Size of KDF_Info in octets.
+        - field: KDF_Info
+          type: struct
+          size: "0 or Variable"
+          description: Present if KDF_Info_Size is greater than 0; otherwise excluded.
+
+    - name: Set AC Client Nonce Fixed Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Key_ID
+          type: uint16
+          size: "2"
+          description: Key ID for which the AC Client nonce fixed part is set.
+        - field: AC_Client_Nonce_Fixed_Value
+          type: struct
+          size: "Variable"
+          description: Fixed part of the AC Client nonce; size per Nonce_Fixed_Size for the Key_ID.
+
+    - name: ATT_MTU Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: ATT_MTU_Size
+          type: uint16
+          size: "2"
+          description: Negotiated ATT_MTU minus 3 octets.

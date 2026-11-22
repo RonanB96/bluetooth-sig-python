@@ -1,0 +1,59 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, 3.16 Playing Orders Supported (Table 3.4).
+characteristic:
+  identifier: org.bluetooth.characteristic.playing_orders_supported
+  name: Playing Orders Supported
+  description: |-
+    The Playing Orders Supported characteristic is a 16-bit bit field representing the supported playing orders described in Table 3.4. The bit field contains all the playing orders that the player supports.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Playing Orders Supported
+      type: boolean[16]
+      size: "2"
+      description: See \autoref{sec:org.bluetooth.characteristic.playing_orders_supported/field/playing_orders_supported}.
+  fields:
+    - name: Playing Orders Supported
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Single once
+            A single track is played once; there is no next track.
+        - bit: "1"
+          description: |-
+            Single repeat
+            A single track is played repeatedly; the next track is the current track.
+        - bit: "2"
+          description: |-
+            In order once
+            The tracks within a group are played once in track order.
+        - bit: "3"
+          description: |-
+            In order repeat
+            The tracks within a group are played in track order repeatedly.
+        - bit: "4"
+          description: |-
+            Oldest once
+            The tracks within a group are played once only from the oldest first.
+        - bit: "5"
+          description: |-
+            Oldest repeat
+            The tracks within a group are played from the oldest first repeatedly.
+        - bit: "6"
+          description: |-
+            Newest once
+            The tracks within a group are played once only from the newest first.
+        - bit: "7"
+          description: |-
+            Newest repeat
+            The tracks within a group are played from the newest first repeatedly.
+        - bit: "8"
+          description: |-
+            Shuffle once
+            The tracks within a group are played in random order once.
+        - bit: "9"
+          description: |-
+            Shuffle repeat
+            The tracks within a group are played in random order repeatedly.
+        - bit: 10–15
+          description: Reserved for Future Use

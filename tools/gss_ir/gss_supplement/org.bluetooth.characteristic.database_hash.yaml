@@ -1,0 +1,13 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Core Specification 6.3, Vol 3, Part G, 7.3 Database Hash (Tables 7.7–7.8).
+characteristic:
+  identifier: org.bluetooth.characteristic.database_hash
+  name: Database Hash
+  description: |-
+    The Database Hash characteristic contains the result of a hash function applied to the service definitions in the GATT database. The client may read the characteristic at any time to determine if services have been added, removed, or modified. If any of the input fields to the hash function (as listed in Section 7.3.1) have changed, the server shall calculate a new Database Hash and update the characteristic value. The characteristic value is a 128-bit unsigned integer number. The calculation of the Database Hash is specified in Section 7.3.1.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Database Hash
+      type: uint128
+      size: "16"
+      description: 128-bit unsigned integer number.

@@ -1,0 +1,14 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Telephone Bearer Service 1.0, Section 3.2.
+characteristic:
+  identifier: org.bluetooth.characteristic.bearer_uci
+  name: Bearer UCI
+  description: |-
+    The Bearer UCI characteristic returns the identifier of the telephone bearer, as identified in the UCI table [2].
+    The "client_id" field of the UCI table is used to populate the Bearer UCI characteristic as a UTF-8 string.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Bearer UCI
+      type: utf8s
+      size: variable
+      description: UTF-8 string

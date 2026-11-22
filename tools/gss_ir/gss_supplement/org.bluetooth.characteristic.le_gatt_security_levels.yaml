@@ -1,0 +1,20 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Core Specification 6.3, Volume 3, Part C, Section 12.7 (Table 12.11).
+characteristic:
+  identifier: org.bluetooth.characteristic.le_gatt_security_levels
+  name: LE GATT Security Levels
+  description: |-
+    The LE GATT Security Levels characteristic shall contain the highest security requirements of the GATT server when operating on a LE connection. The value of the LE GATT Security Levels characteristic shall be static during a connection.
+    The Attribute Value is a sequence of one or more Security Level Requirements. Each Security Level Requirement is a uint8[2] consisting of a Security Mode field followed by a Security Level field.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Security Mode
+      type: uint8
+      size: "1"
+      description: |-
+        Security Mode of the Security Level Requirement.
+        The sequence of fields from Security Mode through Security Level is repeated for each Security Level Requirement in the sequence.
+    - field: Security Level
+      type: uint8
+      size: "1"
+      description: Security Level of the Security Level Requirement.

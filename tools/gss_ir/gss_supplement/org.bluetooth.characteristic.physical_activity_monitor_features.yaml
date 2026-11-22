@@ -1,0 +1,135 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Physical Activity Monitor Service 1.0, Section 3.1.
+characteristic:
+  identifier: org.bluetooth.characteristic.physical_activity_monitor_features
+  name: Physical Activity Monitor Features
+  description: |-
+    The Physical Activity Monitor Features characteristic exposes which optional features are supported by the server implementation.
+    The bits of the Physical Activity Monitor Features characteristic may either be static for the lifetime of the device or static only during a connection. Although all defined bits in this version of this specification are required to be static during the lifetime of a device, it is possible that some future bits are defined as being static only during a connection. The lifetime of the device is defined as the time period until the device is taken out of service or a firmware update takes place.
+    The server shall support at least one feature.
+    If the server supports the User Data Service [4], then the User Data Service Supported bit shall be set to 1; otherwise, the User Data Service Supported bit shall be set to 0.
+    If the User Data Service is used in combination with the PAMS, then the measurement data (i.e., indications or notifications from PAMS data characteristics) must be retrievable on a per-user basis. See Section 3.1 in [5] for more details.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Features
+      type: boolean[64]
+      size: "8"
+      description: |-
+        When the server supports a feature, the associated bit of the Physical Activity Monitor Features characteristic shall be set to 1 (Feature supported); otherwise, the associated bit shall be set to 0 (Feature not supported).
+        See \autoref{sec:org.bluetooth.characteristic.physical_activity_monitor_features/field/features}.
+  fields:
+    - name: Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Multiple Users Supported
+        - bit: "1"
+          description: User Data Service Supported
+        - bit: "2"
+          description: Device Worn Supported
+        - bit: "3"
+          description: Normal Walking Energy Expenditure Supported
+        - bit: "4"
+          description: Normal Walking Energy Expenditure per Hour Supported
+        - bit: "5"
+          description: Intensity Energy Expenditure Supported
+        - bit: "6"
+          description: Intensity Energy Expenditure per Hour Supported
+        - bit: "7"
+          description: Total Energy Expenditure Supported
+        - bit: "8"
+          description: Total Energy Expenditure per Hour Supported
+        - bit: "9"
+          description: Fat Burned Supported
+        - bit: "10"
+          description: Fat Burned per Hour Supported
+        - bit: "11"
+          description: Metabolic Equivalent Supported
+        - bit: "12"
+          description: Distance Supported
+        - bit: "13"
+          description: Speed Supported
+        - bit: "14"
+          description: Duration of Normal Walking Episodes Supported
+        - bit: "15"
+          description: Duration of Intensity Walking Episodes Supported
+        - bit: "16"
+          description: Motion Cadence Supported
+        - bit: "17"
+          description: Floors Supported
+        - bit: "18"
+          description: Positive Elevation Gain Supported
+        - bit: "19"
+          description: Negative Elevation Gain Supported
+        - bit: "20"
+          description: Elevation Supported
+        - bit: "21"
+          description: Activity Count Supported
+        - bit: "22"
+          description: Activity Count per Minute Supported
+        - bit: "23"
+          description: Activity Level Supported
+        - bit: "24"
+          description: Activity Type Supported
+        - bit: "25"
+          description: Worn Duration Supported
+        - bit: "26"
+          description: Time in Heart Rate Zone1 Supported
+        - bit: "27"
+          description: Time in Heart Rate Zone2 Supported
+        - bit: "28"
+          description: Time in Heart Rate Zone3 Supported
+        - bit: "29"
+          description: Time in Heart Rate Zone4 Supported
+        - bit: "30"
+          description: Time in Heart Rate Zone5 Supported
+        - bit: "31"
+          description: VO2 Max Supported
+        - bit: "32"
+          description: Heart Rate Supported
+        - bit: "33"
+          description: Pulse Inter-beat Interval Supported
+        - bit: "34"
+          description: Resting Heart Rate Supported
+        - bit: "35"
+          description: Heart Rate Variability Supported
+        - bit: "36"
+          description: Respiration Rate Supported
+        - bit: "37"
+          description: Resting Respiration Rate Supported
+        - bit: "38"
+          description: Normal Walking Steps Supported
+        - bit: "39"
+          description: Intensity Steps Supported
+        - bit: "40"
+          description: Floor Steps Supported
+        - bit: "41"
+          description: Total Sleep Time Supported
+        - bit: "42"
+          description: Total Wake Time Supported
+        - bit: "43"
+          description: Total Bed Time Supported
+        - bit: "44"
+          description: Number of Awakenings Supported
+        - bit: "45"
+          description: Sleep Latency Supported
+        - bit: "46"
+          description: Sleep Efficiency Supported
+        - bit: "47"
+          description: Snooze Time Supported
+        - bit: "48"
+          description: Number of Toss-&-turn Events Supported
+        - bit: "49"
+          description: Time of Awakening After Alarm Supported
+        - bit: "50"
+          description: Visible Light Level Supported
+        - bit: "51"
+          description: Ultraviolet (UV) Light Level Supported
+        - bit: "52"
+          description: Infrared (IR) Light Level Supported
+        - bit: "53"
+          description: Sleep Stage Supported
+        - bit: "54"
+          description: Sleeping Heart Rate Supported
+        - bit: 55–63
+          description: RFU

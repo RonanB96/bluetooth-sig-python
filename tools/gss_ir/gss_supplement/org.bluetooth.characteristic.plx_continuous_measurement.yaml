@@ -1,0 +1,160 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Pulse Oximeter Service 1.0.1, 3.2 PLX Continuous Measurement Characteristic (Tables 3.6–3.7; Measurement Status and Device and Sensor Status as in Tables 3.4–3.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.plx_continuous_measurement
+  name: PLX Continuous Measurement
+  description: |-
+    The PLX Continuous Measurement characteristic, if supported, shall be used to send periodic pulse oximetry measurements.
+    Included in the characteristic are the Flags field (to indicate presence of optional fields), the SpO2PR-Normal field, and depending on the contents of the Flags field, the SpO2PR-Fast field, the SpO2PR-Slow field, the Measurement Status field, the Device and Sensor Status field, and/or the Pulse Amplitude Index field.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Flags
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.plx_continuous_measurement/field/flags}.
+    - field: SpO2PR-Normal - SpO2
+      type: medfloat16
+      size: "2"
+      description: |-
+        Unit: org.bluetooth.unit.percentage
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+    - field: SpO2PR-Normal - PR
+      type: medfloat16
+      size: "2"
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+    - field: SpO2PR-Fast - SpO2
+      type: medfloat16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.percentage
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if bit 0 of Flags field is set to 1
+    - field: SpO2PR-Fast - PR
+      type: medfloat16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if bit 0 of Flags field is set to 1
+    - field: SpO2PR-Slow - SpO2
+      type: medfloat16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.percentage
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if bit 1 of Flags field is set to 1
+    - field: SpO2PR-Slow - PR
+      type: medfloat16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if bit 1 of Flags field is set to 1
+    - field: Measurement Status
+      type: boolean[16]
+      size: 0 or 2
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.plx_continuous_measurement/field/measurement_status}.
+        Present if bit 2 of Flags field is set to 1
+    - field: Device and Sensor Status
+      type: boolean[24]
+      size: 0 or 3
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.plx_continuous_measurement/field/device_and_sensor_status}.
+        Present if bit 3 of Flags field is set to 1
+    - field: Pulse Amplitude Index
+      type: medfloat16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.percentage
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if bit 4 of Flags field is set to 1
+  fields:
+    - name: Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: SpO2PR–Fast field is present
+        - bit: "1"
+          description: SpO2PR-Slow field is present
+        - bit: "2"
+          description: Measurement Status field is present
+        - bit: "3"
+          description: Device and Sensor Status field is present
+        - bit: "4"
+          description: Pulse Amplitude Index field is present
+        - bit: 5–7
+          description: Reserved for Future Use
+    - name: Measurement Status
+      description: The bits of this field are defined below.
+      values:
+        - bit: 0–4
+          description: Reserved for Future Use
+        - bit: "5"
+          description: Measurement Ongoing
+        - bit: "6"
+          description: Early Estimated Data
+        - bit: "7"
+          description: Validated Data
+        - bit: "8"
+          description: Fully Qualified Data
+        - bit: "9"
+          description: Data from Measurement Storage
+        - bit: "10"
+          description: Data for Demonstration
+        - bit: "11"
+          description: Data for Testing
+        - bit: "12"
+          description: Calibration Ongoing
+        - bit: "13"
+          description: Measurement Unavailable
+        - bit: "14"
+          description: Questionable Measurement Detected
+        - bit: "15"
+          description: Invalid Measurement Detected
+    - name: Device and Sensor Status
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Extended Display Update Ongoing
+        - bit: "1"
+          description: Equipment Malfunction Detected
+        - bit: "2"
+          description: Signal Processing Irregularity Detected
+        - bit: "3"
+          description: Inadequate Signal Detected
+        - bit: "4"
+          description: Poor Signal Detected
+        - bit: "5"
+          description: Low Perfusion Detected
+        - bit: "6"
+          description: Erratic Signal Detected
+        - bit: "7"
+          description: Non-Pulsatile Signal Detected
+        - bit: "8"
+          description: Questionable Pulse Detected
+        - bit: "9"
+          description: Signal Analysis Ongoing
+        - bit: "10"
+          description: Sensor Interference Detected
+        - bit: "11"
+          description: Sensor Unconnected to User
+        - bit: "12"
+          description: Unknown Sensor Connected
+        - bit: "13"
+          description: Sensor Displaced
+        - bit: "14"
+          description: Sensor Malfunctioning
+        - bit: "15"
+          description: Sensor Disconnected
+        - bit: 16–23
+          description: Reserved for Future Use

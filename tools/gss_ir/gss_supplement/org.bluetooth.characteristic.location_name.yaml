@@ -1,0 +1,15 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Indoor Positioning Service 1.0, Section 3.9.
+characteristic:
+  identifier: org.bluetooth.characteristic.location_name
+  name: Location Name
+  description: |-
+    The Location Name Characteristic describes the name of the location in which the device is installed in accordance to the civicLocation definition [3].
+    The Location Name value is a UTF8 string holding the information of the location, for example location name, room name, floor name, etc. The location name shall be formatted according to the civicLocation definition [3].
+    The format of the characteristic is a string of variable size. If unset, the value has zero length.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Location Name
+      type: utf8s
+      size: variable
+      description: UTF-8 string

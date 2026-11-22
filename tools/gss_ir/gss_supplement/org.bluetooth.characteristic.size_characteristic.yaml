@@ -1,0 +1,15 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Coordinated Set Identification Service 1.1, Section 5.2.
+characteristic:
+  identifier: org.bluetooth.characteristic.size_characteristic
+  name: Coordinated Set Size
+  description: |-
+    The Coordinated Set Size characteristic exposes the number of devices comprising the Coordinated Set.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Coordinated Set Size
+      type: uint8
+      size: "1"
+      description: |-
+        Allowed range is: 0x01 to 0xFF.
+        All other values are prohibited.

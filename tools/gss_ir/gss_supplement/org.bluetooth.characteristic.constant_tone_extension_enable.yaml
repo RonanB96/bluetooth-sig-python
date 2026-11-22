@@ -1,0 +1,23 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Constant Tone Extension Service 1.0, 3.1 Constant Tone Extension Enable (Table 3.2).
+characteristic:
+  identifier: org.bluetooth.characteristic.constant_tone_extension_enable
+  name: Constant Tone Extension Enable
+  description: |-
+    The Constant Tone Extension Enable characteristic is a control-point attribute that stores the type of Constant Tone Extension that the server transmits on an ACL (Asynchronous Connection-oriented [logical transport]) connection or on the advertising channels.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Constant Tone Extension Enable
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.constant_tone_extension_enable/field/constant_tone_extension_enable}.
+  fields:
+    - name: Constant Tone Extension Enable
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Enable AoA Constant Tone Extension on the ACL connection with the client
+        - bit: "1"
+          description: Enable AoD Constant Tone Extension in advertising packets
+        - bit: 2–7
+          description: Reserved for Future Use

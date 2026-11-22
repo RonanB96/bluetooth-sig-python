@@ -1,0 +1,35 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Voice Assistant Service 1.0, Section 3.7 (Tables 3.10 and 3.11).
+characteristic:
+  identifier: org.bluetooth.characteristic.voice_assistant_session_flag
+  name: Voice Assistant Session Flag
+  description: |-
+    The Voice Assistant Session Flag characteristic conveys additional details about the VA Session State when the Session Flags Enabled is set in the Voice Assistant Supported Features characteristic (see Section 3.9) and the VA is in the Session Active state.
+    The characteristic consists of 1 octet with the format shown in Table 3.10.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: VA Session Flag
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.voice_assistant_session_flag/field/va_session_flag}.
+  fields:
+    - name: VA Session Flag
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Listening Now
+            0 = The VA is not listening
+            1 = The VA is listening
+        - bit: "1"
+          description: |-
+            Processing Now
+            0 = The VA is not processing any request
+            1 = The VA is processing request
+        - bit: "2"
+          description: |-
+            Playback Now
+            0 = The VA is silent
+            1 = The VA is responding
+        - bit: 3–7
+          description: RFU

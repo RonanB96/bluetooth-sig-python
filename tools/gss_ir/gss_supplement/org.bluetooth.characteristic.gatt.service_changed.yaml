@@ -1,0 +1,21 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Core Specification 6.3, Vol 3, Part G, 7.1 Service Changed (Table 7.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.gatt.service_changed
+  name: Service Changed
+  description: |-
+    The Service Changed characteristic value is two 16-bit Attribute Handles concatenated together, indicating the beginning and ending Attribute Handles affected by an addition, removal, or modification to a GATT-based service on the server.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Start Handle
+      type: uint16
+      size: "2"
+      description: |-
+        Start of Affected Attribute Handle Range
+        Allowed range is 0 to 65535.
+    - field: End Handle
+      type: uint16
+      size: "2"
+      description: |-
+        End of Affected Attribute Handle Range
+        Allowed range is 0 to 65535.

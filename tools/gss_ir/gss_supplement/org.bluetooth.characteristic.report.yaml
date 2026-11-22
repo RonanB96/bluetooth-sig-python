@@ -1,0 +1,22 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HID Service Specification 1.1, Section 2.5.2.
+# The section names no fields and no length.
+# Zephyr read_report returns ctx->value and ctx->value_len (hids.c, lines 248–261).
+# write_report copies the written bytes into that buffer (lines 304–306).
+# BlueZ report_value_cb passes the notification pointer and length to bt_uhid_input
+# (src/shared/hog.c, lines 203–224).
+# size is variable because the section and those handlers state no fixed length.
+# The archived codec minimum of 1 octet is not in Section 2.5.2 and is not used.
+characteristic:
+  identifier: org.bluetooth.characteristic.report
+  name: Report
+  description: |-
+    The Report characteristic value contains Input Report, Output Report, or Feature Report data to be transferred between the HID Device and HID Host.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Report Data
+      type: uint8[n]
+      size: variable
+      description: |-
+        Input Report, Output Report, or Feature Report data.
+        Each element is one octet of that value.

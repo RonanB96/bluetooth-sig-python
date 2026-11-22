@@ -1,0 +1,84 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HID Over GATT Profile 1.2, Section 6.5.2 (Tables 6.9–6.12).
+characteristic:
+  identifier: org.bluetooth.characteristic.le_hid_operation_mode
+  name: LE HID Operation Mode
+  description: |-
+    The LE HID Operation Mode characteristic is used to switch operation modes between Default Operation mode and Hybrid Operation mode.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Opcode
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.le_hid_operation_mode/field/opcode}.
+    - field: CIG ID
+      type: uint8
+      size: 0 or 1
+      description: |-
+        CIG ID for the CIG created by the HID Host.
+        Present if Opcode is 0x01
+    - field: CIS ID
+      type: uint8
+      size: 0 or 1
+      description: |-
+        CIS ID for the CIS created by the HID Host for the HID Reports.
+        Present if Opcode is 0x01
+    - field: Report Interval
+      type: boolean[16]
+      size: 0 or 2
+      description: |-
+        Report interval selection. Encoded identically to the Supported Report Intervals field of the HID ISO Properties characteristic.
+        Only one bit is set to a value of 1; all other bits are set to a value of 0.
+        Present if Opcode is 0x01
+    - field: Current SDU Size for Input Reports
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Maximum SDU Size for SDUs from the HID Device to the HID Host for the Hybrid Mode session started by this command.
+        Present if Opcode is 0x01
+    - field: Current SDU Size for Output Reports
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Maximum SDU Size for SDUs from the HID Host to the HID Device for the Hybrid Mode session started by this command.
+        Present if Opcode is 0x01
+    - field: Hybrid Mode ISO Reports Enable
+      type: struct
+      size: 1 to 2
+      description: |-
+        Array of 8-bit structs containing indices into the Hybrid Mode ISO Reports field of the HID ISO Properties characteristic and settings for Confirmation and Repetition flags for the Reports enabled for Hybrid Operation Mode. One to two structs (struct[1-2]); each struct is 1 octet.
+        See \autoref{sec:org.bluetooth.characteristic.le_hid_operation_mode/field/hybrid_mode_iso_reports_enable}.
+        Present if Opcode is 0x01
+  fields:
+    - name: Opcode
+      description: The values of this field are defined below.
+      values:
+        - opcode: "0x01"
+          parameters: As defined in Section 6.5.2.1.2
+          description: Select Hybrid Operation Mode.
+        - opcode: "0x02"
+          parameters: None
+          description: Select Default Operation Mode.
+        - opcode: All other values
+          parameters: RFU
+          description: RFU
+    - name: Hybrid Mode ISO Reports Enable
+      description: The structure of each array element is defined below. The packed octet is repeated once or twice (1 to 2 times).
+      size_in_bits: true
+      values:
+        - field: Report Info Index
+          data_type: uint3
+          size: "3"
+          description: Index into the Hybrid Mode ISO Reports field of the HID ISO Properties characteristic. The Report ID and Report Type to be enabled over ISO in Hybrid Mode. The first array element has index 0.
+        - field: RFU
+          data_type: boolean[3]
+          size: "3"
+          description: Reserved for future use.
+        - field: Confirmation Enable
+          data_type: boolean
+          size: "1"
+          description: Enable Confirmation for the Report ID and Report Type referenced by the Report Info Index field.
+        - field: Repetition Enable
+          data_type: boolean
+          size: "1"
+          description: Enable Repetition for the Report ID and Report Type referenced by the Report Info Index field.

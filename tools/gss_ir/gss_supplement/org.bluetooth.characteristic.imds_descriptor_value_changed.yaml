@@ -1,0 +1,17 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Industrial Measurement Device Service v1.0, Section 3.3.
+characteristic:
+  identifier: org.bluetooth.characteristic.imds_descriptor_value_changed
+  name: IMDS Descriptor Value Changed
+  description: |-
+    The IMDS Descriptor Value Changed characteristic is present if any of the IMD Measurement characteristics descriptors defined in Table 3.2 can be changed by the IMD Server or if any of the descriptors is writable.
+    If the IMD Client has registered to receive indications via the Client Characteristic Configuration descriptor, then whenever any of the IMD Measurement characteristic descriptor values changes (except for the Client Characteristic Configuration descriptor), the IMD Server shall send the IMDS Descriptor Value Changed characteristic indication.
+    If an IMD Measurement characteristic descriptor value changes while a bonded client is not connected, then the IMD Server shall send an indication on a reconnection to the bonded client. If more than one of the IMD Measurement characteristic descriptors have changed, then the Descriptor Handle shall be set to 0.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Descriptor Handle
+      type: uint16
+      size: "2"
+      description: |-
+        The GATT handle of the descriptor that has been changed.
+        A value of 0 indicates that more than one IMD Measurement characteristic descriptor has changed.

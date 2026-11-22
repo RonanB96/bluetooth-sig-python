@@ -1,0 +1,20 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Core Specification 6.3, Vol 3, Part C, 12.6 Encrypted Data Key Material (Tables 12.9–12.10).
+characteristic:
+  identifier: org.bluetooth.characteristic.encrypted_data_key_material
+  name: Encrypted Data Key Material
+  description: |-
+    The Encrypted Data Key Material characteristic allows advertising data associated with the GAP Service to be decrypted and authenticated using the key material. The Encrypted Data Key characteristic value shall not be writable. The Encrypted Data Key Material characteristic shall only be readable when authenticated and authorized. When read, the key material is stored on the local device. The key material may be discarded at any time on a local device.
+    The Encrypted Data Key Material characteristic may support indications. If the characteristic supports indications, the client has configured the characteristic for indications, and the characteristic value changes after being authenticated and authorized, then the characteristic shall be indicated by the server to the client.
+    The Encrypted Data Key Material characteristic can be used by other services to allow those services to expose separate key material for encrypted advertising data used by those services.
+    The Key Material is composed of a 128-bit value that is used as the session key and a 64-bit value that is used as the IV for encrypting and authenticating the Encrypted Data as defined in Section 1.23.3 of [4], as shown in Table 12.10. The server should update the Key Material periodically.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Session Key
+      type: uint128
+      size: "16"
+      description: The shared session key.
+    - field: IV
+      type: uint64
+      size: "8"
+      description: The initialization vector.

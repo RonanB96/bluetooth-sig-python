@@ -1,0 +1,67 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Cookware Service 1.0, Section 3.6.
+characteristic:
+  identifier: org.bluetooth.characteristic.cooking_zone_desired_cooking_conditions
+  name: Cooking Zone Desired Cooking Conditions
+  description: |-
+    The Cooking Zone Desired Cooking Conditions characteristic is used by the CWD that is executing the Control Loop to request the client set the desired conditions to be applied by the Cooking Zone.
+    The format of the Cooking Zone Desired Cooking Conditions characteristic matches the format of the Cooking Conditions characteristic defined in GSS \autoref{sec:org.bluetooth.characteristic.cooking_conditions}.
+    The Cooking Zone Desired Cooking Conditions characteristic allows a CWD to indicate the cooking conditions to the client, such as power level, humidity level (i.e., the amount of steam in an oven), or fan speed (for convection ovens).
+    If all bits in the Flags field are set to the value of 0, then the client shall stop the cooking process.
+    The Manufacturer Specific Data field may be used by the client to exchange manufacturer-specific information with the CWS.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Flags
+      type: boolean[16]
+      size: "2"
+      description: See \autoref{sec:org.bluetooth.characteristic.cooking_zone_desired_cooking_conditions/field/flags}
+    - field: Power Level
+      type: struct
+      size: 0 or 2
+      description: |-
+        Power level that needs to be applied or is currently applied by the cooking zone to the cooking device.
+        Structure of the field matches the Cooking Zone Perceived Power characteristic in \autoref{sec:org.bluetooth.characteristic.cooking_zone_perceived_power}.
+        Present if bit 0 of Flags field is set to 1
+    - field: Temperature
+      type: struct
+      size: 0 or 2
+      description: |-
+        Temperature level that needs to be set or that is currently set in the cooking zone.
+        Structure of the field matches the Cooking Temperature characteristic in \autoref{sec:org.bluetooth.characteristic.cooking_temperature}.
+        Present if bit 1 of Flags field is set to 1
+    - field: Humidity
+      type: struct
+      size: 0 or 2
+      description: |-
+        Relative humidity level that needs to be set or that is currently set in the cooking zone.
+        Structure of the field matches the Humidity characteristic in \autoref{sec:org.bluetooth.characteristic.humidity}.
+        Present if bit 2 of Flags field is set to 1
+    - field: Blower Fan Speed
+      type: struct
+      size: 0 or 1
+      description: |-
+        Blower fan speed that needs to be set or that is currently set for the intake or recirculation blower fan relative to the Maximum Blower Fan Airflow of the Cooking Zone Capabilities (see \autoref{sec:org.bluetooth.characteristic.cooking_zone_capabilities}).
+        Structure of the field matches the Percentage 8 characteristic in \autoref{sec:org.bluetooth.characteristic.percentage_8}.
+        Present if bit 3 of Flags field is set to 1
+    - field: Manufacturer Specific Data
+      type: struct
+      size: variable
+      description: |-
+        Manufacturer-specific data that is used for monitoring or controlling the cooking conditions.
+        Present if bit 4 of Flags field is set to 1
+  fields:
+    - name: Flags
+      description: The values of this field are defined below.
+      values:
+        - bit: "0"
+          description: Power Level field present
+        - bit: "1"
+          description: Temperature field present
+        - bit: "2"
+          description: Humidity field present
+        - bit: "3"
+          description: Blower Fan Speed field present
+        - bit: "4"
+          description: Manufacturer Specific Data field present
+        - bit: 5–15
+          description: Reserved for Future Use

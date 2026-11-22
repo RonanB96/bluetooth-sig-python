@@ -1,0 +1,17 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Indoor Positioning Service 1.0, Section 3.7.
+characteristic:
+  identifier: org.bluetooth.characteristic.altitude
+  name: Altitude
+  description: |-
+    The Altitude Characteristic expresses the altitude beyond the WGS84 ellipsoid [5] of the device exposing its position.
+    The characteristic value (x) encodes the altitude (h) in decimeters, x = h + 1000. The valid range of h is from -1000 decimeters to 64534 decimeters. A decoded height of -1000 dm shall be interpreted as -1000 dm or below. A decoded height of 64534 dm shall be interpreted as 64534 dm or above.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Altitude
+      type: uint16
+      size: "2"
+      description: |-
+        A value of 0x0000 represents "Altitude is less than or equal to -1000 decimeters".
+        A value of 0xFFFE represents "Altitude is greater than or equal to 64534 decimeters".
+        A value of 0xFFFF represents "Altitude is not configured".

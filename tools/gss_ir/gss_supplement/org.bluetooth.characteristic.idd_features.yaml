@@ -1,0 +1,118 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Insulin Delivery Service 1.0.2, 4.4 IDD Features (Tables 4.11–4.12).
+characteristic:
+  identifier: org.bluetooth.characteristic.idd_features
+  name: IDD Features
+  description: |-
+    The IDD Features characteristic exposes the supported features of the Insulin Delivery Device, which is composed of an E2E-CRC field, E2E-Counter field, Insulin Concentration field, and a Flags field.
+    The value of the IDD Features characteristic shall be static during a connection.
+    Reserved for Future Use (RFU) bits in the Flags field shall be set to 0.
+    The Feature Extension bit shall be set to 0.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: E2E-CRC
+      type: uint16
+      size: "2"
+      description: |-
+        CRC calculated over all fields of the characteristic payload, including the E2E-Counter field, except for the E2E-CRC field itself.
+        The E2E-CRC field shall be set to 0xFFFF if the E2E-Protection Supported bit of the Flags field is not set.
+        A value of 0xFFFF represents "E2E-Protection Supported bit of the Flags field is not set".
+    - field: E2E-Counter
+      type: uint8
+      size: "1"
+      description: |-
+        The E2E-Counter shall be set to 0 if the E2E-Protection Supported bit of the Flags field is not set.
+        A value of 0 represents "E2E-Protection Supported bit of the Flags field is not set".
+    - field: Insulin Concentration
+      type: medfloat16
+      size: "2"
+      description: |-
+        The Insulin Concentration field represents the concentration of insulin in the reservoir information to identify the insulin concentration of the Insulin Delivery Device.
+        Unit is IU/mL (international unit per milliliter).
+        For example, U100 designates an insulin concentration of 100 international unit per milliliter of insulin solution.
+    - field: Flags
+      type: boolean[24]
+      size: 3+n*
+      description: |-
+        If the corresponding feature is supported, the Supported Feature bit shall be set to 1, otherwise it shall be set to 0.
+        Reserved for Future Use (RFU) bits in the Flags field shall be set to 0.
+        The Feature Extension bit shall be set to 0.
+        If the Feature Extension bit is required to be set to 1 in a future version of this Service, an additional octet is attached (bits 24 … 31), where bit 31 will be used as Feature Extension bit in the same way. If this bit is set, then another octet is attached (bits 32 … 39) and so on. This is defined to allow future extension of the characteristic.
+        See \autoref{sec:org.bluetooth.characteristic.idd_features/field/flags}.
+        If Feature Extension bit is set to 1, the number of octets increases.
+  fields:
+    - name: Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            E2E-Protection Supported
+            If this bit is set, an E2E-Protection is attached to all characteristics.
+        - bit: "1"
+          description: |-
+            Basal Rate Supported
+            If this bit is set, the Insulin Delivery Device supports the delivery of a basal rate including support for profile templates to define different basal rate profiles.
+        - bit: "2"
+          description: |-
+            TBR Absolute Supported
+            If this bit is set, the Insulin Delivery Device supports an absolute temporary basal rate in IU/h.
+        - bit: "3"
+          description: |-
+            TBR Relative Supported
+            If this bit is set, the Insulin Delivery Device supports a relative temporary basal rate expressed by a dimensionless scaling factor.
+        - bit: "4"
+          description: |-
+            TBR Template Supported
+            If this bit is set, the Insulin Delivery Device supports templates to define different TBRs with preset values.
+        - bit: "5"
+          description: |-
+            Fast Bolus Supported
+            If this bit is set, the Insulin Delivery Device has the capability to deliver fast boluses.
+        - bit: "6"
+          description: |-
+            Extended Bolus Supported
+            If this bit is set, the Insulin Delivery Device has the capability to deliver extended boluses.
+        - bit: "7"
+          description: |-
+            Multiwave Bolus Supported
+            If this bit is set, the Insulin Delivery Device has the capability to deliver multiwave boluses.
+        - bit: "8"
+          description: |-
+            Bolus Delay Time Supported
+            If this bit is set, the Insulin Delivery Device supports a bolus delay time in minutes.
+        - bit: "9"
+          description: |-
+            Bolus Template Supported
+            If this bit is set, the Insulin Delivery Device supports templates to define boluses (of same or different type) with preset values.
+        - bit: "10"
+          description: |-
+            Bolus Activation Type Supported
+            If this bit is set, the Insulin Delivery Device supports a bolus activation type, which provides additional information about the source, and if possible, the determination of the bolus amount.
+        - bit: "11"
+          description: |-
+            Multiple Bond Supported
+            If this bit is set, the Insulin Delivery Device supports multiple bonded devices.
+        - bit: "12"
+          description: |-
+            ISF Profile Template Supported
+            If this bit is set, the Insulin Delivery Device supports profile templates to define different ISF profiles.
+        - bit: "13"
+          description: |-
+            I2CHO Ratio Profile Template Supported
+            If this bit is set, the Insulin Delivery Device supports profile templates to define different I:CHO Ratio profiles.
+        - bit: "14"
+          description: |-
+            Target Glucose Range Profile Template Supported
+            If this bit is set, the Insulin Delivery Device supports target glucose range profile templates to define different target glucose range profiles.
+        - bit: "15"
+          description: |-
+            Insulin On Board Supported
+            If this bit is set, the Insulin Delivery Device enables Clients to get the current insulin on board.
+        - bit: 16–22
+          description: Reserved for Future Use
+        - bit: "23"
+          description: |-
+            Feature Extension
+            If the Feature Extension bit is set, an additional octet is attached (bits 24 … 31), where bit 31 shall be used as Feature Extension bit in the same way. If this bit is set, then another octet is attached (bits 32 … 39) and so on. This is defined to allow future extension of the characteristic.

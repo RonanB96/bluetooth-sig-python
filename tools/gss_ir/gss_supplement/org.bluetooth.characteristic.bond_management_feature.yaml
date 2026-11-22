@@ -1,0 +1,61 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Bond Management Service 1.0.1, 3.2 Bond Management Feature (Tables 3.4–3.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.bond_management_feature
+  name: Bond Management Feature
+  description: |-
+    The Bond Management Feature characteristic shall be used to indicate the supported features of the server.
+    If the service claim support for the corresponding procedure, it shall set the supported bit.
+    The BM Feature characteristic shall be static during a connection.
+    The server shall only include the number of octets needed for returning the highest set feature bit.
+    The client shall be prepared to receive a value larger than the current 3 octets defined and shall ignore bits it does not understand.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Bond Management Feature
+      type: boolean[24]
+      size: Variable
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.bond_management_feature/field/bond_management_feature}.
+        Reserved for Future Use (RFU) bits in the Bond Management Feature characteristic value shall be set to 0.
+  fields:
+    - name: Bond Management Feature
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Delete bond of requesting device (BR/EDR and LE)
+        - bit: "1"
+          description: Delete bond of requesting device (BR/EDR and LE) with authorization code
+        - bit: "2"
+          description: Delete bond of requesting device (BR/EDR transport only)
+        - bit: "3"
+          description: Delete bond of requesting device (BR/EDR transport only) with authorization code
+        - bit: "4"
+          description: Delete bond of requesting device (LE transport only)
+        - bit: "5"
+          description: Delete bond of requesting device (LE transport only) with authorization code
+        - bit: "6"
+          description: Delete all bonds on server (BR/EDR and LE)
+        - bit: "7"
+          description: Delete all bonds on server (BR/EDR and LE) with authorization code
+        - bit: "8"
+          description: Delete all bonds on server (BR/EDR transport only)
+        - bit: "9"
+          description: Delete all bonds on server (BR/EDR transport only) with authorization code
+        - bit: "10"
+          description: Delete all bonds on server (LE transport only)
+        - bit: "11"
+          description: Delete all bonds on server (LE transport only) with authorization code
+        - bit: "12"
+          description: Delete bond of all except the requesting device on the server (BR/EDR and LE)
+        - bit: "13"
+          description: Delete bond of all except the requesting device on the server (BR/EDR and LE) with authorization code
+        - bit: "14"
+          description: Delete bond of all except the requesting device on the server (BR/EDR transport only)
+        - bit: "15"
+          description: Delete bond of all except the requesting device on the server (BR/EDR transport only) with authorization code
+        - bit: "16"
+          description: Delete bond of all except the requesting device on the server (LE transport only)
+        - bit: "17"
+          description: Delete bond of all except the requesting device on the server (LE transport only) with authorization code
+        - bit: 18–23
+          description: Reserved for Future Use

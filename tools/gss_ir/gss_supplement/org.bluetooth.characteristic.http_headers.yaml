@@ -1,0 +1,15 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HTTP Proxy Service 1.0, 3.2 HTTP Headers Characteristic.
+characteristic:
+  identifier: org.bluetooth.characteristic.http_headers
+  name: HTTP Headers
+  description: |-
+    The HTTP Headers characteristic is used to hold the headers that would be sent with the HTTP Request or the headers contained within an HTTP response message from the HTTP Server.
+    The HTTP Header characteristic shall contain the HTTP header to be used in the HTTP request as a UTF-8 string (utf8s), up to the maximum characteristic length defined.
+    Current version of the spec supports HTTP request with HTTP headers up to 512 octets in length.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: HTTP Headers
+      type: utf8s
+      size: variable
+      description: UTF-8 string

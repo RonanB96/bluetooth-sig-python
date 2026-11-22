@@ -1,0 +1,13 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, Section 3.3.
+characteristic:
+  identifier: org.bluetooth.characteristic.media_player_icon_url
+  name: Media Player Icon URL
+  description: |-
+    The Media Player Icon URL characteristic exposes the URL of an icon that can identify this media player to the user. The value of this characteristic shall be formatted as a UTF-8 string.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Media Player Icon URL
+      type: utf8s
+      size: variable
+      description: UTF-8 string

@@ -1,0 +1,21 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Scan Parameters Service 1.0, 2.5 Scan Refresh Characteristic, Table 2.2.
+characteristic:
+  identifier: org.bluetooth.characteristic.scan_refresh
+  name: Scan Refresh
+  description: |-
+    The Scan Refresh characteristic is used to notify the Client that the Server requires the Scan Interval Window characteristic to be written with the latest values upon notification.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Scan Refresh
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.scan_refresh/field/scan_refresh}.
+  fields:
+    - name: Scan Refresh
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Server requires refresh
+        - value: 0x01–0xFF
+          description: Reserved for Future Use

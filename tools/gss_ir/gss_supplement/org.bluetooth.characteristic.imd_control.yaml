@@ -1,0 +1,77 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Industrial Measurement Device Service v1.0, Section 3.8 (Tables 3.29–3.31).
+characteristic:
+  identifier: org.bluetooth.characteristic.imd_control
+  name: IMD Control
+  description: |-
+    The IMD Control characteristic allows a client to request actions to be performed by the device.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Op Code
+      type: uint8
+      size: "1"
+      description: |-
+        Operation requested by the client.
+        See \autoref{sec:org.bluetooth.characteristic.imd_control/field/op_code}.
+    - field: UUID
+      type: uint16
+      size: "2"
+      description: |-
+        UUID of the IMD Measurement characteristic to be measured.
+        Present if Op Code is 0x00
+    - field: Sampling Function
+      type: uint8
+      size: "1"
+      description: |-
+        The Sampling Function field of the Measurement Description descriptor of the IMD Measurement characteristic (see Section 3.1.2.1.2 ).
+        See \autoref{sec:org.bluetooth.characteristic.imd_control/field/sampling_function}.
+        Present if Op Code is 0x00
+    - field: Description
+      type: uint16
+      size: "2"
+      description: |-
+        The Description field of the Measurement Description descriptor of the IMD Measurement characteristic (see Section 3.1.2.1.5 ).
+        Present if Op Code is 0x00
+    - field: Delay
+      type: uint32
+      size: 0 or 4
+      description: |-
+        Wait for Delay milliseconds before starting the measurement. If 0, then start with no delay.
+        Present if Op Code is 0x00
+    - field: Parameters
+      type: struct
+      size: variable
+      description: |-
+        Parameters of the requested operation.
+        Present if Op Code is 0x80 to 0xFF
+  fields:
+    - name: Op Code
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Request to start measurement
+        - value: "0x01"
+          description: Request to abort current operation
+        - value: 0x02–0x7F
+          description: RFU
+        - value: 0x80–0xFF
+          description: Manufacturer-specific
+    - name: Sampling Function
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Unspecified
+        - value: "0x01"
+          description: Instantaneous
+        - value: "0x02"
+          description: Arithmetic mean since the beginning of the work cycle
+        - value: "0x03"
+          description: Root Mean Square (RMS) value since the beginning of the work cycle
+        - value: "0x04"
+          description: Maximum value in the current work cycle
+        - value: "0x05"
+          description: Minimum value in the current work cycle
+        - value: "0x06"
+          description: Moving average
+        - value: 0x07–0xFF
+          description: RFU

@@ -1,0 +1,19 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Object Transfer Service 1.0, Section 3.2.4 Object Size Characteristic.
+characteristic:
+  identifier: org.bluetooth.characteristic.object_size
+  name: Object Size
+  description: |-
+    The Object Size characteristic exposes the current size as well as the allocated size of the Current Object.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Current Size
+      type: uint32
+      size: "4"
+      description: |-
+        Base Unit: org.bluetooth.unit.unitless
+    - field: Allocated Size
+      type: uint32
+      size: "4"
+      description: |-
+        Base Unit: org.bluetooth.unit.unitless

@@ -1,0 +1,53 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Object Transfer Service 1.0, 3.6 Object Changed Characteristic (Tables 3.29, 3.31).
+characteristic:
+  identifier: org.bluetooth.characteristic.object_changed
+  name: Object Changed
+  description: |-
+    The Object Changed characteristic enables a Client to receive an indication if the contents and/or metadata of one or more objects are changed while the Client is connected without the change being made by an action of the Client itself. This allows the Client to know that the object database has changed while it is connected.
+    A Flags field is included in the characteristic value. This is used to show the nature of the change.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Flags
+      type: boolean[8]
+      size: "1"
+      description: |-
+        Base Unit: org.bluetooth.unit.unitless
+        See \autoref{sec:org.bluetooth.characteristic.object_changed/field/flags}.
+    - field: Object ID
+      type: uint48
+      size: "6"
+      description: |-
+        Base Unit: org.bluetooth.unit.unitless
+        The value shall not be equal to 0.
+  fields:
+    - name: Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Source of Change
+            0 = Server
+            1 = Client
+        - bit: "1"
+          description: |-
+            Change occurred to the object contents
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            Change occurred to the object metadata
+            0 = False
+            1 = True
+        - bit: "3"
+          description: |-
+            Object Creation
+            0 = False
+            1 = True
+        - bit: "4"
+          description: |-
+            Object Deletion
+            0 = False
+            1 = True
+        - bit: 5–7
+          description: Reserved for Future Use

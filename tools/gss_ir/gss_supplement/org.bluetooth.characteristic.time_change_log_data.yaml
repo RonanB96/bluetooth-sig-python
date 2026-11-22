@@ -1,0 +1,283 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Device Time Service 1.0, Section 3.4 (Tables 3.8–3.13).
+characteristic:
+  identifier: org.bluetooth.characteristic.time_change_log_data
+  name: Time Change Log Data
+  description: |-
+    The Time Change Log Data characteristic is used to send Time_Change_Log_Data_Record events as recorded by the Server when the Time Change Logging feature is supported by the Server.
+    Each notification begins with a Segmentation_Header octet followed by all or part of a Time_Change_Log_Data_Record field; the Time_Change_Log_Data_Record field may be 14 to 45 octets depending on the event log type and supported features.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Segmentation_Header
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.time_change_log_data/field/segmentation_header}.
+    - field: E2E_CRC
+      type: uint16
+      size: 0 or 2
+      description: |-
+        CRC calculated over all data fields except for the E2E_CRC field itself.
+        Mandatory if the E2E-CRC feature is supported, otherwise Excluded.
+    - field: Sequence_Number
+      type: uint16
+      size: "2"
+      description: |-
+        The Sequence_Number is an unsigned integer that begins with the value 0 and increments for each logged event. When the Sequence_Number reaches 0xFFFF, it wraps back to 0x0000.
+    - field: Event_Log_Type
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.time_change_log_data/field/event_log_type}.
+    - field: Event_Log_Flags
+      type: boolean[24]
+      size: "3"
+      description: See \autoref{sec:org.bluetooth.characteristic.time_change_log_data/field/event_log_flags}.
+    - field: DT_Status
+      type: boolean[16]
+      size: "2"
+      description: |-
+        Refer to the Device Time characteristic in \autoref{sec:org.bluetooth.characteristic.device_time}.
+    - field: DT_Status_Old
+      type: boolean[16]
+      size: 0 or 2
+      description: |-
+        The DT_Status value that the Server had in effect just before the event that caused the log entry to be created.
+        Present if Event_Log_Type is Time_Update, Time_Fault, or Max_RTC_Drift_Limit_Reached
+    - field: RTC_Time_Fault_Counter
+      type: uint16
+      size: "2"
+      description: |-
+        The total number of time faults that has occurred on the device.
+    - field: Time_Zone
+      type: sint8
+      size: 0 or 1
+      description: |-
+        Unit is 15 minutes.
+        Refer to the Time Zone characteristic in \autoref{sec:org.bluetooth.characteristic.time_zone}.
+        Present if Event_Log_Type is Time_Update or User_Time_Change
+    - field: DST_Offset
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Refer to the DST Offset characteristic in \autoref{sec:org.bluetooth.characteristic.dst_offset}.
+        Present if Event_Log_Type is Time_Update or User_Time_Change
+    - field: Time_Source
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Refer to the Time Source characteristic in \autoref{sec:org.bluetooth.characteristic.time_source}.
+        Present if Event_Log_Type is Time_Update
+    - field: Time_Accuracy
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Unit is 1/8 second.
+        Refer to the Time Accuracy characteristic in \autoref{sec:org.bluetooth.characteristic.time_accuracy}.
+        Present if Event_Log_Type is Time_Update
+    - field: Base_Time
+      type: uint32
+      size: "4"
+      description: |-
+        Unit is seconds.
+        Structure of the field matches the Base_Time field in the Device Time characteristic in \autoref{sec:org.bluetooth.characteristic.device_time}.
+    - field: Base_Time_Old
+      type: uint32
+      size: 0 or 4
+      description: |-
+        Unit is seconds.
+        Structure of the field matches the Base_Time field in the Device Time characteristic in \autoref{sec:org.bluetooth.characteristic.device_time}.
+        Present if Event_Log_Type is Time_Update or Time_Fault
+    - field: Accumulated_RTC_Drift
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit is seconds.
+        Structure of the field matches the Accumulated_RTC_Drift field in the Device Time characteristic in \autoref{sec:org.bluetooth.characteristic.device_time}.
+        Present if bit 0 of Event_Log_Flags field is set to 1
+        Mandatory if the RTC Drift Tracking feature is supported, otherwise Excluded.
+    - field: User_Time
+      type: uint32
+      size: 0 or 4
+      description: |-
+        Unit is seconds.
+        Structure of the field matches the User_Time field in the Device Time characteristic in \autoref{sec:org.bluetooth.characteristic.device_time}.
+        Present if bit 1 of Event_Log_Flags field is set to 1
+        Mandatory if the Separate User Timeline feature is supported, otherwise Excluded.
+    - field: User_Time_Old
+      type: uint32
+      size: 0 or 4
+      description: |-
+        Unit is seconds.
+        Structure of the field matches the User_Time field in the Device Time characteristic in \autoref{sec:org.bluetooth.characteristic.device_time}.
+        Present if bit 2 of Event_Log_Flags field is set to 1
+        Mandatory if the Separate User Timeline feature is supported, otherwise Excluded.
+    - field: Base_Time_Second_Fractions
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit is 1/65,536 second.
+        Structure of the field matches the Base_Time_Second_Fractions field in the Device Time characteristic in \autoref{sec:org.bluetooth.characteristic.device_time}.
+        Present if bit 3 of Event_Log_Flags field is set to 1
+        Mandatory if the Base Time Second-Fractions feature is supported, otherwise Excluded.
+    - field: Base_Time_Second_Fractions_Old
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit is 1/65,536 second.
+        Structure of the field matches the Base_Time_Second_Fractions field in the Device Time characteristic in \autoref{sec:org.bluetooth.characteristic.device_time}.
+        Present if bit 4 of Event_Log_Flags field is set to 1
+        Mandatory if the Base Time Second-Fractions feature is supported, otherwise Excluded.
+    - field: Non_Logged_Time_Adjustment_Limit
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit is seconds.
+        Structure of the field matches the Non_Logged_Time_Adjustment_Limit field in the Device Time Parameters characteristic in \autoref{sec:org.bluetooth.characteristic.device_time_parameters}.
+        Present if bit 5 of Event_Log_Flags field is set to 1
+        Mandatory if the Propose Non-Logged Time Adjustment Limit feature is supported, otherwise Excluded.
+    - field: Non_Logged_Time_Adjustment_Limit_Old
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit is seconds.
+        Structure of the field matches the Non_Logged_Time_Adjustment_Limit field in the Device Time Parameters characteristic in \autoref{sec:org.bluetooth.characteristic.device_time_parameters}.
+        Present if bit 6 of Event_Log_Flags field is set to 1
+        Mandatory if the Propose Non-Logged Time Adjustment Limit feature is supported, otherwise Excluded.
+    - field: Non_Logged_Time_Adjustment_Counter
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Present if bit 7 of Event_Log_Flags field is set to 1
+        Mandatory if the Non-Logged Time Change Active bit is set to 1 in the DT_Status field, otherwise Excluded.
+    - field: Consolidated_Log_Counter
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Present if bit 8 of Event_Log_Flags field is set to 1
+        Mandatory if the Log Consolidation Active bit is set to 1 in the DT_Status field, otherwise Excluded.
+    - field: Accumulated_Non_Logged_Base_Time_Second_Fractions
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit is 1/65,536 second.
+        Present if bit 9 of Event_Log_Flags field is set to 1
+        Mandatory if the Base Time Second-Fractions feature is supported when the Active_Time_Adjustments field is present, otherwise Excluded.
+    - field: Accumulated_Non_Logged_Base_Time_Seconds
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit is seconds.
+        Present if bit 9 of Event_Log_Flags field is set to 1
+    - field: Active_Time_Adjustment_Flags
+      type: boolean[8]
+      size: 0 or 1
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.time_change_log_data/field/active_time_adjustment_flags}.
+        Present if bit 9 of Event_Log_Flags field is set to 1
+    - field: Consolidated_Base_Time_Second_Fractions
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit is 1/65,536 second.
+        Present if bit 9 of Event_Log_Flags field is set to 1
+        Mandatory if the Base Time Second-Fractions feature is supported when the Active_Time_Adjustments field is present, otherwise Excluded.
+    - field: Consolidated_Base_Time_Seconds
+      type: uint32
+      size: 0 or 4
+      description: |-
+        Unit is seconds.
+        Present if bit 9 of Event_Log_Flags field is set to 1
+    - field: Displayed_Formats
+      type: struct
+      size: 0 or 2
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.device_time_parameters/field/displayed_formats}.
+        Present if bit 10 of Event_Log_Flags field is set to 1
+        Mandatory if the Displayed_Formats Changeable feature is supported, otherwise Excluded.
+    - field: Displayed_Formats_Old
+      type: struct
+      size: 0 or 2
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.device_time_parameters/field/displayed_formats}.
+        Present if bit 11 of Event_Log_Flags field is set to 1
+        Mandatory if the Displayed_Formats Changeable feature is supported, otherwise Excluded.
+  fields:
+    - name: Segmentation_Header
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            First Segment
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            Last Segment
+            0 = False
+            1 = True
+        - bit: 2–7
+          description: Rolling Segment Number (0 to 63)
+    - name: Event_Log_Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Time_Fault
+        - value: "0x01"
+          description: Time_Update
+        - value: "0x02"
+          description: User_Time_Change
+        - value: "0x03"
+          description: Max_RTC_Drift_Limit_Reached
+        - value: "0x04"
+          description: DT_Parameters_Changed
+        - value: 0x05–0xFF
+          description: RFU
+    - name: Event_Log_Flags
+      description: |-
+        When a bit in the Event_Log_Flags field is set to 1, the notification shall include and populate the respective field with the appropriate value for that log entry.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Accumulated_RTC_Drift field is included
+        - bit: "1"
+          description: User_Time field is included
+        - bit: "2"
+          description: User_Time_Old field is included
+        - bit: "3"
+          description: Base_Time_Second_Fractions field is included
+        - bit: "4"
+          description: Base_Time_Second_Fractions_Old field is included
+        - bit: "5"
+          description: Non_Logged_Time_Adjustment_Limit field is included
+        - bit: "6"
+          description: Non_Logged_Time_Adjustment_Limit_Old field is included
+        - bit: "7"
+          description: Non_Logged_Time_Adjustment_Counter field is included
+        - bit: "8"
+          description: Consolidated_Log_Counter field is included
+        - bit: "9"
+          description: Active_Time_Adjustments field is included
+        - bit: "10"
+          description: Displayed_Formats field is included
+        - bit: "11"
+          description: Displayed_Formats_Old field is included
+        - bit: 12–23
+          description: RFU
+    - name: Active_Time_Adjustment_Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Sign of accumulated non-logged values
+            0 = positive accumulated non-logged Base_Time adjustments
+            1 = negative accumulated non-logged Base_Time adjustments
+        - bit: 1–5
+          description: RFU
+        - bit: "6"
+          description: |-
+            Epoch Span
+            Applies when both Epoch Year 1900 and Epoch Year 2000 features are supported.
+        - bit: "7"
+          description: |-
+            Sign of consolidated values
+            0 = positive consolidated Base_Time adjustments
+            1 = negative consolidated Base_Time adjustments

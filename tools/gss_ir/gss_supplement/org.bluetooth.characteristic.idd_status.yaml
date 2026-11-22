@@ -1,0 +1,115 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Insulin Delivery Service 1.0.2, 4.2 IDD Status (Tables 4.3–4.6).
+characteristic:
+  identifier: org.bluetooth.characteristic.idd_status
+  name: IDD Status
+  description: |-
+    The IDD Status characteristic contains status values of the Insulin Delivery Device and the insulin therapy comprising an optional E2E-Counter field and an optional E2E-CRC field.
+    Reserved for Future Use (RFU) bits in the Flags field shall be set to 0.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Therapy Control State
+      type: uint8
+      size: "1"
+      description: |-
+        The Therapy Control State field describes the therapy state of the Insulin Delivery Device.
+        See \autoref{sec:org.bluetooth.characteristic.idd_status/field/therapy_control_state}.
+        All not already defined Hamming code values within 0x00 and 0xFF are reserved for future use.
+        All other values are prohibited.
+    - field: Operational State
+      type: uint8
+      size: "1"
+      description: |-
+        The Operational State field represents the operational state of the Insulin Delivery Device in the context of running an insulin infusion therapy.
+        See \autoref{sec:org.bluetooth.characteristic.idd_status/field/operational_state}.
+        All not already defined Hamming code values within 0x00 and 0xFF are reserved for future use.
+        All other values are prohibited.
+    - field: Reservoir Remaining Amount
+      type: medfloat16
+      size: "2"
+      description: |-
+        The Reservoir Remaining Amount field represents the remaining amount of insulin in the reservoir in IU.
+        Unit is IU.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        If the Reservoir is not attached (i.e., Reservoir Attached bit of Flags field is set to False), the Reservoir Remaining Amount shall be set to NaN.
+    - field: Flags
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.idd_status/field/flags}.
+    - field: E2E-Counter
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+    - field: E2E-CRC
+      type: uint16
+      size: 0 or 2
+      description: |-
+        CRC calculated over all fields of the characteristic payload, including the E2E-Counter field, except for the E2E-CRC field itself.
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+  fields:
+    - name: Therapy Control State
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: |-
+            Undetermined
+            The operational state is undetermined.
+        - value: "0x33"
+          description: |-
+            Stop
+            The insulin infusion therapy is stopped but the Insulin Delivery Device can still be configured (e.g., priming).
+        - value: "0x3C"
+          description: |-
+            Pause
+            The insulin infusion therapy is paused (i.e., the device does not deliver insulin related to the therapy but delivers the missed amount of insulin after leaving state Pause and entering state Run). Typically the Pause state is limited to several minutes and can be used, for example, to bridge the time during a reservoir change.
+        - value: "0x55"
+          description: |-
+            Run
+            The insulin infusion therapy is running (i.e., the device delivers insulin related to the therapy). The Insulin Delivery Device cannot be configured in the Run state (e.g., priming).
+    - name: Operational State
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: |-
+            Undetermined
+            The operational state is undetermined.
+        - value: "0x33"
+          description: |-
+            Off
+            The Insulin Delivery Device is switched off and no functionality is available (i.e., no delivery and no configuration is possible).
+        - value: "0x3C"
+          description: |-
+            Standby
+            No insulin is delivered and resuming from this state is faster than from state Off (e.g., the device is being set to a state to save energy).
+        - value: "0x55"
+          description: |-
+            Preparing
+            The Insulin Delivery Device prepares the insulin infusion therapy. For example, the Insulin Delivery Device rewinds the piston rod to enable the insertion of a new reservoir or performs a sniffing by detecting the position of the plunger in the reservoir (related to insulin pumps with cartridge).
+        - value: "0x5A"
+          description: |-
+            Priming
+            The Insulin Delivery Device fills the fluidic path from the reservoir to the body with insulin (e.g., after replacement of the reservoir and/or infusion set).
+        - value: "0x66"
+          description: |-
+            Waiting
+            The Insulin Delivery Device waits for an interaction (e.g., waiting for the infusion set to be connected to the body after priming or waiting for a user confirmation of a reported error).
+        - value: "0x96"
+          description: |-
+            Ready
+            The Insulin Delivery Device is ready for the insulin infusion therapy.
+    - name: Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Reservoir Attached
+            If this bit is set, the reservoir is attached to the Insulin Delivery Device.
+            0 = False
+            1 = True
+        - bit: 1–7
+          description: Reserved for Future Use

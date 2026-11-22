@@ -1,0 +1,34 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Electronic Shelf Label Service 1.0.1, Section 3.7 (Table 3.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.esl_sensor_information
+  name: ESL Sensor Information
+  description: |-
+    The ESL Sensor Information characteristic value consists of an array of one or more Sensor Information Structures. Each individual Sensor Information Structure shall consist of a pair of fields (i.e., Size and Sensor_Type) having either the short or long format.
+    The two different Sensor Information Structure formats may be mixed within an array, in any order.
+    When the ESL supports more than one sensor, the Sensor Information Structure associated with the index value of 0 shall be located to begin at the least significant bit position and the Sensor Information Structures shall be concatenated in order of increasing index value.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Sensor Information Structure(s)
+      type: struct
+      size: variable
+      description: |-
+        A sequence of one or more Sensor Information Structures, concatenated as defined by the service.
+        The structure of a Sensor Information Structure is defined in \autoref{sec:org.bluetooth.characteristic.esl_sensor_information/field/sensor_information_structure}.
+  fields:
+    - name: Sensor Information Structure
+      description: The structure of a Sensor Information Structure is defined below.
+      values:
+        - field: Size
+          data_type: uint8
+          size: "1"
+          description: |-
+            When Size is 0x00, the Sensor_Type field is a 16-bit value (2 octets), and is a Property ID assigned in the Mesh Device Properties specification.
+            When Size is 0x01, the Sensor_Type field is a 32-bit vendor-specific value (4 octets).
+        - field: Sensor_Type
+          data_type: struct
+          size: 2 or 4
+          description: |-
+            An ID that indicates a type of sensor.
+            When Size is 0x00: 16-bit Property ID from Mesh Device Properties (2 octets).
+            When Size is 0x01: 32-bit vendor-specific value (4 octets) consisting of Company_ID (uint16) and Sensor_Code (uint16).

@@ -1,0 +1,19 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Indoor Positioning Service 1.0, Section 3.6.
+characteristic:
+  identifier: org.bluetooth.characteristic.floor_number
+  name: Floor Number
+  description: |-
+    The Floor Number Characteristic describes the floor number in which the device is installed.
+    The floor number, N, is encoded as X = N + 20 where X is the encoded floor number.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Floor Number
+      type: uint8
+      size: "1"
+      description: |-
+        A value of 0x00 represents "floor -20 and any floor below that".
+        A value of 0xFC represents "floor 232 and any floor above that".
+        A value of 0xFD represents "floor number 0 and ground floor".
+        A value of 0xFE represents "floor number 1 and ground floor".
+        A value of 0xFF represents "no floor number is configured".

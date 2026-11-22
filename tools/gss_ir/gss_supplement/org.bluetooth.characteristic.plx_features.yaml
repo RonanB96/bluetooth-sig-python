@@ -1,0 +1,111 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Pulse Oximeter Service 1.0.1, 3.3 PLX Features (Tables 3.8–3.11).
+characteristic:
+  identifier: org.bluetooth.characteristic.plx_features
+  name: PLX Features
+  description: |-
+    The PLX Features characteristic shall be used to describe the supported features of the Server.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Supported Features
+      type: boolean[16]
+      size: "2"
+      description: See \autoref{sec:org.bluetooth.characteristic.plx_features/field/supported_features}.
+    - field: Measurement Status Support
+      type: boolean[16]
+      size: 0 or 2
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.plx_features/field/measurement_status_support}.
+        Present if bit 0 of Supported Features field is set to 1
+    - field: Device and Sensor Status Support
+      type: boolean[24]
+      size: 0 or 3
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.plx_features/field/device_and_sensor_status_support}.
+        Present if bit 1 of Supported Features field is set to 1
+  fields:
+    - name: Supported Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Measurement Status support is present
+        - bit: "1"
+          description: Device and Sensor Status support is present
+        - bit: "2"
+          description: Measurement Storage for Spot-check measurements is supported
+        - bit: "3"
+          description: Timestamp for Spot-check measurements is supported
+        - bit: "4"
+          description: SpO2PR-Fast metric is supported
+        - bit: "5"
+          description: SpO2PR-Slow metric is supported
+        - bit: "6"
+          description: Pulse Amplitude Index field is supported
+        - bit: "7"
+          description: Multiple Bonds Supported
+        - bit: 8–15
+          description: Reserved for Future Use
+    - name: Measurement Status Support
+      description: The bits of this field are defined below.
+      values:
+        - bit: 0–4
+          description: Reserved for Future Use
+        - bit: "5"
+          description: Measurement Ongoing bit supported
+        - bit: "6"
+          description: Early Estimated Data bit supported
+        - bit: "7"
+          description: Validated Data bit supported
+        - bit: "8"
+          description: Fully Qualified Data bit supported
+        - bit: "9"
+          description: Data from Measurement Storage bit supported
+        - bit: "10"
+          description: Data for Demonstration bit supported
+        - bit: "11"
+          description: Data for Testing bit supported
+        - bit: "12"
+          description: Calibration Ongoing bit supported
+        - bit: "13"
+          description: Measurement Unavailable bit supported
+        - bit: "14"
+          description: Questionable Measurement Detected bit supported
+        - bit: "15"
+          description: Invalid Measurement Detected bit supported
+    - name: Device and Sensor Status Support
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Extended Display Update Ongoing bit supported
+        - bit: "1"
+          description: Equipment Malfunction Detected bit supported
+        - bit: "2"
+          description: Signal Processing Irregularity Detected bit supported
+        - bit: "3"
+          description: Inadequate Signal Detected bit supported
+        - bit: "4"
+          description: Poor Signal Detected bit supported
+        - bit: "5"
+          description: Low Perfusion Detected bit supported
+        - bit: "6"
+          description: Erratic Signal Detected bit supported
+        - bit: "7"
+          description: Nonpulsatile Signal Detected bit supported
+        - bit: "8"
+          description: Questionable Pulse Detected bit supported
+        - bit: "9"
+          description: Signal Analysis Ongoing bit supported
+        - bit: "10"
+          description: Sensor Interference Detected bit supported
+        - bit: "11"
+          description: Sensor Unconnected to User bit supported
+        - bit: "12"
+          description: Unknown Sensor Connected bit supported
+        - bit: "13"
+          description: Sensor Displaced bit supported
+        - bit: "14"
+          description: Sensor Malfunctioning bit supported
+        - bit: "15"
+          description: Sensor Disconnected bit supported
+        - bit: 16–23
+          description: Reserved for Future Use

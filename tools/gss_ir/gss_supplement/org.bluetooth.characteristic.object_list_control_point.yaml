@@ -1,0 +1,198 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Object Transfer Service 1.0, 3.4 Object List Control Point (Tables 3.21–3.25).
+characteristic:
+  identifier: org.bluetooth.characteristic.object_list_control_point
+  name: Object List Control Point
+  description: |-
+    The Object List Control Point (OLCP) is used by a Client to control certain behaviors of the Server. The role of the OLCP is to provide a mechanism for the Client to find the desired object and to designate it as the Current Object. The OLCP procedures shall not modify the contents of an object or its metadata.
+    For consistency between implementations, the sort algorithms used for ordering strings in ascending or descending alphabetical order should follow the guidance in ISO/IEC 14651.
+    The structure of the OLCP characteristic is defined below.
+  structure:
+    - field: Op Code
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.object_list_control_point/field/op_code}
+    - field: Object ID
+      type: uint48
+      size: "0 or 6"
+      description: |-
+        Refer to the Object ID characteristic in \autoref{sec:org.bluetooth.characteristic.object_id}.
+        Present if Op Code is 0x05
+    - field: List Sort Order
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.object_list_control_point/field/list_sort_order}.
+        Present if Op Code is 0x06
+    - field: Request Op Code
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.object_list_control_point/field/op_code}.
+        Present if Op Code is 0x70
+    - field: Result Code
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.object_list_control_point/field/result_codes}.
+        Present if Op Code is 0x70
+    - field: Response Parameter
+      type: uint32
+      size: "0 or 4"
+      description: |-
+        Total Number of Objects.
+        Present if Op Code is 0x70 and Request Op Code is 0x07 and Result Code is 0x01
+  fields:
+    - name: Op Code
+      description: The values of this field are defined below.
+      section_title: Object List Control Point Procedure Requirements
+      table_caption: Object List Control Point Procedure Requirements
+      values:
+        - op_code_value: "0x00"
+          procedure: Reserved for Future Use
+          requirement: N/A
+          parameter: N/A
+          applicable_response_value: N/A
+          response_parameter: N/A
+        - op_code_value: "0x01"
+          procedure: First
+          requirement: M
+          parameter: None
+          applicable_response_value: Success, Operation Failed, Too Many Objects, No Object
+          response_parameter: None
+        - op_code_value: "0x02"
+          procedure: Last
+          requirement: M
+          parameter: None
+          applicable_response_value: Success, Operation Failed, Too Many Objects, No Object
+          response_parameter: None
+        - op_code_value: "0x03"
+          procedure: Previous
+          requirement: M
+          parameter: None
+          applicable_response_value: Success, Out Of Bounds, Operation Failed, Too Many Objects, No Object
+          response_parameter: None
+        - op_code_value: "0x04"
+          procedure: Next
+          requirement: M
+          parameter: None
+          applicable_response_value: Success, Out Of Bounds, Operation Failed, Too Many Objects, No Object
+          response_parameter: None
+        - op_code_value: "0x05"
+          procedure: Go To
+          requirement: O
+          parameter: Object ID (UINT48)
+          applicable_response_value: Success, Invalid Parameter, Object ID Not Found, Op Code Not Supported, Operation Failed, Too Many Objects, No Object
+          response_parameter: None
+        - op_code_value: "0x06"
+          procedure: Order
+          requirement: O
+          parameter: List Sort Order (UINT8) (see Table 3.23)
+          applicable_response_value: Success, Invalid Parameter, Op Code Not Supported, Operation Failed, Too Many Objects, No Object
+          response_parameter: None
+        - op_code_value: "0x07"
+          procedure: Request Number of Objects
+          requirement: O
+          parameter: None
+          applicable_response_value: Success, Op Code Not Supported, Operation Failed, Too Many Objects, No Object
+          response_parameter: Total Number of Objects (UINT32)
+        - op_code_value: "0x08"
+          procedure: Clear Marking
+          requirement: O
+          parameter: None
+          applicable_response_value: Success, Op Code Not Supported, Operation Failed, Too Many Objects, No Object
+          response_parameter: None
+        - op_code_value: 0x09–0x6F
+          procedure: Reserved for Future Use
+          requirement: N/A
+          parameter: N/A
+          applicable_response_value: N/A
+          response_parameter: N/A
+        - op_code_value: "0x70"
+          procedure: Response Code
+          requirement: M
+          parameter: OLCP Response value (see Table 3.25)
+          applicable_response_value: N/A
+          response_parameter: N/A
+        - op_code_value: 0x71–0xFF
+          procedure: Reserved for Future Use
+          requirement: N/A
+          parameter: N/A
+          applicable_response_value: N/A
+          response_parameter: N/A
+    - name: List Sort Order
+      description: The values of this field are defined below.
+      section_title: List Sort Order - Enumeration of Parameter Values
+      table_caption: List Sort Order - Enumeration of Parameter Values
+      values:
+        - value: "0x00"
+          description: Reserved for future use
+        - value: "0x01"
+          description: Order the list by object name, ascending (Note 1)
+        - value: "0x02"
+          description: Order the list by object type, ascending
+        - value: "0x03"
+          description: Order the list by object current size, ascending
+        - value: "0x04"
+          description: Order the list by object first-created timestamp, ascending
+        - value: "0x05"
+          description: Order the list by object last-modified timestamp, ascending
+        - value: 0x06–0x10
+          description: Reserved for future use
+        - value: "0x11"
+          description: Order the list by object name, descending (Note 1)
+        - value: "0x12"
+          description: Order the list by object type, descending
+        - value: "0x13"
+          description: Order the list by object current size, descending
+        - value: "0x14"
+          description: Order the list by object first-created timestamp, descending
+        - value: "0x15"
+          description: Order the list by object last-modified timestamp, descending
+        - value: 0x16–0xFF
+          description: Reserved for future use
+    - name: Result Codes
+      description: The Result Codes and Response Parameters associated with Op Code 0x70 are defined below.
+      section_title: List of OLCP Result Codes and Response Parameters
+      table_caption: List of OLCP Result Codes and Response Parameters
+      values:
+        - result_code: "0x00"
+          definition: Reserved For Future Use
+          response_parameter: N/A
+          description: N/A
+        - result_code: "0x01"
+          definition: Success
+          response_parameter: None except for Op Code 0x07 (Request Number of Objects) (UINT32)
+          description: Response for successful operation.
+        - result_code: "0x02"
+          definition: Op Code Not Supported
+          response_parameter: None
+          description: Response if unsupported Op Code is received.
+        - result_code: "0x03"
+          definition: Invalid Parameter
+          response_parameter: None
+          description: Response if Parameter received does not meet the requirements of the service.
+        - result_code: "0x04"
+          definition: Operation Failed
+          response_parameter: None
+          description: Response if the requested procedure failed for a reason other than those enumerated below.
+        - result_code: "0x05"
+          definition: Out Of Bounds
+          response_parameter: None
+          description: Response if the requested procedure attempted to select an object beyond the first object or beyond the last object in the current list.
+        - result_code: "0x06"
+          definition: Too Many Objects
+          response_parameter: None
+          description: Response if the requested procedure failed due to too many objects in the current list.
+        - result_code: "0x07"
+          definition: No Object
+          response_parameter: None
+          description: Response if the requested procedure failed due to there being zero objects in the current list.
+        - result_code: "0x08"
+          definition: Object ID Not Found
+          response_parameter: None
+          description: Response if the requested procedure failed due to there being no object with the requested Object ID.
+        - result_code: 0x09–0xFF
+          definition: Reserved For Future Use
+          response_parameter: N/A
+          description: N/A

@@ -1,0 +1,38 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Core Specification 6.3, Vol 3, Part C, 12.3 Peripheral Preferred Connection Parameters characteristic (Table 12.6).
+characteristic:
+  identifier: org.bluetooth.characteristic.gap.peripheral_preferred_connection_parameters
+  name: Peripheral Preferred Connection Parameters
+  description: |-
+    The Peripheral Preferred Connection Parameters (PPCP) characteristic contains the preferred connection parameters of the Peripheral.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Interval_Min
+      type: uint16
+      size: "2"
+      description: |-
+        connInterval = Interval_Min × 1.25 ms
+        Allowed range is: 0x0006 to 0x0C80.
+        A value of 0xFFFF represents "no specific value is requested".
+    - field: Interval_Max
+      type: uint16
+      size: "2"
+      description: |-
+        connInterval = Interval_Max × 1.25 ms
+        The value shall not be less than the value of Interval_Min.
+        Allowed range is: 0x0006 to 0x0C80.
+        A value of 0xFFFF represents "no specific value is requested".
+    - field: Latency
+      type: uint16
+      size: "2"
+      description: |-
+        connPeripheralLatency = Latency
+        Allowed range is: 0x0000 to 0x01F3.
+        A value of 0xFFFF represents "no specific value is requested".
+    - field: Timeout
+      type: uint16
+      size: "2"
+      description: |-
+        connSupervisionTimeout = Timeout × 10 ms
+        Allowed range is: 0x000A to 0x0C80.
+        A value of 0xFFFF represents "no specific value is requested".
