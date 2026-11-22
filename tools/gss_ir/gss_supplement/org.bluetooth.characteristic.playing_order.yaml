@@ -1,0 +1,61 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, Section 3.15 (Table 3.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.playing_order
+  name: Playing Order
+  description: |-
+    The Playing Order characteristic exposes the playing order of the media player. The value of this characteristic is an enumerated value as defined in Table 3.3. The resultant playing order when referencing “Oldest” and “Newest” in the “Name” column in Table 3.3 is implementation-specific.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Playing Order
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.playing_order/field/playing_order}.
+  fields:
+    - name: Playing Order
+      description: The values of this field are defined below.
+      values:
+        - value: "0x01"
+          description: |-
+            Single once
+            A single track is played once; there is no next track.
+        - value: "0x02"
+          description: |-
+            Single repeat
+            A single track is played repeatedly; the next track is the current track.
+        - value: "0x03"
+          description: |-
+            In order once
+            The tracks within a group are played once in track order.
+        - value: "0x04"
+          description: |-
+            In order repeat
+            The tracks within a group are played in track order repeatedly.
+        - value: "0x05"
+          description: |-
+            Oldest once
+            The tracks within a group are played once only from the oldest first.
+        - value: "0x06"
+          description: |-
+            Oldest repeat
+            The tracks within a group are played from the oldest first repeatedly.
+        - value: "0x07"
+          description: |-
+            Newest once
+            The tracks within a group are played once only from the newest first.
+        - value: "0x08"
+          description: |-
+            Newest repeat
+            The tracks within a group are played from the newest first repeatedly.
+        - value: "0x09"
+          description: |-
+            Shuffle once
+            The tracks within a group are played in random order once.
+        - value: "0x0A"
+          description: |-
+            Shuffle repeat
+            The tracks within a group are played in random order repeatedly.
+        - value: "0x00"
+          description: Reserved for Future Use
+        - value: 0x0B–0xFF
+          description: Reserved for Future Use

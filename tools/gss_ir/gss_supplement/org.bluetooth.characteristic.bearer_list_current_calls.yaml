@@ -1,0 +1,91 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Telephone Bearer Service 1.0, Section 3.7.
+characteristic:
+  identifier: org.bluetooth.characteristic.bearer_list_current_calls
+  name: Bearer List Current Calls
+  description: |-
+    The Bearer List Current Calls characteristic returns a list of current calls. If no calls are available, the list is empty, and a read of this characteristic shall return 0 octets. The list of current calls is built from other characteristics from TBS and is provided in this format to offer a way to get a snapshot of the current call information.
+    Each list item in the list of calls shall have the structure shown in Table 3.2.
+    The List_Item_Length field is the total length of the item, excluding the octet for the List_Item_Length field itself.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: List Item Length
+      type: uint8
+      size: "1"
+      description: |-
+        The total length of the item, excluding the octet for the List Item Length field itself.
+        The sequence of fields from List Item Length through Call URI is repeated for each list item in the list of current calls.
+    - field: Call Index
+      type: uint8
+      size: "1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.bearer_list_current_calls/field/call_index}.
+        Refer to Call State in \autoref{sec:org.bluetooth.characteristic.call_state}.
+    - field: Call State
+      type: uint8
+      size: "1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.bearer_list_current_calls/field/call_state}.
+        Refer to Call State in \autoref{sec:org.bluetooth.characteristic.call_state}.
+    - field: Call Flags
+      type: boolean[8]
+      size: "1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.bearer_list_current_calls/field/call_flags}.
+        Refer to Call State in \autoref{sec:org.bluetooth.characteristic.call_state}.
+    - field: Call URI
+      type: utf8s
+      size: variable
+      description: |-
+        UTF-8 string
+        Length in octets is List Item Length minus 3.
+        Refer to Incoming Call characteristic in \autoref{sec:org.bluetooth.characteristic.incoming_call}.
+        The Incoming Call URI or Outgoing Call URI is used to populate the URI field, depending on whether the call is an incoming or outgoing call.
+  fields:
+    - name: Call Index
+      description: The values of this field are defined below.
+      values:
+        - value: "0"
+          description: Reserved
+        - value: 1–255
+          description: |-
+            Call index chosen by the server to identify an active call. The Call Index shall remain unique for the life of the call.
+    - name: Call State
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Incoming
+        - value: "0x01"
+          description: Dialing
+        - value: "0x02"
+          description: Alerting
+        - value: "0x03"
+          description: Active
+        - value: "0x04"
+          description: Locally Held
+        - value: "0x05"
+          description: Remotely Held
+        - value: "0x06"
+          description: Locally and Remotely Held
+        - value: 0x07–0xFF
+          description: Reserved for Future Use
+    - name: Call Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Incoming/Outgoing
+            0 = Call is an incoming call
+            1 = Call is an outgoing call
+        - bit: "1"
+          description: |-
+            Information withheld by server
+            0 = Not withheld
+            1 = Withheld
+        - bit: "2"
+          description: |-
+            Information withheld by network
+            0 = Provided by network
+            1 = Withheld by network
+        - bit: 3–7
+          description: Reserved for Future Use

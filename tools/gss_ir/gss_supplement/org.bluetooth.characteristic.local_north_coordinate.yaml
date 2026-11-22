@@ -1,0 +1,17 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Indoor Positioning Service 1.0, Section 3.4.
+characteristic:
+  identifier: org.bluetooth.characteristic.local_north_coordinate
+  name: Local North Coordinate
+  description: |-
+    The Local North Coordinate Characteristic describes the North coordinate of the device using a local coordinate system.
+    The Local North Coordinate is relative to the north orientation on a predefined map downloaded prior to using the Indoor Positioning Service at the given location.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Local North Coordinate
+      type: sint16
+      size: "2"
+      description: |-
+        Unit is decimeters with a resolution of 1 decimeter.
+        Allowed range is: -32767 to 32767.
+        A value of 0x8000 represents "Local North Coordinate information is not configured".

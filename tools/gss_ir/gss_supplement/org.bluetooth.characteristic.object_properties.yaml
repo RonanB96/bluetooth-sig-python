@@ -1,0 +1,60 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Object Transfer Service 1.0, 3.2.8 Object Properties Characteristic (Tables 3.6–3.7).
+characteristic:
+  identifier: org.bluetooth.characteristic.object_properties
+  name: Object Properties
+  description: |-
+    This characteristic exposes a bit field representing the properties of the Current Object. When a bit is set to 1 (True), the Current Object possesses the associated property as defined in \RefRef{assigned_numbers}.
+    An object’s properties determine the operations that are permitted to be performed on that object, as described in Section 3.3. For example, an attempt to use the OACP Write Op Code when the Write bit of the properties for the Current Object is 0 (False) will result in an error response.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Object Properties
+      type: boolean[32]
+      size: "4"
+      description: See \autoref{sec:org.bluetooth.characteristic.object_properties/field/object_properties}.
+  fields:
+    - name: Object Properties
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Delete
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            Execute
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            Read
+            0 = False
+            1 = True
+        - bit: "3"
+          description: |-
+            Write
+            0 = False
+            1 = True
+        - bit: "4"
+          description: |-
+            Append
+            0 = False
+            1 = True
+        - bit: "5"
+          description: |-
+            Truncate
+            0 = False
+            1 = True
+        - bit: "6"
+          description: |-
+            Patch
+            0 = False
+            1 = True
+        - bit: "7"
+          description: |-
+            Mark
+            0 = False
+            1 = True
+        - bit: 8–31
+          description: Reserved for Future Use

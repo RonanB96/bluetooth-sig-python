@@ -1,0 +1,14 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Voice Assistant Service v1.0, Section 3.2.1.
+characteristic:
+  identifier: org.bluetooth.characteristic.voice_assistant_uuid
+  name: Voice Assistant UUID
+  description: |-
+    The Voice Assistant UUID characteristic is provided by the VA. The VA vendor is responsible for selecting a UUID value that is consistent across all VAS host platforms and shall use industry standard methods to randomly select a UUID, as specified in the Bluetooth Core Specification (Volume 1, Part E, Section 2.6) [2].
+    The Voice Assistant UUID characteristic shall be a 128-bit value.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Voice Assistant UUID
+      type: uint8
+      size: "16"
+      description: 128-bit UUID that identifies the voice assistant instance.

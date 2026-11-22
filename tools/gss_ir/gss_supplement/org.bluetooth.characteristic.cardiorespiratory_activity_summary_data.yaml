@@ -1,0 +1,329 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Physical Activity Monitor Service 1.0, Section 3.5 (Tables 3.12–3.13; Section 2.4.1 Table 2.1).
+characteristic:
+  identifier: org.bluetooth.characteristic.cardiorespiratory_activity_summary_data
+  name: CardioRespiratory Activity Summary Data
+  description: |-
+    The CardioRespiratory Activity Summary Data characteristic is used to send session/sub-session summary-type data to the client (see the definition of summary data in Section 2.2). The data is related to measurements that are typically supported by physical activity monitors that have cardiovascular and/or respiratory capabilities.
+    Included in the characteristic value are a Header field and a set of conditional fields, as shown in Table 3.12.
+    The characteristic value is of variable length, ranging up to 62 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Header
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.cardiorespiratory_activity_summary_data/field/header}.
+    - field: Flags
+      type: boolean[32]
+      size: "0 or 4"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.cardiorespiratory_activity_summary_data/field/flags}.
+        Mandatory if no segmentation into multiple indications is used. Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+    - field: Session ID
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Session ID field represents the physical activity session identifier to which the data is related.
+        Mandatory if no segmentation into multiple indications is used. Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+    - field: Sub-session ID
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Sub-session ID field represents the physical activity sub-session identifier to which the data is related. The value 0xFFFF is reserved to denote that the data in the characteristic relates to an entire session (i.e., including all its sub-sessions).
+        Mandatory if no segmentation into multiple indications is used. Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+    - field: Relative Timestamp
+      type: uint32
+      size: "0 or 4"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Relative Timestamp field represents the data time stamp that is included in the CardioRespiratory Activity Summary Data characteristic. The time stamp is represented as the elapsed number of seconds since the start of the physical activity session that is denoted in the Session ID field.
+        Mandatory if no segmentation into multiple indications is used. Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+    - field: Sequence Number
+      type: uint32
+      size: "0 or 4"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Sequence Number field represents the data sequence number that is included in the CardioRespiratory Activity Summary Data characteristic.
+        Sequence Number field values are assigned by the server in an implementation-specific manner that facilitates the correct data organization on the client side. Sequence Number field values should be incremented by 1 every time their respective data characteristic is updated and should roll over to 0x00000000 after the maximum value 0xFFFFFFFF is reached.
+        Mandatory if no segmentation into multiple indications is used. Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+    - field: Time in Heart Rate Zone1
+      type: uint24
+      size: "0 or 3"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Time in Heart Rate Zone1 field represents the total amount of time within the physical activity session/sub-session in which the user's heart rate remains in Heart Rate Zone1.
+        Present if bit 0 of Flags field is set to 1
+    - field: Time in Heart Rate Zone2
+      type: uint24
+      size: "0 or 3"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Time in Heart Rate Zone2 field represents the total amount of time within the physical activity session/sub-session in which the user's heart rate remains in Heart Rate Zone2.
+        Present if bit 1 of Flags field is set to 1
+    - field: Time in Heart Rate Zone3
+      type: uint24
+      size: "0 or 3"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Time in Heart Rate Zone3 field represents the total amount of time within the physical activity session/sub-session in which the user's heart rate remains in Heart Rate Zone3.
+        Present if bit 2 of Flags field is set to 1
+    - field: Time in Heart Rate Zone4
+      type: uint24
+      size: "0 or 3"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Time in Heart Rate Zone4 field represents the total amount of time within the physical activity session/sub-session in which the user's heart rate remains in Heart Rate Zone4.
+        Present if bit 3 of Flags field is set to 1
+    - field: Time in Heart Rate Zone5
+      type: uint24
+      size: "0 or 3"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Time in Heart Rate Zone5 field represents the total amount of time within the physical activity session/sub-session in which the user's heart rate remains in Heart Rate Zone5.
+        Present if bit 4 of Flags field is set to 1
+    - field: Minimum VO2 Max
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.transfer_rate.milliliter_per_kilogram_per_minute
+        The Minimum VO2 Max field represents the user's minimum aerobic capacity during the physical activity session/sub-session. See Section 3.4.1.1.7 for more details on aerobic capacity.
+        Present if bit 5 of Flags field is set to 1
+    - field: Maximum VO2 Max
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.transfer_rate.milliliter_per_kilogram_per_minute
+        The Maximum VO2 Max field represents the user's maximum aerobic capacity during the physical activity session/sub-session. See Section 3.4.1.1.7 for more details on aerobic capacity.
+        Present if bit 6 of Flags field is set to 1
+    - field: Average VO2 Max
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.transfer_rate.milliliter_per_kilogram_per_minute
+        The Average VO2 Max field represents the user's average aerobic capacity during the physical activity session/sub-session. See Section 3.4.1.1.7 for more details on aerobic capacity.
+        Present if bit 7 of Flags field is set to 1
+    - field: Minimum Heart Rate
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        The Minimum Heart Rate field represents the user's minimum heart rate during the physical activity session/sub-session.
+        Present if bit 8 of Flags field is set to 1
+    - field: Maximum Heart Rate
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        The Maximum Heart Rate field represents the user's maximum heart rate during the physical activity session/sub-session.
+        Present if bit 9 of Flags field is set to 1
+    - field: Average Heart Rate
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        The Average Heart Rate field represents the user's average heart rate during the physical activity session/sub-session.
+        Present if bit 10 of Flags field is set to 1
+    - field: Minimum Pulse Inter-beat Interval
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Base Unit: org.bluetooth.unit.time.second
+        Represented values: M = 1, d = 0, b = -10
+        Unit is 1/1024 s
+        The Minimum Pulse Inter-beat Interval field represents the minimum interval between the user's heartbeats during the physical activity session/sub-session. See Section 3.4.1.1.9 for more details on the interval between heartbeats.
+        Present if bit 11 of Flags field is set to 1
+    - field: Maximum Pulse Inter-beat Interval
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Base Unit: org.bluetooth.unit.time.second
+        Represented values: M = 1, d = 0, b = -10
+        Unit is 1/1024 s
+        The Maximum Pulse Inter-beat Interval field represents the maximum interval between the user's heartbeats during the physical activity session/sub-session. See Section 3.4.1.1.9 for more details on the interval between heartbeats.
+        Present if bit 12 of Flags field is set to 1
+    - field: Average Pulse Inter-beat Interval
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Base Unit: org.bluetooth.unit.time.second
+        Represented values: M = 1, d = 0, b = -10
+        Unit is 1/1024 s
+        The Average Pulse Inter-beat Interval field represents the average interval between the user's heartbeats during the physical activity session/sub-session. See Section 3.4.1.1.9 for more details on the interval between heartbeats.
+        Present if bit 13 of Flags field is set to 1
+    - field: Minimum Resting Heart Rate
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        The Minimum Resting Heart Rate field represents the user's minimum heart rate at rest during the physical activity session/sub-session.
+        Present if bit 14 of Flags field is set to 1
+    - field: Maximum Resting Heart Rate
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        The Maximum Resting Heart Rate field represents the user's maximum heart rate at rest during the physical activity session/sub-session.
+        Present if bit 15 of Flags field is set to 1
+    - field: Average Resting Heart Rate
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.period.beats_per_minute
+        The Average Resting Heart Rate field represents the user's average heart rate at rest during the physical activity session/sub-session.
+        Present if bit 16 of Flags field is set to 1
+    - field: Minimum Heart Rate Variability
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Base Unit: org.bluetooth.unit.time.second
+        Represented values: M = 1, d = 0, b = -10
+        Unit is 1/1024 s
+        The Minimum Heart Rate Variability field represents the minimum variation of the user's pulse inter-beat interval during the physical activity session/sub-session.
+        Present if bit 17 of Flags field is set to 1
+    - field: Maximum Heart Rate Variability
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Base Unit: org.bluetooth.unit.time.second
+        Represented values: M = 1, d = 0, b = -10
+        Unit is 1/1024 s
+        The Maximum Heart Rate Variability field represents the maximum variation of the user's pulse inter-beat interval during the physical activity session/sub-session.
+        Present if bit 18 of Flags field is set to 1
+    - field: Average Heart Rate Variability
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Base Unit: org.bluetooth.unit.time.second
+        Represented values: M = 1, d = 0, b = -10
+        Unit is 1/1024 s
+        The Average Heart Rate Variability field represents the average variation of the user's pulse inter-beat interval during the physical activity session/sub-session.
+        Present if bit 19 of Flags field is set to 1
+    - field: Minimum Respiration Rate
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.period.breaths_per_minute
+        The Minimum Respiration Rate field represents the user's minimum breathing rate during the physical activity session/sub-session.
+        Present if bit 20 of Flags field is set to 1
+    - field: Maximum Respiration Rate
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.period.breaths_per_minute
+        The Maximum Respiration Rate field represents the user's maximum breathing rate during the physical activity session/sub-session.
+        Present if bit 21 of Flags field is set to 1
+    - field: Average Respiration Rate
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.period.breaths_per_minute
+        The Average Respiration Rate field represents the user's average breathing rate during the physical activity session/sub-session.
+        Present if bit 22 of Flags field is set to 1
+    - field: Minimum Resting Respiration Rate
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.period.breaths_per_minute
+        The Minimum Resting Respiration Rate field represents the user's minimum breathing rate at rest during the physical activity session/sub-session.
+        Present if bit 23 of Flags field is set to 1
+    - field: Maximum Resting Respiration Rate
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.period.breaths_per_minute
+        The Maximum Resting Respiration Rate field represents the user's maximum breathing rate at rest during the physical activity session/sub-session.
+        Present if bit 24 of Flags field is set to 1
+    - field: Average Resting Respiration Rate
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Unit: org.bluetooth.unit.period.breaths_per_minute
+        The Average Resting Respiration Rate field represents the user's average breathing rate at rest during the physical activity session/sub-session.
+        Present if bit 25 of Flags field is set to 1
+    - field: Worn Duration
+      type: uint24
+      size: "0 or 3"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Worn Duration field represents the total amount of time within the physical activity session/sub-session that the user has worn the Physical Activity Monitor (as detected and calculated by the Physical Activity Monitor). See Section 3.3.1.1.31 for more details on the Worn Duration field.
+        Present if bit 26 of Flags field is set to 1
+  fields:
+    - name: Header
+      description: |-
+        The Header field and its use are described in Section 2.4.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            First Segment
+            The First Segment bit identifies the first segment of a segmented Data Record.
+        - bit: "1"
+          description: |-
+            Last Segment
+            The Last Segment bit identifies the last segment of a segmented Data Record.
+        - bit: 2–7
+          description: Rolling Segment Counter. The Rolling Segment Counter bits are used to enable the client to correctly reconstruct a segmented Data Record.
+    - name: Flags
+      description: |-
+        When the server includes a given data field, the associated bit of the Flags field shall be set to 1 (field present); otherwise, the associated bit shall be set to 0 (field not present).
+        If a given bit in the Physical Activity Monitor Features characteristic is set to 0, then the corresponding Flags field bit(s) shall be set to 0 and the associated field(s) shall not be present in the CardioRespiratory Activity Summary Data characteristic.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Time in Heart Rate Zone1 Present
+        - bit: "1"
+          description: Time in Heart Rate Zone2 Present
+        - bit: "2"
+          description: Time in Heart Rate Zone3 Present
+        - bit: "3"
+          description: Time in Heart Rate Zone4 Present
+        - bit: "4"
+          description: Time in Heart Rate Zone5 Present
+        - bit: "5"
+          description: Minimum VO2 Max Present
+        - bit: "6"
+          description: Maximum VO2 Max Present
+        - bit: "7"
+          description: Average VO2 Max Present
+        - bit: "8"
+          description: Minimum Heart Rate Present
+        - bit: "9"
+          description: Maximum Heart Rate Present
+        - bit: "10"
+          description: Average Heart Rate Present
+        - bit: "11"
+          description: Minimum Pulse Inter-beat Interval Present
+        - bit: "12"
+          description: Maximum Pulse Inter-beat Interval Present
+        - bit: "13"
+          description: Average Pulse Inter-beat Interval Present
+        - bit: "14"
+          description: Minimum Resting Heart Rate Present
+        - bit: "15"
+          description: Maximum Resting Heart Rate Present
+        - bit: "16"
+          description: Average Resting Heart Rate Present
+        - bit: "17"
+          description: Minimum Heart Rate Variability Present
+        - bit: "18"
+          description: Maximum Heart Rate Variability Present
+        - bit: "19"
+          description: Average Heart Rate Variability Present
+        - bit: "20"
+          description: Minimum Respiration Rate Present
+        - bit: "21"
+          description: Maximum Respiration Rate Present
+        - bit: "22"
+          description: Average Respiration Rate Present
+        - bit: "23"
+          description: Minimum Resting Respiration Rate Present
+        - bit: "24"
+          description: Maximum Resting Respiration Rate Present
+        - bit: "25"
+          description: Average Resting Respiration Rate Present
+        - bit: "26"
+          description: Worn Duration Present
+        - bit: 27–31
+          description: Reserved for Future Use

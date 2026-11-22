@@ -1,0 +1,24 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Volume Control Service 1.0.1, 3.3 Volume Flags (Tables 3.11–3.12).
+characteristic:
+  identifier: org.bluetooth.characteristic.volume_flags
+  name: Volume Flags
+  description: |-
+    The Volume Flags characteristic shall be set to a value that reflects the properties of VCS.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Volume Flags
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.volume_flags/field/volume_flags}.
+  fields:
+    - name: Volume Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Volume_Setting_Persisted
+            0 = Reset Volume Setting
+            1 = User Set Volume Setting
+        - bit: 1–7
+          description: Reserved for Future Use

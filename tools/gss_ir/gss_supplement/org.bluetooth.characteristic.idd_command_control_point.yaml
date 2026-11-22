@@ -1,0 +1,1337 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Insulin Delivery Service 1.0.2, Section 4.6 IDD Command Control Point (Tables 4.35–4.92).
+characteristic:
+  identifier: org.bluetooth.characteristic.idd_command_control_point
+  name: IDD Command Control Point
+  description: |-
+    This control point is used with a service to provide the ability to support the insulin therapy by adapting therapy parameters to enable the remote operation of the insulin therapy as well as the remote operation for device maintenance.
+    The structure of this characteristic is defined below.
+
+  structure:
+    - field: Op Code
+      type: uint16
+      size: "2"
+      description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/op_code}.
+    - field: Operand
+      type: struct
+      size: 0 to 15
+      description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/operand}.
+    - field: E2E-Counter
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+    - field: E2E-CRC
+      type: uint16
+      size: 0 or 2
+      description: |-
+        CRC calculated over all fields of the characteristic payload, including the E2E-Counter field, except for the E2E-CRC field itself.
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+  fields:
+    - name: Operand
+      description: |-
+        The structure of the Operand field depends on the Op Code field. See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/op_code}.
+    - name: Op Code
+      description: The values of this field are defined below.
+      section_title: Op Codes
+      table_caption: IDD Command CP Op Codes
+      values:
+        - op_code_value: 0x0000 –0x00FF
+          definition: Prohibited
+          operand: N/A
+          description: Reserved for IDD RACP and therefore prohibited
+        - op_code_value: 0x0100 –0x0302
+          definition: Prohibited
+          operand: N/A
+          description: Prohibited to keep Hamming distance of CP Op Codes in Insulin Delivery Service
+        - op_code_value: 0x0303 – 0x0F3C
+          definition: Prohibited
+          operand: N/A
+          description: Reserved for IDD Status Reader CP and therefore prohibited
+        - op_code_value: 0x0F3D –0x0F54
+          definition: Prohibited
+          operand: N/A
+          description: Prohibited to keep Hamming distance of CP Op Codes in Insulin Delivery Service
+        - op_code_value: "0x0F55"
+          definition: Response Code
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/response_code_operand}
+          description: See Section 4.6.2.1
+        - op_code_value: "0x0F5A"
+          definition: Set Therapy Control State
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/set_therapy_control_state_operand}
+          description: Set the therapy control state of the Insulin Delivery Device. The response to this control point is Response Code .
+        - op_code_value: "0x0F66"
+          definition: Set Flight Mode
+          operand: N/A
+          description: Activates the flight mode of the Insulin Delivery Device. The response to this control point is Response Code .
+        - op_code_value: "0x0F69"
+          definition: Snooze Annunciation
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/snooze_annunciation_operand}
+          description: Snoozes an annunciation for a limited amount of time. The normal response to this control point is Snooze Annunciation Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x0F96"
+          definition: Snooze AnnunciationResponse
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/snooze_annunciation_response_operand}
+          description: This is the normal response to Snooze Annunciation .
+        - op_code_value: "0x0F99"
+          definition: Confirm Annunciation
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/confirm_annunciation_operand}
+          description: Confirms an annunciation on the Server Application and removes this specific annunciation from the list of currently active annunciations on the Server Application. The normal response to this control point is Confirm Annunciation Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x0FA5"
+          definition: Confirm AnnunciationResponse
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/confirm_annunciation_response_operand}
+          description: This is the normal response to Confirm Annunciation.
+        - op_code_value: "0x0FAA"
+          definition: Read Basal Rate Profile Template
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/read_basal_rate_profile_template_operand}
+          description: Reads a specific Basal Rate Profile Template. The response to this control point is Response Code .
+        - op_code_value: "0x0FC3"
+          definition: Read Basal Rate Profile Template Response
+          operand: No Operand in the context of the IDD Command Control Point; Operand is defined in the IDD Command Data characteristic (Section 3.8.1.4)
+          description: This response is used to report one or more time blocks of a Basal Rate Profile Template.
+        - op_code_value: "0x0FCC"
+          definition: Write Basal Rate Profile Template
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_basal_rate_profile_template_operand}
+          description: Writes a specific Basal Rate Profile Template. The normal response to this control point is Write Basal Rate Profile Template Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x0FF0"
+          definition: Write Basal Rate Profile Template Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_basal_rate_profile_template_response_operand}
+          description: This is the normal response to Write Basal Rate Profile Template.
+        - op_code_value: "0x0FFF"
+          definition: Set TBR Adjustment
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/set_tbr_adjustment_operand}
+          description: Sets a new or changes a currently active TBR. The response to this control point is Response Code .
+        - op_code_value: "0x1111"
+          definition: Cancel TBR Adjustment
+          operand: N/A
+          description: Cancels a currently active TBR. The response to this control point is Response Code .
+        - op_code_value: "0x111E"
+          definition: Get TBR Template
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/get_tbr_template_operand}
+          description: Gets the parameters of a specific TBR template. The normal response to this control point is Get TBR Template Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x1122"
+          definition: Get TBR Template Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/get_tbr_template_response_operand}
+          description: This is the normal response to Get TBR Template.
+        - op_code_value: "0x112D"
+          definition: Set TBR Template
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/set_tbr_template_operand}
+          description: Sets the parameters of a specific TBR template. The normal response to this control point is Set TBR Template Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x1144"
+          definition: Set TBR Template Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/set_tbr_template_response_operand}
+          description: This is the normal response to Set TBR Template.
+        - op_code_value: "0x114B"
+          definition: Set Bolus
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/set_bolus_operand}
+          description: Sets a bolus with the specified parameters. The normal response to this control point is Set Bolus Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x1177"
+          definition: Set Bolus Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/set_bolus_response_operand}
+          description: This is the normal response to Set Bolus.
+        - op_code_value: "0x1178"
+          definition: Cancel Bolus
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/cancel_bolus_operand}
+          description: Cancels a bolus with the specified Bolus ID. The normal response to this control point is Cancel Bolus Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x1187"
+          definition: Cancel Bolus Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/cancel_bolus_response_operand}
+          description: This is the normal response to Cancel Bolus.
+        - op_code_value: "0x1188"
+          definition: Get Available Boluses
+          operand: N/A
+          description: Gets the currently available bolus types. The normal response to this control point is Get Available Boluses Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x11B4"
+          definition: Get Available Boluses Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/get_available_boluses_response_operand}
+          description: This is the normal response to Get Available Boluses.
+        - op_code_value: "0x11BB"
+          definition: Get Bolus Template
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/get_bolus_template_operand}
+          description: Gets the parameters of a specific bolus template. The normal response to this control point is Get Bolus Template Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x11D2"
+          definition: Get Bolus Template Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/get_bolus_template_response_operand}
+          description: This is the normal response to Get Bolus Template.
+        - op_code_value: "0x11DD"
+          definition: Set Bolus Template
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/set_bolus_template_operand}
+          description: Sets the parameters of a specific bolus template. The normal response to this control point is Set Bolus Template Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x11E1"
+          definition: Set Bolus Template Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/set_bolus_template_response_operand}
+          description: This is the normal response to Set Bolus Template.
+        - op_code_value: "0x11EE"
+          definition: Get Template Status and Details
+          operand: See Section 4.6.2.28
+          description: Gets the status and details of all the supported template types (i.e., if they are configured and / or configurable, the max number of supported time blocks and the template number range). The normal response to this control point is Get Template Status and Details Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x1212"
+          definition: Get Template Status and Details Response
+          operand: No Operand in the context of the IDD Command Control Point; Operand is defined in the IDD Command Data characteristic (Section 3.8.1.8)
+          description: This is the normal response to Get Template Status and Details.
+        - op_code_value: "0x121D"
+          definition: Reset Template Status
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/reset_template_status_operand}
+          description: Resets the status of one or many templates by marking them as Not Configured . The normal response to this control point is Reset Template Status Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x1221"
+          definition: Reset Template Status Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/reset_template_status_response_operand}
+          description: This is the normal response to Reset Template Status.
+        - op_code_value: "0x122E"
+          definition: Activate Profile Templates
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/activate_profile_templates_operand}
+          description: Activates profile templates. The normal response to this control point is Activate Profile Templates Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x1247"
+          definition: Activate Profile Templates Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/activate_profile_templates_response_operand}
+          description: This is the normal response to Activate Profile Templates.
+        - op_code_value: "0x1248"
+          definition: Get Activated Profile Templates
+          operand: See Section 4.6.2.34
+          description: Gets all the currently activated profile templates (e.g., basal rate profile template). The normal response to this control point is Get Activated Profile Templates Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x1274"
+          definition: Get Activated Profile Templates Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/get_activated_profile_templates_response_operand}
+          description: This is the normal response to Get Activated Profile Templates.
+        - op_code_value: "0x127B"
+          definition: Start Priming
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/start_priming_operand}
+          description: Starts the priming of the fluidic path of the Insulin Delivery Device with the provided amount of insulin. The priming is stopped as soon as that amount is delivered. The response to this control point is Response Code .
+        - op_code_value: "0x1284"
+          definition: Stop Priming
+          operand: N/A
+          description: Stops the priming of the fluidic path of the Insulin Delivery Device immediately. The response to this control point is Response Code .
+        - op_code_value: "0x128B"
+          definition: Set Initial Reservoir Fill Level
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/set_initial_reservoir_fill_level_operand}
+          description: Sets the initial fill level of the reservoir after refill or replacement. The response to this control point is Response Code .
+        - op_code_value: "0x12B7"
+          definition: Reset Reservoir Insulin Operation Time
+          operand: N/A
+          description: Resets the counter Reservoir Insulin Operation Time (retrieved by procedure Get Counter of IDD Status Reader CP with Counter Type Reservoir Insulin Operation Time ). The response to this control point is Response Code .
+        - op_code_value: "0x12B8"
+          definition: Read ISF Profile Template
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/read_isf_profile_template_operand}
+          description: Reads a specific ISF Profile Template. The response to this control point is Response Code .
+        - op_code_value: "0x12D1"
+          definition: Read ISF Profile Template Response
+          operand: No Operand in the context of the IDD Command Control Point; Operand is defined in the IDD Command Data characteristic (Section 3.8.1.5)
+          description: This response is used to report one or more time blocks of an ISF Profile Template.
+        - op_code_value: "0x12DE"
+          definition: Write ISF Profile Template
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_isf_profile_template_operand}
+          description: Writes a specific ISF Profile Template. The normal response to this control point is Write ISF Profile Template Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x12E2"
+          definition: Write ISF Profile Template Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_isf_profile_template_response_operand}
+          description: This is the normal response to Write ISF Profile Template.
+        - op_code_value: "0x12ED"
+          definition: Read I2CHO Ratio Profile Template
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/read_i2cho_ratio_profile_template_operand}
+          description: Reads a specific I:CHO Ratio Profile Template. The response to this control point is Response Code .
+        - op_code_value: "0x1414"
+          definition: Read I2CHO Ratio Profile Template Response
+          operand: No Operand in the context of the IDD Command Control Point; Operand is defined in the IDD Command Data characteristic (Section 3.8.1.6)
+          description: This response is used to report one or more time blocks of an I:CHO Ratio Profile Template.
+        - op_code_value: "0x141B"
+          definition: Write I2CHO Ratio Profile Template
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_i2cho_ratio_profile_template_operand}
+          description: Writes a specific I:CHO Ratio Profile Template. The normal response to this control point is Write I2CHO Ratio Profile Template Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x1427"
+          definition: Write I2CHO Ratio Profile Template Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_i2cho_ratio_profile_template_response_operand}
+          description: This is the normal response to Write I2CHO Ratio Profile Template.
+        - op_code_value: "0x1428"
+          definition: Read Target Glucose Range Profile Template
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/read_target_glucose_range_profile_template_operand}
+          description: Reads a specific Target Glucose Range Profile Template. The response to this control point is Response Code .
+        - op_code_value: "0x1441"
+          definition: Read Target Glucose Range Profile Template Response
+          operand: No Operand in the context of the IDD Command Control Point; Operand is defined in the IDD Command Data characteristic (Section 3.8.1.7)
+          description: This response is used to report one or more time blocks of a Target Glucose Range Profile Template.
+        - op_code_value: "0x144E"
+          definition: Write Target Glucose Range Profile Template
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_target_glucose_range_profile_template_operand}
+          description: Writes a specific Target Glucose Range Profile Template. The normal response to this control point is Write Target Glucose Range Profile Template Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x1472"
+          definition: Write Target Glucose Range Profile Template Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_target_glucose_range_profile_template_response_operand}
+          description: This is the normal response to Write Target Glucose Range Profile Template.
+        - op_code_value: "0x147D"
+          definition: Get Max Bolus Amount
+          operand: N/A
+          description: Gets the maximum bolus amount that can be delivered in a single bolus.
+        - op_code_value: "0x1482"
+          definition: Get Max Bolus Amount Response
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/get_max_bolus_amount_response_operand}
+          description: This is the normal response to Get Max Bolus Amount.
+        - op_code_value: "0x148D"
+          definition: Set Max Bolus Amount
+          operand: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/set_max_bolus_amount_operand}
+          description: Sets the maximum bolus amount that can be delivered in a single bolus
+        - op_code_value: 0x148E –0x14B0
+          definition: Prohibited
+          operand: N/A
+          description: Prohibited to keep Hamming distance of CP Op Codes in Insulin Delivery Service
+        - op_code_value: 0x14B1 –0x1B7D
+          definition: RFU
+          operand: N/A
+          description: Hamming code values reserved for IDD Command CP
+        - op_code_value: All not already defined Hamming code values within 0x0000 and 0xFFFF
+          definition: RFU
+          operand: N/A
+          description: All values in this table which are not defined above and do match a Hamming code value in the range of 0x0000 and 0xFFFF are reserved for future use.
+        - op_code_value: All other values
+          definition: Prohibited
+          operand: N/A
+          description: All values not defined above are prohibited.
+    - name: Response Code Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Request Op Code
+          type: uint16
+          size: "2"
+          description: The Op Code of the requested procedure. See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/op_code}.
+        - field: Response Code Value
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/response_code_value}.
+    - name: Set Therapy Control State Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Therapy Control State
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/therapy_control_state}.
+    - name: Snooze Annunciation Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Annunciation Instance ID
+          type: uint16
+          size: "2"
+          description: |-
+    - name: Snooze Annunciation Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Annunciation Instance ID
+          type: uint16
+          size: "2"
+          description: |-
+    - name: Confirm Annunciation Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Annunciation Instance ID
+          type: uint16
+          size: "2"
+          description: |-
+    - name: Confirm Annunciation Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Annunciation Instance ID
+          type: uint16
+          size: "2"
+          description: |-
+    - name: Read Basal Rate Profile Template Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Basal Rate Profile Template Number
+          type: uint8
+          size: "1"
+    - name: Get TBR Template Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: TBR Template Number
+          type: uint8
+          size: "1"
+    - name: Set TBR Template Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: TBR Template Number
+          type: uint8
+          size: "1"
+    - name: Get Bolus Template Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Bolus Template Number
+          type: uint8
+          size: "1"
+    - name: Set Bolus Template Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Bolus Template Number
+          type: uint8
+          size: "1"
+    - name: Read ISF Profile Template Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: ISF Profile Template Number
+          type: uint8
+          size: "1"
+    - name: Read I2CHO Ratio Profile Template Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: I2CHO Ratio Profile Template Number
+          type: uint8
+          size: "1"
+    - name: Read Target Glucose Range Profile Template Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Target Glucose Range Profile Template Number
+          type: uint8
+          size: "1"
+    - name: Set Bolus Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Bolus ID
+          type: uint16
+          size: "2"
+          description: |-
+            The Bolus ID field represents a unique identifier as a uint16 data type created by the Server Application for a programmed bolus.
+    - name: Cancel Bolus Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Bolus ID
+          type: uint16
+          size: "2"
+          description: |-
+            The Bolus ID field represents a unique identifier as a uint16 data type created by the Server Application for a programmed bolus.
+    - name: Cancel Bolus Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Bolus ID
+          type: uint16
+          size: "2"
+          description: |-
+            The Bolus ID field represents a unique identifier as a uint16 data type created by the Server Application for a programmed bolus.
+    - name: Write Basal Rate Profile Template Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_basal_rate_profile_template_operand_flags}.
+        - field: Basal Rate Profile Template Number
+          type: uint8
+          size: "1"
+        - field: First Time Block Number Index
+          type: uint8
+          size: "1"
+        - field: First Duration
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is minutes.
+        - field: First Rate
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is IU/h.
+        - field: Second Duration
+          type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if bit 1 of Flags field is set to 1
+        - field: Second Rate
+          type: medfloat16
+          size: 0 or 2
+          description: |-
+            Unit is IU/h.
+            Present if bit 1 of Flags field is set to 1
+        - field: Third Duration
+          type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if bit 2 of Flags field is set to 1
+        - field: Third Rate
+          type: medfloat16
+          size: 0 or 2
+          description: |-
+            Unit is IU/h.
+            Present if bit 2 of Flags field is set to 1
+    - name: Write Basal Rate Profile Template Operand Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            End Transaction
+            0 = False
+            1 = True
+            If this bit is set, it signals the Server that all time blocks of the basal rate profile have been sent (i.e., the basal rate profile is complete). It shall only be set if the last time blocks of the basal rate profile are sent.
+        - bit: "1"
+          description: |-
+            Second Time Block Present
+            0 = False
+            1 = True
+            If this bit is set, the fields Second Duration and Second Rate are present.
+        - bit: "2"
+          description: |-
+            Third Time Block Present
+            0 = False
+            1 = True
+            If this bit is set, the fields Third Duration and Third Rate are present.
+        - bit: 3–7
+          description: Reserved for Future Use
+    - name: Write Basal Rate Profile Template Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_basal_rate_profile_template_response_operand_flags}.
+        - field: Basal Rate Profile Template Number
+          type: uint8
+          size: "1"
+        - field: First Time Block Number Index
+          type: uint8
+          size: "1"
+    - name: Write Basal Rate Profile Template Response Operand Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Transaction Completed
+            0 = False
+            1 = True
+            If this bit is set, the basal rate profile passed the plausibility checks of the Server and was written successfully (i.e., the write transaction of all time blocks of the basal rate profile completed).
+        - bit: 1–7
+          description: Reserved for Future Use
+    - name: Write ISF Profile Template Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_isf_profile_template_operand_flags}.
+        - field: ISF Profile Template Number
+          type: uint8
+          size: "1"
+        - field: First Time Block Number Index
+          type: uint8
+          size: "1"
+        - field: First Duration
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is minutes.
+        - field: First ISF
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is mg/dL.
+        - field: Second Duration
+          type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if bit 1 of Flags field is set to 1
+        - field: Second ISF
+          type: medfloat16
+          size: 0 or 2
+          description: |-
+            Unit is mg/dL.
+            Present if bit 1 of Flags field is set to 1
+        - field: Third Duration
+          type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if bit 2 of Flags field is set to 1
+        - field: Third ISF
+          type: medfloat16
+          size: 0 or 2
+          description: |-
+            Unit is mg/dL.
+            Present if bit 2 of Flags field is set to 1
+    - name: Write ISF Profile Template Operand Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            End Transaction
+            0 = False
+            1 = True
+            If this bit is set, it indicates to the Server that all time blocks of the ISF profile have been sent (i.e., the ISF profile is complete). It shall only be set if the last time blocks of the ISF profile are sent.
+        - bit: "1"
+          description: |-
+            Second Time Block Present
+            0 = False
+            1 = True
+            If this bit is set, the fields Second Duration and Second ISF are present.
+        - bit: "2"
+          description: |-
+            Third Time Block Present
+            0 = False
+            1 = True
+            If this bit is set, the fields Third Duration and Third ISF are present.
+        - bit: 3–7
+          description: Reserved for Future Use
+    - name: Write ISF Profile Template Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_isf_profile_template_response_operand_flags}.
+        - field: ISF Profile Template Number
+          type: uint8
+          size: "1"
+        - field: First Time Block Number Index
+          type: uint8
+          size: "1"
+    - name: Write ISF Profile Template Response Operand Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Transaction Completed
+            0 = False
+            1 = True
+            If this bit is set, the ISF profile passed the plausibility checks of the Server and was written successfully (i.e., the write transaction of all time blocks of the ISF profile completed).
+        - bit: 1–7
+          description: Reserved for Future Use
+    - name: Write I2CHO Ratio Profile Template Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_i2cho_ratio_profile_template_operand_flags}.
+        - field: I2CHO Ratio Profile Template Number
+          type: uint8
+          size: "1"
+        - field: First Time Block Number Index
+          type: uint8
+          size: "1"
+        - field: First Duration
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is minutes.
+        - field: First I2CHO Ratio
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is grams.
+        - field: Second Duration
+          type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if bit 1 of Flags field is set to 1
+        - field: Second I2CHO Ratio
+          type: medfloat16
+          size: 0 or 2
+          description: |-
+            Unit is grams.
+            Present if bit 1 of Flags field is set to 1
+        - field: Third Duration
+          type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if bit 2 of Flags field is set to 1
+        - field: Third I2CHO Ratio
+          type: medfloat16
+          size: 0 or 2
+          description: |-
+            Unit is grams.
+            Present if bit 2 of Flags field is set to 1
+    - name: Write I2CHO Ratio Profile Template Operand Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            End Transaction
+            0 = False
+            1 = True
+            If this bit is set, it indicates to the Server that all time blocks of the I:CHO ratio profile have been sent (i.e., the I:CHO ratio profile is complete). It shall only be set if the last time blocks of the I:CHO ratio profile are sent.
+        - bit: "1"
+          description: |-
+            Second Time Block Present
+            0 = False
+            1 = True
+            If this bit is set, the fields Second Duration and Second I2CHO Ratio are present.
+        - bit: "2"
+          description: |-
+            Third Time Block Present
+            0 = False
+            1 = True
+            If this bit is set, the fields Third Duration and Third I2CHO Ratio are present.
+        - bit: 3–7
+          description: Reserved for Future Use
+    - name: Write I2CHO Ratio Profile Template Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_i2cho_ratio_profile_template_response_operand_flags}.
+        - field: I2CHO Ratio Profile Template Number
+          type: uint8
+          size: "1"
+        - field: First Time Block Number Index
+          type: uint8
+          size: "1"
+    - name: Write I2CHO Ratio Profile Template Response Operand Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Transaction Completed
+            0 = False
+            1 = True
+            If this bit is set, the I:CHO ratio profile passed the plausibility checks of the Server and was written successfully (i.e., the write transaction of all time blocks of the I:CHO ratio profile completed).
+        - bit: 1–7
+          description: Reserved for Future Use
+    - name: Write Target Glucose Range Profile Template Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_target_glucose_range_profile_template_operand_flags}.
+        - field: Target Glucose Range Profile Template Number
+          type: uint8
+          size: "1"
+        - field: First Time Block Number Index
+          type: uint8
+          size: "1"
+        - field: First Duration
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is minutes.
+        - field: First Lower Target Glucose Limit
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is mg/dL.
+        - field: First Upper Target Glucose Limit
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is mg/dL.
+        - field: Second Duration
+          type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if bit 1 of Flags field is set to 1
+        - field: Second Lower Target Glucose Limit
+          type: medfloat16
+          size: 0 or 2
+          description: |-
+            Unit is mg/dL.
+            Present if bit 1 of Flags field is set to 1
+        - field: Second Upper Target Glucose Limit
+          type: medfloat16
+          size: 0 or 2
+          description: |-
+            Unit is mg/dL.
+            Present if bit 1 of Flags field is set to 1
+    - name: Write Target Glucose Range Profile Template Operand Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            End Transaction
+            0 = False
+            1 = True
+            If this bit is set, it indicates to the Server that all time blocks of the target glucose range profile have been sent (i.e., the target glucose range profile is complete). It shall only be set if the last time blocks of the target glucose range profile are sent.
+        - bit: "1"
+          description: |-
+            Second Time Block Present
+            0 = False
+            1 = True
+            If this bit is set, the fields Second Duration, Second Lower Target Glucose Limit, and Second Upper Target Glucose Limit are present.
+        - bit: 2–7
+          description: Reserved for Future Use
+    - name: Write Target Glucose Range Profile Template Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/write_target_glucose_range_profile_template_response_operand_flags}.
+        - field: Target Glucose Range Profile Template Number
+          type: uint8
+          size: "1"
+        - field: First Time Block Number Index
+          type: uint8
+          size: "1"
+    - name: Write Target Glucose Range Profile Template Response Operand Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Transaction Completed
+            0 = False
+            1 = True
+            If this bit is set, the target glucose range profile passed the plausibility checks of the Server and was written successfully (i.e., the write transaction of all time blocks of the target glucose range profile completed).
+        - bit: 1–7
+          description: Reserved for Future Use
+    - name: Set TBR Adjustment Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/set_tbr_adjustment_operand_flags}.
+        - field: TBR Type
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/tbr_type}.
+        - field: TBR Adjustment Value
+          type: medfloat16
+          size: "2"
+          description: |-
+            If the TBR is absolute (i.e., TBR Type is set to Absolute), the TBR Adjustment Value field contains the temporary basal rate as the absolute value in IU/h. If the TBR is relative (i.e., TBR Type is set to Relative), the TBR Adjustment Value field contains a dimensionless scaling factor.
+        - field: TBR Duration
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is minutes.
+        - field: TBR Template Number
+          type: uint8
+          size: 0 or 1
+          description: |-
+            Present if bit 0 of Flags field is set to 1
+        - field: TBR Delivery Context
+          type: uint8
+          size: 0 or 1
+          description: |-
+            See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/tbr_delivery_context}.
+            Present if bit 1 of Flags field is set to 1
+    - name: Get TBR Template Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: TBR Template Number
+          type: uint8
+          size: "1"
+        - field: TBR Type
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/tbr_type}.
+        - field: TBR Adjustment Value
+          type: medfloat16
+          size: "2"
+          description: |-
+            If the TBR is absolute (i.e., TBR Type is set to Absolute), the TBR Adjustment Value field contains the temporary basal rate as the absolute value in IU/h. If the TBR is relative (i.e., TBR Type is set to Relative), the TBR Adjustment Value field contains a dimensionless scaling factor.
+        - field: TBR Duration
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is minutes.
+    - name: Set TBR Template Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: TBR Template Number
+          type: uint8
+          size: "1"
+        - field: TBR Type
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/tbr_type}.
+        - field: TBR Adjustment Value
+          type: medfloat16
+          size: "2"
+          description: |-
+            If the TBR is absolute (i.e., TBR Type is set to Absolute), the TBR Adjustment Value field contains the temporary basal rate as the absolute value in IU/h. If the TBR is relative (i.e., TBR Type is set to Relative), the TBR Adjustment Value field contains a dimensionless scaling factor.
+        - field: TBR Duration
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is minutes.
+    - name: Set TBR Adjustment Operand Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            TBR Template Number Present
+            0 = False
+            1 = True
+            If this bit is set, the TBR Template Number field is present.
+        - bit: "1"
+          description: |-
+            TBR Delivery Context Present
+            0 = False
+            1 = True
+            If this bit is set, the TBR Delivery Context field is present.
+        - bit: "2"
+          description: |-
+            Change TBR
+            0 = False
+            1 = True
+            If this bit is set, a currently active TBR shall be completely overwritten with the changed settings; otherwise a new TBR shall be activated (i.e., the changed settings are new settings and are not based on the settings of the currently active TBR).
+        - bit: 3–7
+          description: Reserved for Future Use
+    - name: Set Bolus Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/set_bolus_operand_flags}.
+        - field: Bolus Type
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/bolus_type}.
+        - field: Bolus Fast Amount
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is IU.
+            The Bolus Fast Amount field shall be set to 0 if Bolus Type is set to Extended.
+        - field: Bolus Extended Amount
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is IU.
+            The Bolus Extended Amount field shall be set to 0 if Bolus Type is set to Fast.
+        - field: Bolus Duration
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is minutes.
+            The Bolus Duration field shall be set to 0 if Bolus Type is set to Fast.
+        - field: Bolus Delay Time
+          type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if bit 0 of Flags field is set to 1
+        - field: Bolus Template Number
+          type: uint8
+          size: 0 or 1
+          description: |-
+            Present if bit 1 of Flags field is set to 1
+        - field: Bolus Activation Type
+          type: uint8
+          size: 0 or 1
+          description: |-
+            See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/bolus_activation_type}.
+            Present if bit 2 of Flags field is set to 1
+    - name: Set Bolus Operand Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Bolus Delay Time Present
+            0 = False
+            1 = True
+            If this bit is set, the Bolus Delay Time field is present.
+        - bit: "1"
+          description: |-
+            Bolus Template Number Present
+            0 = False
+            1 = True
+            If this bit is set, the Bolus Template Number field is present.
+        - bit: "2"
+          description: |-
+            Bolus Activation Type Present
+            0 = False
+            1 = True
+            If this bit is set, the Bolus Activation Type field is present.
+        - bit: "3"
+          description: |-
+            Bolus Delivery Reason Correction
+            0 = False
+            1 = True
+            If this bit is set, the reason for the bolus is the correction of a high blood glucose level.
+        - bit: "4"
+          description: |-
+            Bolus Delivery Reason Meal
+            0 = False
+            1 = True
+            If this bit is set, the reason for the bolus is to cover the intake of food.
+        - bit: 5–7
+          description: Reserved for Future Use
+    - name: Get Bolus Template Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Bolus Template Number
+          type: uint8
+          size: "1"
+        - field: Flags
+          type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/get_bolus_template_operand_flags}.
+        - field: Bolus Type
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/bolus_type}.
+        - field: Bolus Fast Amount
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is IU.
+            The Bolus Fast Amount field is set to 0 if Bolus Type is set to Extended.
+        - field: Bolus Extended Amount
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is IU.
+            The Bolus Extended Amount field is set to 0 if Bolus Type is set to Fast.
+        - field: Bolus Duration
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is minutes.
+            The Bolus Duration field is set to 0 if Bolus Type is set to Fast.
+        - field: Bolus Delay Time
+          type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if bit 0 of Flags field is set to 1
+    - name: Set Bolus Template Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Bolus Template Number
+          type: uint8
+          size: "1"
+        - field: Flags
+          type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/get_bolus_template_operand_flags}.
+        - field: Bolus Type
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/bolus_type}.
+        - field: Bolus Fast Amount
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is IU.
+            The Bolus Fast Amount field is set to 0 if Bolus Type is set to Extended.
+        - field: Bolus Extended Amount
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is IU.
+            The Bolus Extended Amount field is set to 0 if Bolus Type is set to Fast.
+        - field: Bolus Duration
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is minutes.
+            The Bolus Duration field is set to 0 if Bolus Type is set to Fast.
+        - field: Bolus Delay Time
+          type: uint16
+          size: 0 or 2
+          description: |-
+            Unit is minutes.
+            Present if bit 0 of Flags field is set to 1
+    - name: Get Available Boluses Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Flags
+          type: boolean[8]
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.idd_command_control_point/field/get_available_boluses_response_operand_flags}.
+    - name: Get Available Boluses Response Operand Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Fast Bolus Available
+            0 = False
+            1 = True
+            If this bit is set, a fast bolus is currently available to be set.
+        - bit: "1"
+          description: |-
+            Extended Bolus Available
+            0 = False
+            1 = True
+            If this bit is set, an extended bolus is currently available to be set.
+        - bit: "2"
+          description: |-
+            Multiwave Bolus Available
+            0 = False
+            1 = True
+            If this bit is set, a multiwave bolus is currently available to be set.
+        - bit: 3–7
+          description: Reserved for Future Use
+    - name: Get Bolus Template Operand Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Bolus Delay Time Present
+            0 = False
+            1 = True
+            If this bit is set, the Bolus Delay Time field is present.
+        - bit: "1"
+          description: |-
+            Bolus Delivery Reason Correction
+            0 = False
+            1 = True
+            If this bit is set, the reason for the bolus is the correction of a high blood glucose level.
+        - bit: "2"
+          description: |-
+            Bolus Delivery Reason Meal
+            0 = False
+            1 = True
+            If this bit is set, the reason for the bolus is to cover the intake of food.
+        - bit: 3–7
+          description: Reserved for Future Use
+    - name: Reset Template Status Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Number of Templates to Reset
+          type: uint8
+          size: "1"
+        - field: Template Numbers
+          type: uint8[n]
+          size: 1 to 14
+    - name: Reset Template Status Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Number of Templates Reset
+          type: uint8
+          size: "1"
+        - field: Template Numbers
+          type: uint8[n]
+          size: 1 to 14
+    - name: Activate Profile Templates Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Number of Profile Templates to Activate
+          type: uint8
+          size: "1"
+        - field: Profile Template Numbers
+          type: uint8[n]
+          size: 1 to 14
+    - name: Activate Profile Templates Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Number of Profile Templates Activated
+          type: uint8
+          size: "1"
+        - field: Profile Template Numbers
+          type: uint8[n]
+          size: 1 to 14
+    - name: Get Activated Profile Templates Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Number of Activated Profile Templates
+          type: uint8
+          size: "1"
+        - field: Profile Template Numbers
+          type: uint8[n]
+          size: 0 or 1 to 14
+          description: |-
+            Present if the Number of Activated Profile Templates field is greater than 0
+    - name: Start Priming Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Amount
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is IU.
+    - name: Set Initial Reservoir Fill Level Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Fill Level
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is IU.
+    - name: Get Max Bolus Amount Response Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Max Bolus Amount
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is IU.
+    - name: Set Max Bolus Amount Operand
+      description: The structure of this field is defined below.
+      values:
+        - field: Max Bolus Amount
+          type: medfloat16
+          size: "2"
+          description: |-
+            Unit is IU.
+    - name: Response Code Value
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: |-
+            Success
+            Normal response for successful procedure.
+        - value: "0x70"
+          description: |-
+            Op Code not supported
+            Normal response if unsupported Op Code is received.
+        - value: "0x71"
+          description: |-
+            Invalid Operand
+            Normal response if Operand received does not meet the requirements of the service.
+        - value: "0x72"
+          description: |-
+            Procedure not completed
+            Normal response if unable to complete a procedure for any reason.
+        - value: "0x73"
+          description: |-
+            Parameter out of range
+            Normal response if Operand received does not meet the range requirements of the service.
+        - value: "0x74"
+          description: |-
+            Procedure not applicable
+            Normal response if the procedure cannot be executed because it is not applicable in the current Server Application context.
+        - value: "0x75"
+          description: |-
+            Plausibility check failed
+            Normal response if a transaction consisting of several procedures was not completed by the Server because the parameters provided by the Client to perform this transaction has been invalid or inconsistent.
+        - value: "0x76"
+          description: |-
+            Maximum Bolus Number reached
+            Normal response if the maximum number of boluses of a specific type is reached when executing the Set Bolus procedure. The maximum available number of boluses depends on the implementation of Insulin Delivery Device and which boluses are already running.
+        - value: All not already defined values with a Hamming distance of 4 bits to 0x0F
+          description: |-
+            RFU
+            All not already defined values with a Hamming distance of 4 bits to Response Code Value of Success = 0x0F are reserved for future use.
+        - value: All other values
+          description: |-
+            Prohibited
+            Values not having a Hamming distance of 4 bits to Response Code Value of Success = 0x0F shall not be defined and are prohibited.
+    - name: Therapy Control State
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: |-
+            Undetermined
+            The operational state is undetermined.
+        - value: "0x33"
+          description: |-
+            Stop
+            The insulin infusion therapy is stopped but the Insulin Delivery Device can still be configured (e.g., priming).
+        - value: "0x3C"
+          description: |-
+            Pause
+            The insulin infusion therapy is paused (i.e., the device does not deliver insulin related to the therapy but delivers the missed amount of insulin after leaving state Pause and entering state Run). Typically the Pause state is limited to several minutes and can be used, for example, to bridge the time during a reservoir change.
+        - value: "0x55"
+          description: |-
+            Run
+            The insulin infusion therapy is running (i.e., the device delivers insulin related to the therapy). The Insulin Delivery Device cannot be configured in the Run state (e.g., priming).
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: |-
+            RFU
+            All values in this table which are not defined above and do match a Hamming code value in the range of 0x00 and 0xFF are reserved for future use.
+        - value: All other values
+          description: |-
+            Prohibited
+            All values not defined above are prohibited.
+    - name: Bolus Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined
+        - value: "0x33"
+          description: Fast
+        - value: "0x3C"
+          description: Extended
+        - value: "0x55"
+          description: Multiwave
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: TBR Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined
+        - value: "0x33"
+          description: Absolute
+        - value: "0x3C"
+          description: Relative
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: TBR Delivery Context
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: |-
+            Undetermined
+            The delivery context is undetermined.
+        - value: "0x33"
+          description: |-
+            Device Based
+            The TBR was initiated directly on the Insulin Delivery Device (e.g., the user triggers a TBR directly on the device).
+        - value: "0x3C"
+          description: |-
+            Remote Control
+            The TBR was initiated via a remote control (i.e., an external device). For example, the user triggers a TBR via a remote control.
+        - value: "0x55"
+          description: |-
+            AP Controller
+            The TBR was initiated by an AP Controller (i.e., an external automated device) as part of an APDS.
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: |-
+            RFU
+            All values in this table which are not defined above and do match a Hamming code value in the range of 0x00 and 0xFF are reserved for future use.
+        - value: All other values
+          description: |-
+            Prohibited
+            All values not defined above are prohibited.
+    - name: Bolus Activation Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: |-
+            Undetermined
+            The activation type is undetermined.
+        - value: "0x33"
+          description: |-
+            Manual Bolus
+            The bolus was defined by the user.
+        - value: "0x3C"
+          description: |-
+            Recommended Bolus
+            The bolus was recommended by a calculation algorithm (e.g., a bolus calculator) and confirmed by the user.
+        - value: "0x55"
+          description: |-
+            Manually Changed Recommended Bolus
+            The user changed a recommended bolus.
+        - value: "0x5A"
+          description: |-
+            Commanded Bolus
+            The bolus was activated without user interaction (e.g., by an APDS)
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: |-
+            RFU
+            All values in this table which are not defined above and do match a Hamming code value in the range of 0x00 and 0xFF are reserved for future use.
+        - value: All other values
+          description: |-
+            Prohibited
+            All values not defined above are prohibited.

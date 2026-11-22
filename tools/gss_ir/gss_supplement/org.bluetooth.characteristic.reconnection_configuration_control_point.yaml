@@ -1,0 +1,325 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Reconnection Configuration Service 1.0.1, 3.3 Reconnection Configuration Control Point (Tables 3.6–3.10).
+characteristic:
+  identifier: org.bluetooth.characteristic.reconnection_configuration_control_point
+  name: Reconnection Configuration Control Point
+  description: |-
+    The Reconnection Configuration Control Point (RCCP) characteristic shall be used to execute a supported procedure on the Reconnection Configuration server. This may include parameters that are valid within the context of that opcode as defined in \autoref{sec:org.bluetooth.characteristic.reconnection_configuration_control_point/field/opcode}.
+    The Reconnection Configuration client should read the RC Feature characteristic to obtain information about the supported features on the Reconnection Configuration server before writing to the Reconnection Configuration Control Point.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Opcode
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.reconnection_configuration_control_point/field/opcode}
+    - field: Operand
+      type: struct
+      size: 0 to 17
+      description: See \autoref{sec:org.bluetooth.characteristic.reconnection_configuration_control_point/field/opcode}
+    - field: E2E-CRC
+      type: uint16
+      size: 0 or 2
+      description: |-
+        CRC calculated over all data but the CRC field itself. See \autoref{sec:crc_calculation} for details.
+        Present if E2E-CRC Supported bit in RC Feature characteristic is set to 1
+  fields:
+    - name: Opcode
+      description: The values of this field are defined below.
+      section_title: RCCP requirements
+      table_caption: RCCP requirements
+      values:
+        - op_code_value: "0x00"
+          definition: Enable Disconnect
+          requirement: C.1
+          operand: None
+          operand_data_type: N/A
+          applicable_result_codes: Opcode Not Supported, Operation Failed, Success
+          remark: N/A
+          description: N/A
+        - op_code_value: "0x01"
+          definition: Get Actual Communication Parameters
+          requirement: C.2
+          operand: None
+          operand_data_type: N/A
+          applicable_result_codes: Opcode Not Supported, Operation Failed
+          remark: Normal response to this opcode is Client Parameter Indication
+          description: N/A
+        - op_code_value: "0x02"
+          definition: Propose Settings
+          requirement: C.2
+          operand: See Table 3.8
+          operand_data_type: See \autoref{sec:org.bluetooth.characteristic.reconnection_configuration_control_point/field/operand_response_parameter}
+          applicable_result_codes: Opcode Not Supported, Communication Parameter out of Range, Invalid Parameter Combination, Operation Failed, Invalid Operand Proposal Accepted, Success, Communication Parameters rejected
+          remark: N/A
+          description: N/A
+        - op_code_value: "0x03"
+          definition: Activate Stored Settings
+          requirement: C.2
+          operand: Parameter-Set
+          operand_data_type: uint8
+          applicable_result_codes: Success, Opcode Not Supported, Operation Failed, Invalid Operand, Proposal Accepted, Communication Parameters rejected
+          remark: N/A
+          description: N/A
+        - op_code_value: "0x04"
+          definition: Get Max Values
+          requirement: C.3
+          operand: None
+          operand_data_type: N/A
+          applicable_result_codes: Opcode Not Supported, Operation Failed
+          remark: Normal response to this opcode is Communication Parameter Response
+          description: N/A
+        - op_code_value: "0x05"
+          definition: Get Min Values
+          requirement: C.3
+          operand: None
+          operand_data_type: N/A
+          applicable_result_codes: Opcode Not Supported, Operation Failed
+          remark: Normal response to this opcode is Communication Parameter Response
+          description: N/A
+        - op_code_value: "0x06"
+          definition: Get Stored Values
+          requirement: C.2
+          operand: Parameter-Set
+          operand_data_type: uint8
+          applicable_result_codes: Opcode Not Supported, Operation Failed, Invalid Operand
+          remark: Normal response to this opcode is Communication Parameter Response
+          description: N/A
+        - op_code_value: "0x07"
+          definition: Set Filter Accept List Timer
+          requirement: C.4
+          operand: uint32 containing time in seconds used for Filter Accept List
+          operand_data_type: uint32
+          applicable_result_codes: Opcode Not Supported, Operation Failed, Invalid Operand, Success
+          remark: N/A
+          description: N/A
+        - op_code_value: "0x08"
+          definition: Get Filter Accept List Timer
+          requirement: C.4
+          operand: None
+          operand_data_type: N/A
+          applicable_result_codes: Opcode Not Supported, Operation Failed
+          remark: Normal response to this opcode is Filter Accept List Timer Response
+          description: N/A
+        - op_code_value: "0x09"
+          definition: Set Advertisement Configuration
+          requirement: C.5
+          operand: uint8
+          operand_data_type: uint8
+          applicable_result_codes: Success, Opcode Not Supported, Operation Failed, Invalid Operand
+          remark: N/A
+          description: See \autoref{sec:org.bluetooth.characteristic.reconnection_configuration_control_point/field/advertisement_configuration_operand}
+        - op_code_value: "0x0A"
+          definition: Upgrade to LESC Only
+          requirement: C.6
+          operand: uint8 (0xFF = true, 0x00 = false)
+          operand_data_type: uint8
+          applicable_result_codes: Success, Opcode Not Supported, Invalid Operand, Operation Failed
+          remark: N/A
+          description: N/A
+        - op_code_value: "0x0B"
+          definition: Switch OOB Pairing
+          requirement: C.7
+          operand: uint8 (0xFF = true, 0x00 = false)
+          operand_data_type: uint8
+          applicable_result_codes: Success, Opcode Not Supported, Invalid Operand, Operation Failed
+          remark: N/A
+          description: N/A
+        - op_code_value: "0x0C"
+          definition: Limited Access
+          requirement: C.8
+          operand: uint8 (0xFF = true, 0x00 = false)
+          operand_data_type: uint8
+          applicable_result_codes: Success, Opcode Not Supported, Invalid Operand, Operation Failed
+          remark: N/A
+          description: N/A
+        - op_code_value: "0x0D"
+          definition: Reserved for Future Use
+          requirement: N/A
+          operand: N/A
+          operand_data_type: N/A
+          applicable_result_codes: N/A
+          remark: N/A
+          description: N/A
+        - op_code_value: "0x0E"
+          definition: Procedure Response
+          requirement: M
+          operand: Request Opcode, Result Code
+          operand_data_type: N/A
+          applicable_result_codes: N/A
+          remark: N/A
+          description: See \autoref{sec:org.bluetooth.characteristic.reconnection_configuration_control_point/field/result_code_values}
+        - op_code_value: "0x0F"
+          definition: Communication Parameter Response
+          requirement: C.2
+          operand: Request Opcode, parameters as defined in Table 3.8
+          operand_data_type: See \autoref{sec:org.bluetooth.characteristic.reconnection_configuration_control_point/field/operand_response_parameter}
+          applicable_result_codes: N/A
+          remark: Normal response for the Get Min Values, Get Max Values, Get Stored Values procedures
+          description: N/A
+        - op_code_value: "0x10"
+          definition: Filter Accept List Timer Response
+          requirement: C.4
+          operand: uint32 for current settings of Filter Accept List Timer (in seconds), uint32 for min value and uint32 for max value
+          operand_data_type: uint32, uint32, uint32
+          applicable_result_codes: N/A
+          remark: Normal response for the Get Filter Accept List Timer procedure
+          description: N/A
+        - op_code_value: "0x11"
+          definition: Client Parameter Indication
+          requirement: M
+          operand: See Table 3.8
+          operand_data_type: See \autoref{sec:org.bluetooth.characteristic.reconnection_configuration_control_point/field/operand_response_parameter}
+          applicable_result_codes: N/A
+          remark: This Indication is sent every time the Reconnection Configuration client sets the communication parameters, even when not triggered by a RCCP procedure.
+          description: N/A
+        - op_code_value: 0x12–0xFF
+          definition: Reserved for Future Use
+          requirement: None
+          operand: N/A
+          operand_data_type: N/A
+          applicable_result_codes: N/A
+          remark: N/A
+          description: N/A
+    - name: Operand / Response parameter
+      description: The Operand / Response parameter fields are defined below.
+      section_title: Operand / Response parameter
+      table_caption: Operand / Response parameter
+      values:
+        - field: Reconnection Timeout
+          data_type: uint16
+          size: "2"
+          description: |-
+            Field-No. 0.
+            Allowed range is 0 to 20000.
+            Unit is s.
+        - field: Minimum Connection Interval
+          data_type: uint16
+          size: "2"
+          description: |-
+            Field-No. 1.
+            Allowed range is 0x0006 to 0x0C80 multiply by 1.25 ms.
+            Unit is ms.
+            Within the Client Parameter Indication the values for the Minimum Connection Interval and Maximum Connection Interval shall be set to the actual used value of the communication interval.
+        - field: Maximum Connection Interval
+          data_type: uint16
+          size: "2"
+          description: |-
+            Field-No. 2.
+            Allowed range is 0x0006 to 0x0C80 multiply by 1.25 ms.
+            Unit is ms.
+            Within the Client Parameter Indication the values for the Minimum Connection Interval and Maximum Connection Interval shall be set to the actual used value of the communication interval.
+        - field: Peripheral Latency
+          data_type: uint16
+          size: "2"
+          description: |-
+            Field-No. 3.
+            Allowed range is 0 to 499.
+            Unit is N/A.
+        - field: Supervision Timeout multiplier
+          data_type: uint16
+          size: "2"
+          description: |-
+            Field-No. 4.
+            Allowed range is 10 to 3200 multiply by 10 ms.
+            Unit is ms.
+        - field: Advertisement Interval
+          data_type: uint16
+          size: "2"
+          description: |-
+            Field-No. 5.
+            Allowed range is 0x0020 to 0x4000 multiply by 0.625 ms.
+            Unit is ms.
+        - field: Advertisement Count
+          data_type: uint16
+          size: "2"
+          description: |-
+            Field-No. 6.
+            Allowed range is 1 to 1000.
+            Unit is N/A.
+        - field: Advertisement Repetition Time
+          data_type: uint16
+          size: "2"
+          description: |-
+            Field-No. 7.
+            Allowed range is 0 to 10000.
+            Unit is s.
+            For parameter not to be changed a wildcard value of 0xFFFF shall be used.
+    - name: Advertisement Configuration operand
+      description: The setting of the bits in the operand for the Set Advertisement Configuration opcode is defined below.
+      section_title: Operand for Set Advertisement Configuration opcode
+      table_caption: Operand for Set Advertisement Configuration opcode
+      values:
+        - definition: Advertisement Configuration 1
+          bit_7_through_bit_2: "0"
+          bit_1: "0"
+          bit_0: "0"
+          description: N/A
+        - definition: Advertisement Configuration 2
+          bit_7_through_bit_2: "0"
+          bit_1: "0"
+          bit_0: "1"
+          description: N/A
+        - definition: Advertisement Configuration 3
+          bit_7_through_bit_2: "0"
+          bit_1: "1"
+          bit_0: "0"
+          description: N/A
+        - definition: Advertisement Configuration 4
+          bit_7_through_bit_2: "0"
+          bit_1: "1"
+          bit_0: "1"
+          description: N/A
+        - definition: RFU
+          bit_7_through_bit_2: X (all other permutations)
+          bit_1: X
+          bit_0: X
+          description: N/A
+    - name: Result Code Values
+      description: The Result Codes associated with the Procedure Response opcode are defined below.
+      section_title: RCCP Result Codes
+      table_caption: RCCP Result Codes
+      values:
+        - result_code_value: "0x00"
+          definition: Reserved for Future Use
+          result_parameter: Reserved for Future Use
+          description: Reserved for Future Use
+        - result_code_value: "0x01"
+          definition: Success
+          result_parameter: None
+          description: Response for successful operation.
+        - result_code_value: "0x02"
+          definition: Opcode not supported
+          result_parameter: None
+          description: Response if unsupported opcode is received.
+        - result_code_value: "0x03"
+          definition: Invalid Operand
+          result_parameter: None
+          description: Response if operand received does not meet the requirements of the service.
+        - result_code_value: "0x04"
+          definition: Operation failed
+          result_parameter: None
+          description: Response if unable to complete a procedure for any reason.
+        - result_code_value: "0x05"
+          definition: Communication Parameter out of range
+          result_parameter: uint8 identifying the parameter fields out of range, see below.
+          description: Response if operand received does not meet the range requirements
+        - result_code_value: "0x06"
+          definition: Invalid Parameter combination
+          result_parameter: uint8 identifying the parameter fields out of range, see below
+          description: Normal response if the combination of parameters received does not meet the requirements of the device
+        - result_code_value: "0x07"
+          definition: Device Busy
+          result_parameter: None
+          description: Normal response if unable to start the disconnect procedure, e.g., if a measurement is pending
+        - result_code_value: "0x08"
+          definition: Communication Parameters rejected
+          result_parameter: None
+          description: Response when Reconnection Configuration client does not accept the request
+        - result_code_value: "0x09"
+          definition: Proposal Accepted
+          result_parameter: None
+          description: Response when the Reconnection Configuration server accepts the parameters of the “Propose Settings” and the “Activate Stored Settings” procedure. It is sent when the Reconnection Configuration server starts the Connection Parameter Update Request. This Indication is always followed by a Client Parameter indication showing the result of the operation.
+        - result_code_value: 0x0A–0xFF
+          definition: Reserved for Future Use
+          result_parameter: None
+          description: N/A

@@ -1,0 +1,57 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Industrial Measurement Device Service 1.0, Section 3.6 (Tables 3.21–3.24).
+characteristic:
+  identifier: org.bluetooth.characteristic.work_cycle_data
+  name: Work Cycle Data
+  description: |-
+    The Work Cycle Data characteristic provides information about the work cycle of the IMD. It may also be used to start or stop a work cycle.
+    When read, the IMD Server shall return the current Work Cycle index, the time when the current Work Cycle was started, and the Status. If the IMD Server does not know its status (for example, after the restart), then it shall return Status set to Unknown (0x00), and the values for Work Cycle Index and Start Time shall be set to zero.
+    If the IMD Work Cycle Data characteristic supports notifications, and if the client configures the characteristic for notifications via the Client Characteristic Configuration descriptor, then IMDS shall notify the characteristic while in a connection if there are any changes to Work Cycle Index, Start Time, or Status.
+    The structure of this characteristic when read or notified is defined below.
+    The structure of this characteristic when written is defined below.
+  structures:
+    read:
+      - field: Work Cycle Index
+        type: uint24
+        size: "3"
+        description: Index of the current Work Cycle
+      - field: Start Time
+        type: struct
+        size: "9"
+        description: |-
+          The time when the Work Cycle started.
+          Refer to the Elapsed Time characteristic in \autoref{sec:org.bluetooth.characteristic.elapsed_time}
+      - field: Status
+        type: uint8
+        size: "1"
+        description: |-
+          Status of the Work Cycle.
+          See \autoref{sec:org.bluetooth.characteristic.work_cycle_data/field/status}.
+    write:
+      - field: Operation Request Code
+        type: uint8
+        size: "1"
+        description: |-
+          Operation requested by the client.
+          See \autoref{sec:org.bluetooth.characteristic.work_cycle_data/field/operation_request_code}.
+  fields:
+    - name: Status
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Unknown
+        - value: "0x01"
+          description: Work Cycle is in progress
+        - value: "0x02"
+          description: Work Cycle is completed
+        - value: 0x03–0xFF
+          description: Reserved for Future Use
+    - name: Operation Request Code
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Start new Work Cycle
+        - value: "0x01"
+          description: Stop current Work Cycle
+        - value: 0x02–0xFF
+          description: Reserved for Future Use

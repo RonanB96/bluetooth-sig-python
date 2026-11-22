@@ -1,0 +1,13 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Telephone Bearer Service 1.0, Section 3.1.
+characteristic:
+  identifier: org.bluetooth.characteristic.bearer_provider_name
+  name: Bearer Provider Name
+  description: |-
+    The Bearer Provider Name characteristic returns the friendly name of the provider, for example, a cellular service provider. The characteristic value shall be an 8-bit Unicode Transformation Format (UTF-8) string. The value of this characteristic can change if the provider changes. For example, this can occur when a phone is roaming and changes providers as it roams through different coverage areas.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Bearer Provider Name
+      type: utf8s
+      size: variable
+      description: UTF-8 string

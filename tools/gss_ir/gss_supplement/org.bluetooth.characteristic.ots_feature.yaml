@@ -1,0 +1,98 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Object Transfer Service 1.0, 3.1 OTS Feature Characteristic (Tables 3.2–3.4).
+characteristic:
+  identifier: org.bluetooth.characteristic.ots_feature
+  name: OTS Feature
+  description: |-
+    The OTS Feature characteristic exposes which optional features are supported by the Server implementation.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: OACP Features
+      type: boolean[32]
+      size: "4"
+      description: See \autoref{sec:org.bluetooth.characteristic.ots_feature/field/oacp_features}.
+    - field: OLCP Features
+      type: boolean[32]
+      size: "4"
+      description: See \autoref{sec:org.bluetooth.characteristic.ots_feature/field/olcp_features}.
+  fields:
+    - name: OACP Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            OACP Create Op Code Supported
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            OACP Delete Op Code Supported
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            OACP Calculate Checksum Op Code Supported
+            0 = False
+            1 = True
+        - bit: "3"
+          description: |-
+            OACP Execute Op Code Supported
+            0 = False
+            1 = True
+        - bit: "4"
+          description: |-
+            OACP Read Op Code Supported
+            0 = False
+            1 = True
+        - bit: "5"
+          description: |-
+            OACP Write Op Code Supported
+            0 = False
+            1 = True
+        - bit: "6"
+          description: |-
+            Appending Additional Data to Objects Supported
+            0 = False
+            1 = True
+        - bit: "7"
+          description: |-
+            Truncation of Objects Supported
+            0 = False
+            1 = True
+        - bit: "8"
+          description: |-
+            Patching of Objects Supported
+            0 = False
+            1 = True
+        - bit: "9"
+          description: |-
+            OACP Abort Op Code Supported
+            0 = False
+            1 = True
+        - bit: 10–31
+          description: Reserved for Future Use
+    - name: OLCP Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            OLCP Go To Op Code Supported
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            OLCP Order Op Code Supported
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            OLCP Request Number of Objects Op Code Supported
+            0 = False
+            1 = True
+        - bit: "3"
+          description: |-
+            OLCP Clear Marking Op Code Supported
+            0 = False
+            1 = True
+        - bit: 4–31
+          description: Reserved for Future Use

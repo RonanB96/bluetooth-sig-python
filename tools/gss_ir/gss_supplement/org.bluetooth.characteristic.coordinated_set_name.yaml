@@ -1,0 +1,13 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Coordinated Set Identification Service 1.1, Section 5.5.
+characteristic:
+  identifier: org.bluetooth.characteristic.coordinated_set_name
+  name: Coordinated Set Name
+  description: |-
+    The Coordinated Set Name characteristic shall be the name of the Coordinated Set. The characteristic value is a UTF-8 string represented by a minimum of 0 octets and a maximum of 128 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Coordinated Set Name
+      type: utf8s
+      size: 0–128
+      description: UTF-8 string

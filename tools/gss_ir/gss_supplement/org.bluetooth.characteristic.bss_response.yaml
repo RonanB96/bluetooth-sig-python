@@ -1,0 +1,59 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Binary Sensor Service 1.0, Section 3.2 (Table 3.2).
+characteristic:
+  identifier: org.bluetooth.characteristic.bss_response
+  name: BSS Response
+  description: |-
+    The BSS Response characteristics shall be used to send responses and unsolicited events from the server.
+    The structure of the characteristic is defined in Table 3.2.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Split Header
+      type: struct
+      size: "1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.bss_response/field/split_header}.
+        The Split Header field is used for reassembling commands. See Section 3.1.1.1 for the format of the Split Header field.
+    - field: Payload
+      type: uint8[n]
+      size: 1 to 19
+      description: |-
+        The Payload field is used to hold a fragment of the response or event data.
+  fields:
+    - name: Split Header
+      description: The structure of this field is defined below.
+      size_in_bits: true
+      values:
+        - field: Execute Flag
+          data_type: boolean
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.bss_response/subfield/execute_flag}.
+        - field: Sequence Number
+          data_type: uint5
+          size: "5"
+          description: |-
+            Sequence Number is an unsigned 5-bit integer (range 0 to 31) that indicates a sequence order of split packets.
+            When there is no split packet, the value 0x00 shall be set for a non-split packet.
+        - field: RFU
+          data_type: uint1
+          size: "1"
+          description: Reserved for Future Use
+        - field: Source Flag
+          data_type: boolean
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.bss_response/subfield/source_flag}.
+      subfields:
+        - name: Execute Flag
+          description: The values of this field are defined below.
+          values:
+            - value: "0"
+              description: Split packet, not final packet
+            - value: "1"
+              description: Not a split packet or, indicates final packet
+        - name: Source Flag
+          description: The values of this field are defined below.
+          values:
+            - value: "0"
+              description: Indicate direction from client to Server
+            - value: "1"
+              description: Indicate direction from Server to client

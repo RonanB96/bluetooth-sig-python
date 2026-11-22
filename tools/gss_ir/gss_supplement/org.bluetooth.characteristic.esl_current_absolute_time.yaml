@@ -1,0 +1,19 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Electronic Shelf Label Service 1.0.1, Section 3.4.1.
+characteristic:
+  identifier: org.bluetooth.characteristic.esl_current_absolute_time
+  name: ESL Current Absolute Time
+  description: |-
+    The ESL Current Absolute Time characteristic value is a 32-bit reference time integer value (uint32) with a resolution of 1 millisecond (ms).
+    When a value is written to the ESL Current Absolute Time characteristic, the Server shall set its current system time to the value.
+    The Server shall increment the value by 1, every 1 ms. When the value has reached 0xFFFFFFFF, it shall roll over to 0x00000000.
+    The resulting value is referred to in this specification as the "absolute time".
+    The ESL current absolute time concept does not specify an epoch; it is assumed that all ESLs are configured to have the same current absolute time value and, therefore, the timed commands will operate at approximately the same time.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: ESL Current Absolute Time
+      type: uint32
+      size: "4"
+      description: |-
+        Unit is millisecond with a resolution of 1 millisecond.
+        Allowed range is 0 to 0xFFFFFFFF.

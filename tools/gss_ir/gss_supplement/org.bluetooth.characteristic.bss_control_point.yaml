@@ -1,0 +1,64 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Binary Sensor Service 1.0, Section 3.1 (Tables 3.2, 3.3–3.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.bss_control_point
+  name: BSS Control Point
+  description: |-
+    The BSS Control Point characteristics shall be used to receive the commands for the Server.
+    The structure of the characteristic is defined in Table 3.2.
+    When the BSS Control Point is written, the server shall interpret the Split Header field to assemble a complete command payload as described in Section 5. When a complete command is assembled, the Server shall execute the appropriate procedure as described in Section 4.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Split Header
+      type: struct
+      size: "1"
+      description: |-
+        The Split Header field is used for reassembling commands.
+        See \autoref{sec:org.bluetooth.characteristic.bss_control_point/field/split_header}.
+    - field: Payload
+      type: struct
+      size: 1 to 19
+      description: |-
+        The Payload field holds a fragment of command data.
+        See Section 4 for the structure of an assembled command message and Section 5 for split transmission procedures.
+  fields:
+    - name: Split Header
+      description: The structure of this field is defined below.
+      size_in_bits: true
+      values:
+        - field: Execute Flag
+          data_type: boolean
+          size: "1"
+          description: |-
+            Flag to indicate packet end.
+            See \autoref{sec:org.bluetooth.characteristic.bss_control_point/field/execute_flag}.
+        - field: Sequence Number
+          data_type: uint5
+          size: "5"
+          description: |-
+            Sequence Number is an unsigned 5-bit integer (range 0 to 31) that indicates a sequence order of split packets.
+            When there is no split packet, the value 0x00 shall be set for a non-split packet.
+        - field: RFU
+          data_type: uint1
+          size: "1"
+          description: Reserved for Future Use
+        - field: Source Flag
+          data_type: boolean
+          size: "1"
+          description: |-
+            Flag to indicate packet transmitted direction.
+            See \autoref{sec:org.bluetooth.characteristic.bss_control_point/field/source_flag}.
+    - name: Execute Flag
+      description: The values of this field are defined below.
+      values:
+        - value: "0"
+          description: Split packet, not final packet
+        - value: "1"
+          description: Not a split packet or, indicates final packet
+    - name: Source Flag
+      description: The values of this field are defined below.
+      values:
+        - value: "0"
+          description: Indicate direction from client to Server
+        - value: "1"
+          description: Indicate direction from Server to client

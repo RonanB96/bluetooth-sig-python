@@ -1,0 +1,14 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Core Specification 4.0, Vol 3, Part C, 12.4 Reconnection Address characteristic (Table 12.5).
+# Note: removed from the GAP Service characteristic set in Core Specification 4.2 and later (including 6.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.gap.reconnection_address
+  name: Reconnection Address
+  description: |-
+    The Reconnection Address characteristic defines the reconnection address. The reconnection address is a non-resolvable private address.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Reconnection Address
+      type: uint48
+      size: "6"
+      description: Non-resolvable private address. The Reconnection Address characteristic value shall be 6 octets in length.

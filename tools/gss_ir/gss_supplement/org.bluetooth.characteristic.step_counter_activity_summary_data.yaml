@@ -1,0 +1,135 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Physical Activity Monitor Service 1.0, Section 3.6.
+characteristic:
+  identifier: org.bluetooth.characteristic.step_counter_activity_summary_data
+  name: Step Counter Activity Summary Data
+  description: |-
+    The Step Counter Activity Summary Data characteristic is used to send session/sub-session summary-type data to the client (see the definition of summary data in Section 2.2). The data is related to measurements that are typically supported by physical activity monitors that have step-counting capabilities.
+    Included in the characteristic value are a Header field and a set of conditional fields, as shown in Table 3.14.
+    The characteristic value is of variable length, ranging up to 29 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Header
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.step_counter_activity_summary_data/field/header}.
+    - field: Flags
+      type: boolean[8]
+      size: "0 or 1"
+      description: |-
+        Mandatory if no segmentation into multiple indications is used.
+        Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+        See \autoref{sec:org.bluetooth.characteristic.step_counter_activity_summary_data/field/flags}.
+    - field: Session ID
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        Mandatory if no segmentation into multiple indications is used.
+        Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+        The Session ID field represents the physical activity session identifier to which the data is related.
+    - field: Sub-session ID
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        Mandatory if no segmentation into multiple indications is used.
+        Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+        The Sub-session ID field represents the physical activity sub-session identifier to which the data is related.
+        A value of 0xFFFF represents the data in the characteristic relates to an entire session (i.e., including all its sub-sessions).
+    - field: Relative Timestamp
+      type: uint32
+      size: "0 or 4"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        Mandatory if no segmentation into multiple indications is used.
+        Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+        The Relative Timestamp field represents the data time stamp that is included in the Step Counter Activity Summary Data characteristic.
+        The time stamp is represented as the elapsed number of seconds since the start of the physical activity session that is denoted in the Session ID field.
+    - field: Sequence Number
+      type: uint32
+      size: "0 or 4"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        Mandatory if no segmentation into multiple indications is used.
+        Also mandatory if segmentation into multiple indications is used, but only included in the first segment.
+        The Sequence Number field represents the data sequence number that is included in the Step Counter Activity Summary Data characteristic.
+        Refer to the General Activity Instantaneous Data characteristic in \autoref{sec:org.bluetooth.characteristic.general_activity_instantaneous_data} for more details about the Sequence Number field values.
+    - field: Normal Walking Steps
+      type: uint24
+      size: "0 or 3"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        Present if bit 0 of Flags field is set to 1
+        The Normal Walking Steps field may be included in the Step Counter Activity Summary Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Normal Walking Steps.
+        The Normal Walking Steps field represents the number of normal walking steps taken by the user during the physical activity session/sub-session.
+    - field: Intensity Steps
+      type: uint24
+      size: "0 or 3"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        Present if bit 1 of Flags field is set to 1
+        The Intensity Steps field may be included in the Step Counter Activity Summary Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Intensity Steps.
+        The Intensity Steps field represents the number of intensity walking steps taken by the user during the physical activity session/sub-session.
+    - field: Floor Steps
+      type: uint24
+      size: "0 or 3"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        Present if bit 2 of Flags field is set to 1
+        The Floor Steps field may be included in the Step Counter Activity Summary Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Floor Steps.
+        The Floor Steps field represents the number of steps taken by the user to climb up stairs (floors) during the physical activity session/sub-session.
+    - field: Distance
+      type: uint24
+      size: "0 or 3"
+      description: |-
+        Base Unit: org.bluetooth.unit.length.metre
+        Represented values: M = 1, d = 1, b = 0
+        Unit is 1 m.
+        Present if bit 3 of Flags field is set to 1
+        The Distance field may be included in the Step Counter Activity Summary Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Distance.
+        The Distance field represents the distance covered by the user during the physical activity session/sub-session.
+    - field: Worn Duration
+      type: uint24
+      size: "0 or 3"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        Present if bit 4 of Flags field is set to 1
+        The Worn Duration field may be included in the Step Counter Activity Summary Data characteristic if the Physical Activity Monitor Features characteristic denotes server support for Worn Duration.
+        The Worn Duration field represents the total amount of time within the physical activity session/sub-session that the user has worn the Physical Activity Monitor (as detected and calculated by the Physical Activity Monitor).
+  fields:
+    - name: Header
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            First Segment
+            The First Segment bit identifies the first segment of a segmented Data Record.
+        - bit: "1"
+          description: |-
+            Last Segment
+            The Last Segment bit identifies the last segment of a segmented Data Record.
+        - bit: 2–7
+          description: |-
+            Rolling Segment Counter
+            The Rolling Segment Counter bits are used to enable the client to correctly reconstruct a segmented Data Record.
+            Allowed values are 0 to 63.
+            The Rolling Segment Counter rolls over to 0 after the value 63 when it is incremented by 1.
+    - name: Flags
+      description: |-
+        When the server includes a given data field, the associated bit of the Flags field shall be set to 1 (field present); otherwise, the associated bit shall be set to 0 (field not present).
+        If a given bit in the Physical Activity Monitor Features characteristic is set to 0, then the corresponding Flags field bit(s) shall be set to 0 and the associated field(s) shall not be present in the Step Counter Activity Summary Data characteristic.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Normal Walking Steps Present
+        - bit: "1"
+          description: Intensity Steps Present
+        - bit: "2"
+          description: Floor Steps Present
+        - bit: "3"
+          description: Distance Present
+        - bit: "4"
+          description: Worn Duration Present
+        - bit: 5–7
+          description: RFU

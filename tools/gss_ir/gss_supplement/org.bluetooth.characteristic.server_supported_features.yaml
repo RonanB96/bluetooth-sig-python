@@ -1,0 +1,25 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Core Specification 6.3, Vol 3, Part G, 7.4 Server Supported Features (Tables 7.9–7.11).
+characteristic:
+  identifier: org.bluetooth.characteristic.server_supported_features
+  name: Server Supported Features
+  description: |-
+    The Server Supported Features characteristic is a read-only characteristic that shall be used to indicate support for server features. The server shall set a bit only if the corresponding feature is supported.
+    The Server Supported Features characteristic is an array of octets, each of which is a bit field. The allocation of these bits is specified in Table 7.11. All bits not listed are reserved for future use. The array should not have any trailing all-zero octets.
+    If any octet number in Table 7.11 does not appear in the attribute value because it is too short, the client shall behave as if that octet were present with the value of zero.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Server Supported Features
+      type: boolean[8]
+      size: Variable
+      description: See \autoref{sec:org.bluetooth.characteristic.server_supported_features/field/server_supported_features}.
+  fields:
+    - name: Server Supported Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            EATT Supported
+            Enhanced ATT bearer supported
+        - bit: 1–7
+          description: Reserved for Future Use

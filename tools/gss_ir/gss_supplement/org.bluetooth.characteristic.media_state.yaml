@@ -1,0 +1,29 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, Section 3.17 (Table 3.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.media_state
+  name: Media State
+  description: |-
+    The Media State characteristic is defined as an 8-bit enumerated value. The following states are defined in Table 3.5.
+    The media player has a state machine that represents the states and transitions of the control of the media player. The states include Inactive, Playing, Paused, and Seeking, as shown in Figure 3.1.
+    These states do not relate to any audio streams that are used to play the audio. It is possible for the media player to be in the Playing state without a related audio stream, or in the Inactive and Paused state with a related audio stream. A media player should manage the state of the related audio stream to match the state of the media player, but this relationship is not defined within this service and is left to the implementation.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Media State
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.media_state/field/media_state}.
+  fields:
+    - name: Media State
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Inactive
+        - value: "0x01"
+          description: Playing
+        - value: "0x02"
+          description: Paused
+        - value: "0x03"
+          description: Seeking
+        - value: 0x04–0xFF
+          description: Reserved for Future Use

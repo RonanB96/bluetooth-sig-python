@@ -1,0 +1,15 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HTTP Proxy Service 1.0, 3.6 HTTPS Security Characteristic.
+characteristic:
+  identifier: org.bluetooth.characteristic.https_security
+  name: HTTPS Security
+  description: |-
+    The HTTPS Security characteristic contains the known authenticity of the HTTP Server certificate for the URI.
+    The HTTPS Security characteristic is Boolean.
+    This GATT characteristic is Boolean: TRUE (0x01) and FALSE (0x00).
+    The structure of this characteristic is defined below.
+  structure:
+    - field: HTTPS Security
+      type: boolean
+      size: "1"
+      description: Boolean TRUE (0x01) and FALSE (0x00).

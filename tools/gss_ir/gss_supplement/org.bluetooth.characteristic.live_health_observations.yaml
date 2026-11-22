@@ -1,0 +1,575 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Generic Health Sensor Service 1.0, Section 3.2.1 Live Health Observations format (Tables 3.8–3.28; IEEE FLOAT, Section 1.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.live_health_observations
+  name: Live Health Observations
+  description: |-
+    The Live Health Observations characteristic is used by the Generic Health Sensor to report generated observations to a client using indications or notifications.
+    These observations are reported live when they are generated from measurements, or when they are first temporarily stored and reported when a connection with a client is established. Temporarily stored observations shall include a time stamp.
+    The Live Health Observations characteristic supports the different ACOM observation class types to cover the different value types ACOM observations can have.
+    A 1-byte segmentation scheme is used to support values that do not fit in a single Maximum Transfer Unit (MTU).
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Segmentation Header
+      type: boolean[8]
+      size: "1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.live_health_observations/field/segmentation_header}.
+    - field: Health Observation Body Segment
+      type: struct
+      size: 1.. (ATT_MTU-4)
+      description: |-
+        A segment of a Health Observation Body structure as defined in Table 3.10.
+        Segmentation is defined in Section 3.2.2.1.
+        See \autoref{sec:org.bluetooth.characteristic.live_health_observations/field/health_observation_body}.
+  fields:
+    - name: Segmentation Header
+      description: |-
+        The server shall use these values to provide information to the client on the segments to concatenate to get a complete Health Observation Body structure.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            First Segment: The characteristic contains the first segment of content that should be concatenated by the client.
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            Last Segment: The characteristic contains the last segment of content that should be concatenated by the client.
+            0 = False
+            1 = True
+        - bit: 2–7
+          description: |-
+            Rolling Segment Counter: 0 to 63
+            The Rolling Segment Counter is incremented per segment during a connection. If the Rolling Segment Counter is equal to a value of 63, then the counter rolls over to 0 when it is next incremented.
+    - name: Health Observation Body
+      description: The structure of this field is defined below.
+      values:
+        - field: Observation Class Type
+          data_type: uint8
+          size: "1"
+          description: |-
+            The ACOM Observation Class Type as defined in Table 3.11.
+            See \autoref{sec:org.bluetooth.characteristic.live_health_observations/field/observation_class_type}.
+        - field: Length
+          data_type: uint16
+          size: "2"
+          description: The length in bytes of the Health Observation Body structure.
+        - field: Flags
+          data_type: boolean[16]
+          size: "2"
+          description: |-
+            Flags indicating the presence of optional attributes as defined in Table 3.12.
+            See \autoref{sec:org.bluetooth.characteristic.live_health_observations/field/flags}.
+        - field: Observation Type
+          data_type: uint32
+          size: 0 or 4
+          description: |-
+            An MDC code (e.g., for SpO2) representing the type of observation.
+            Mandatory for all single observations but not for observation bundles. When observations are bundled, this field may be factored out if it is common to all observations in the bundle (see Sections 3.2.1.5 and 3.2.1.15.9).
+            Present if bit 0 of Flags field is set to 1
+        - field: Time Stamp
+          data_type: struct
+          size: 0 or 9
+          description: |-
+            The time the observation was observed.
+            When there is a Measurement Duration, the Time Stamp field represents the start of the measurement.
+            Refer to the Elapsed Time characteristic in \autoref{sec:org.bluetooth.characteristic.elapsed_time}.
+            Present if bit 1 of Flags field is set to 1
+        - field: Measurement Duration
+          data_type: medfloat32
+          size: 0 or 4
+          description: |-
+            Unit: org.bluetooth.unit.time.second
+            The duration of the measurement in seconds.
+            Allowed values are 0 and all positive real numbers.
+            The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+            The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+            Present if bit 2 of Flags field is set to 1
+        - field: Measurement Status
+          data_type: boolean[16]
+          size: 0 or 2
+          description: |-
+            Measurement status bits as defined in Table 3.13.
+            See \autoref{sec:org.bluetooth.characteristic.live_health_observations/field/measurement_status}.
+            Present if bit 3 of Flags field is set to 1
+        - field: Observation Id
+          data_type: uint32
+          size: 0 or 4
+          description: |-
+            Instance identifier for unique referencing to an Observation.
+            The Observation Id field shall be absent at the top level of an observation bundle (i.e., when the Observation Class Type is set to Observation bundle, the Observation Id present flag is set to false).
+            Present if bit 4 of Flags field is set to 1
+        - field: Patient
+          data_type: uint8
+          size: 0 or 1
+          description: |-
+            Patient or user identifier.
+            Present if bit 5 of Flags field is set to 1
+        - field: Supplemental Information
+          data_type: struct
+          size: 0 or variable
+          description: |-
+            Information that helps in understanding the observation.
+            See \autoref{sec:org.bluetooth.characteristic.live_health_observations/field/supplemental_information}.
+            Present if bit 6 of Flags field is set to 1
+        - field: Derived From
+          data_type: struct
+          size: 0 or variable
+          description: |-
+            References to other observations from which this observation is derived.
+            See \autoref{sec:org.bluetooth.characteristic.live_health_observations/field/derived_from}.
+            Present if bit 7 of Flags field is set to 1
+        - field: Is Member Of
+          data_type: struct
+          size: 0 or variable
+          description: |-
+            References to other observations that this observation is a member of.
+            See \autoref{sec:org.bluetooth.characteristic.live_health_observations/field/is_member_of}.
+            Present if bit 8 of Flags field is set to 1
+        - field: TLVs
+          data_type: struct
+          size: 0 or variable
+          description: |-
+            Type-Length-Value (TLV) extension attributes.
+            See \autoref{sec:org.bluetooth.characteristic.live_health_observations/field/tlvs}.
+            Present if bit 9 of Flags field is set to 1
+        - field: Observation Value
+          data_type: struct
+          size: variable
+          description: |-
+            Mandatory field. Structure depends on the Observation Class Type (see Section 3.2.1.15).
+            See \autoref{sec:org.bluetooth.characteristic.live_health_observations/field/observation_value}.
+    - name: Observation Class Type
+      description: The values of this field are defined below.
+      values:
+        - value: "1"
+          description: |-
+            Numeric observation
+            The numeric observation value is defined in Section 3.2.1.15.1.
+        - value: "2"
+          description: |-
+            Simple discrete observation
+            The simple discrete observation value is defined in Section 3.2.1.15.2.
+        - value: "3"
+          description: |-
+            String observation
+            The string observation value is defined in Section 3.2.1.15.3.
+        - value: "4"
+          description: |-
+            Sample array observation
+            The sample array observation value is defined in Section 3.2.1.15.4.
+        - value: "5"
+          description: |-
+            Compound discrete event observation
+            The compound discrete observation value is defined in Section 3.2.1.15.5.
+        - value: "6"
+          description: |-
+            Compound state/event observation
+            The compound state/event observation value is defined in Section 3.2.1.15.6.
+        - value: "7"
+          description: |-
+            Compound observation
+            The compound observation value is defined in Section 3.2.1.15.7.
+        - value: "8"
+          description: |-
+            TLV-encoded observation
+            The TLV-encoded observation value is defined in Section 3.2.1.15.8.
+        - value: "255"
+          description: |-
+            Observation bundle
+            The observation bundle value is defined in Section 3.2.1.15.9.
+        - value: "0"
+          description: RFU
+        - value: 9–254
+          description: |-
+            RFU
+            RFU values shall not be used by implementations claiming conformance to this version of GHSS.
+    - name: Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Observation Type present
+        - bit: "1"
+          description: Time Stamp present
+        - bit: "2"
+          description: Measurement Duration present
+        - bit: "3"
+          description: Measurement Status present
+        - bit: "4"
+          description: Observation Id present
+        - bit: "5"
+          description: Patient present
+        - bit: "6"
+          description: Supplemental Information present
+        - bit: "7"
+          description: Derived From present
+        - bit: "8"
+          description: Is Member Of present
+        - bit: "9"
+          description: TLVs present
+        - bit: 10–15
+          description: Reserved for Future Use
+    - name: Measurement Status
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Invalid
+            The observation is invalid.
+        - bit: "1"
+          description: |-
+            Questionable
+            The observation is questionable.
+        - bit: "2"
+          description: |-
+            Not available
+            No actual observation can be generated.
+        - bit: "3"
+          description: |-
+            Calibrating
+            The observation is generated during a calibration procedure.
+        - bit: "4"
+          description: |-
+            Test data
+            The observation contains test data.
+        - bit: "5"
+          description: |-
+            Early estimate
+            The observation contains an early estimate (of a final value).
+        - bit: "6"
+          description: |-
+            Manually entered
+            The observation value is manually entered.
+        - bit: "7"
+          description: |-
+            Setting
+            The observation value is a device setting.
+        - bit: "8"
+          description: |-
+            RFU
+            Reserved for Future Use
+        - bit: "9"
+          description: |-
+            RFU
+            Reserved for Future Use
+        - bit: "10"
+          description: |-
+            RFU
+            Reserved for Future Use
+        - bit: "11"
+          description: |-
+            RFU
+            Reserved for Future Use
+        - bit: "12"
+          description: |-
+            RFU
+            Reserved for Future Use
+        - bit: "13"
+          description: |-
+            RFU
+            Reserved for Future Use
+        - bit: "14"
+          description: |-
+            Threshold error
+            The (numeric) observation value is outside the boundaries. The boundaries exceeded may be reported as a TLV attribute identified by the MDC Code MDC_ATTR_LIMIT_CURR.
+        - bit: "15"
+          description: |-
+            Thresholding disabled
+            The observation value thresholds are not checked. If bit 15 is set, bit 14 shall not be set.
+    - name: Supplemental Information
+      description: The structure of this field is defined below.
+      values:
+        - field: Count
+          data_type: uint8
+          size: "1"
+          description: The number of MDC codes present in the Codes field
+        - field: Codes
+          data_type: uint32
+          size: variable
+          description: |-
+            A series of MDC codes.
+            Length in octets is Count * 4.
+            The sequence of Count followed by Codes is repeated once per Supplemental Information field.
+    - name: Derived From
+      description: The structure of this field is defined below.
+      values:
+        - field: Count
+          data_type: uint8
+          size: "1"
+          description: The number of Observation Ids present in the Observation Ids field
+        - field: Observation Ids
+          data_type: uint32
+          size: variable
+          description: |-
+            A series of Observation Id field values.
+            Length in octets is Count * 4.
+    - name: Is Member Of
+      description: |-
+        The structure of this field is defined below.
+        In most cases, an observation is a member of one group, but the structure allows for membership in multiple groups.
+      values:
+        - field: Count
+          data_type: uint8
+          size: "1"
+          description: The number of Observation Ids present in the Observation Ids field
+        - field: Observation Ids
+          data_type: uint32
+          size: variable
+          description: |-
+            A series of Observation Id field values.
+            Length in octets is Count * 4.
+    - name: TLVs
+      description: The structure of this field is defined below.
+      values:
+        - field: Number Of TLV Attributes
+          data_type: uint8
+          size: "1"
+          description: N, the number of TLV attributes in this field.
+        - field: Value
+          data_type: struct
+          size: variable
+          description: |-
+            The concatenation of the N TLV attributes of the field.
+            See \autoref{sec:org.bluetooth.characteristic.live_health_observations/field/tlv_attribute}.
+            The sequence of one TLV attribute structure is repeated N times.
+    - name: TLV Attribute
+      description: The structure of this field is defined below.
+      values:
+        - field: Type
+          data_type: uint32
+          size: "4"
+          description: |-
+            The MDC code from IEEE 11073-10101 identifying the type of the TLV attribute.
+        - field: Length
+          data_type: uint16
+          size: "2"
+          description: The length of the Encoded Value field in octets. The Format Type is not counted in the length.
+        - field: Format Type
+          data_type: uint8
+          size: "1"
+          description: |-
+            A Format Type as defined in Section 2.4.1 GATT Format Types of Assigned Numbers.
+            When the Format Type has a value of 0x1B, the encoded value is an opaque structure that is not further defined by GHSS.
+            When the Format Type has a value of 0x1C, the encoded value follows the MDER encoding rules for an ASN.1 defined value as defined in Annex F of IEEE 11073-20601.
+        - field: Encoded Value
+          data_type: struct
+          size: variable
+          description: |-
+            The value of the observation attribute identified by the Type encoded according to the Format Type.
+            Length in octets is the Length field.
+    - name: Observation Value
+      description: |-
+        The structure of this field depends on the Observation Class Type field.
+        When the Observation Class Type is Numeric observation, the Numeric observation value structure applies.
+        When the Observation Class Type is Simple discrete observation, the Simple discrete observation value structure applies.
+        When the Observation Class Type is String observation, the String observation value structure applies.
+        When the Observation Class Type is Sample array observation, the Sample array observation value structure applies.
+        When the Observation Class Type is Compound discrete event observation, the Compound discrete event observation value structure applies.
+        When the Observation Class Type is Compound state/event observation, the Compound state/event observation value structure applies.
+        When the Observation Class Type is Compound observation, the Compound observation value structure applies.
+        When the Observation Class Type is TLV-encoded observation, the TLVs structure applies.
+        When the Observation Class Type is Observation bundle, the Observation bundle value structure applies.
+    - name: Numeric observation value
+      description: The structure of this field is defined below.
+      values:
+        - field: Unit Code
+          data_type: uint16
+          size: "2"
+          description: A 2-byte MDC code from partition 4 of IEEE 11073-10101 that identifies the unit of Value
+        - field: Value
+          data_type: medfloat32
+          size: "4"
+          description: |-
+            The numeric value of the observation encoded as an IEEE 11073 32-bit FLOAT.
+            Allowed values are 0 and all positive real numbers.
+            The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+            The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+    - name: Simple discrete observation value
+      description: The structure of this field is defined below.
+      values:
+        - field: Value
+          data_type: uint32
+          size: "4"
+          description: The MDC code that identifies the value of this observation
+    - name: String observation value
+      description: The structure of this field is defined below.
+      values:
+        - field: Length
+          data_type: uint16
+          size: "2"
+          description: Length of the string
+        - field: Value
+          data_type: utf8s
+          size: variable
+          description: |-
+            UTF-8 string
+            Length in octets is the Length field.
+    - name: Sample array observation value
+      description: The structure of this field is defined below.
+      values:
+        - field: Unit Code
+          data_type: uint16
+          size: "2"
+          description: The 2-byte MDC code from partition 4 of IEEE 11073-10101.
+        - field: Scale Factor
+          data_type: medfloat32
+          size: "4"
+          description: The scaling factor to be applied to the samples.
+        - field: Offset
+          data_type: medfloat32
+          size: "4"
+          description: The offset to be applied to the samples.
+        - field: Sample Period
+          data_type: medfloat32
+          size: "4"
+          description: |-
+            Unit: org.bluetooth.unit.time.second
+            The duration in seconds.
+        - field: Number Of Samples Per Period
+          data_type: uint8
+          size: "1"
+          description: The number of samples per period. This can be used to support multi-dimensional sample arrays.
+        - field: Bytes Per Sample
+          data_type: uint8
+          size: "1"
+          description: The number of bytes for one sample. The recommended values are 1, 2, or 4.
+        - field: Number Of Samples
+          data_type: uint32
+          size: "4"
+          description: The total number of samples.
+        - field: Scaled Samples
+          data_type: struct
+          size: variable
+          description: |-
+            The scaled samples.
+            Length in octets is Number Of Samples * Bytes Per Sample.
+            For each i in the range of 0...Number Of Samples: Sample[i] = Scaled Sample[i] * Scale Factor + Offset.
+    - name: Compound discrete event observation value
+      description: The structure of this field is defined below.
+      values:
+        - field: Number Of Components
+          data_type: uint8
+          size: "1"
+          description: The number of discrete events in this observation
+        - field: Value
+          data_type: uint32
+          size: variable
+          description: |-
+            The concatenation of the MDC codes for the event values.
+            Length in octets is 4 * Number Of Components.
+            The sequence of one uint32 MDC code is repeated Number Of Components times.
+    - name: Compound state/event observation value
+      description: The structure of this field is defined below.
+      values:
+        - field: Size
+          data_type: uint8
+          size: "1"
+          description: |-
+            N is the number of bytes used for the state/event bits.
+            The value of this field determines the size of the other fields of this structure.
+        - field: Supported Or Unsupported Mask Bits
+          data_type: boolean[8]
+          size: variable
+          description: |-
+            N*8 bits indicates if the (binary) state or event is supported in the observation.
+            1 = supported, 0 = unsupported
+            Length in octets is Size.
+        - field: State Or Event Mask Bits
+          data_type: boolean[8]
+          size: variable
+          description: |-
+            N*8 bits indicates if the bit represents a state or an event.
+            1 = state, 0 = event
+            Length in octets is Size.
+        - field: Value
+          data_type: boolean[8]
+          size: variable
+          description: |-
+            N*8 bits indicates if the state is valid or if the event occurred in this observation.
+            When supported: 1 = state is valid or event occurred; 0 = state is not valid or event did not occur.
+            Length in octets is Size.
+    - name: Compound observation value
+      description: The structure of this field is defined below.
+      values:
+        - field: Number Of Components
+          data_type: uint8
+          size: "1"
+          description: N, the number of components in this observation
+        - field: Value
+          data_type: struct
+          size: variable
+          description: |-
+            The concatenation of the components of the observation.
+            See \autoref{sec:org.bluetooth.characteristic.live_health_observations/field/observation_component}.
+            The Observation component structure is repeated N times.
+    - name: Observation component
+      description: The structure of this field is defined below.
+      values:
+        - field: Component Type
+          data_type: uint32
+          size: "4"
+          description: Term code, a 4-byte MDC code from IEEE 11073-10101 that uniquely defines the type of the component.
+        - field: Component Value Type
+          data_type: uint8
+          size: "1"
+          description: |-
+            1-byte enumeration value that indicates the value type of the component (see Table 3.27).
+            See \autoref{sec:org.bluetooth.characteristic.live_health_observations/field/component_value_type}.
+        - field: Value
+          data_type: struct
+          size: variable
+          description: |-
+            The value of the component. The structure of the value depends on the Component Value Type field.
+            When Component Value Type is 1, the Numeric observation value structure applies.
+            When Component Value Type is 2, the Simple discrete observation value structure applies.
+            When Component Value Type is 3, the String observation value structure applies.
+            When Component Value Type is 4, the Sample array observation value structure applies.
+            When Component Value Type is 5, the Compound discrete event observation value structure applies.
+            When Component Value Type is 6, the Compound state/event observation value structure applies.
+    - name: Component Value Type
+      description: The values of this field are defined below.
+      values:
+        - value: "1"
+          description: |-
+            Numeric
+            The Numeric observation value is a structure defined in Table 3.19.
+        - value: "2"
+          description: |-
+            Simple discrete
+            The Simple discrete observation value is a structure defined in Table 3.20.
+        - value: "3"
+          description: |-
+            String
+            The String observation value is a structure defined in Table 3.21.
+        - value: "4"
+          description: |-
+            Sample array
+            The Sample array observation value is a structure defined in Table 3.22.
+        - value: "5"
+          description: |-
+            Compound discrete
+            The Compound discrete observation value is a structure defined in Table 3.23.
+        - value: "6"
+          description: |-
+            Compound state/event
+            The Compound state/event observation value is a structure defined in Table 3.24.
+        - value: "0"
+          description: RFU
+        - value: 7–255
+          description: RFU
+    - name: Observation bundle value
+      description: The structure of this field is defined below.
+      values:
+        - field: Number Of Observations
+          data_type: uint8
+          size: "1"
+          description: N, the number of observations in this bundle.
+        - field: Value
+          data_type: struct
+          size: variable
+          description: |-
+            The concatenation of the N bundled Health Observation bodies.
+            Each Observation shall be encoded as defined in Section 3.2.1.2, leaving out the attributes that have been factored out.
+            An observation bundle shall not be nested within another bundle.
+            The Health Observation Body structure is repeated N times.

@@ -1,0 +1,79 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Object Transfer Service 1.0, 3.5 Object List Filter Characteristic (Tables 3.27–3.28).
+characteristic:
+  identifier: org.bluetooth.characteristic.object_list_filter
+  name: Object List Filter
+  description: |-
+    If Object List Filter characteristics are exposed, the filter conditions shall determine which objects are included in or excluded from the list of objects. The Object List Filter characteristics can therefore modify the behavior of the Object List Control Point.
+    Each Object List Filter characteristic is a variable length characteristic that contains up to two fields: a Filter field and a Parameter field.
+    The format of the Parameter depends on the Filter value.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Filter
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.object_list_filter/field/filter}.
+    - field: String
+      type: utf8s
+      size: variable
+      description: |-
+        UTF-8 string
+        Present if Filter is 0x01, 0x02, 0x03, or 0x04
+    - field: UUID
+      type: gatt_uuid
+      size: 2 or 16
+      description: |-
+        gatt_uuid is either a 16-bit UUID (uint16) or a 128-bit UUID (uint128), distinguished by the length of the field.
+        Present if Filter is 0x05
+    - field: timestamp1
+      type: struct
+      size: "7"
+      description: |-
+        Refer to Date Time characteristic in \autoref{sec:org.bluetooth.characteristic.date_time}.
+        Present if Filter is 0x06 or 0x07
+    - field: timestamp2
+      type: struct
+      size: "7"
+      description: |-
+        Refer to Date Time characteristic in \autoref{sec:org.bluetooth.characteristic.date_time}.
+        Timestamp1 shall represent a time that is earlier than or equal to timestamp2.
+        Present if Filter is 0x06 or 0x07
+    - field: size1
+      type: uint32
+      size: "4"
+      description: |-
+        Present if Filter is 0x08 or 0x09
+    - field: size2
+      type: uint32
+      size: "4"
+      description: |-
+        The value of size1 shall be less than or equal to the value of size2.
+        Present if Filter is 0x08 or 0x09
+  fields:
+    - name: Filter
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: No Filter (everything passes)
+        - value: "0x01"
+          description: Name Starts With
+        - value: "0x02"
+          description: Name Ends With
+        - value: "0x03"
+          description: Name Contains
+        - value: "0x04"
+          description: Name is Exactly
+        - value: "0x05"
+          description: Object Type (UUID)
+        - value: "0x06"
+          description: 'Created between (inclusive): timestamp1 <= t <= timestamp2'
+        - value: "0x07"
+          description: 'Modified between (inclusive): timestamp1 <= t <= timestamp2'
+        - value: "0x08"
+          description: 'Current Size between (inclusive): size1 <= s <= size2'
+        - value: "0x09"
+          description: 'Allocated Size between (inclusive): size1 <= s <= size2'
+        - value: "0x0A"
+          description: Marked Objects
+        - value: 0x0B–0xFF
+          description: Reserved for Future Use

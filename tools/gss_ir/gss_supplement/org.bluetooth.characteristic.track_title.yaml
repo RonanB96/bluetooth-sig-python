@@ -1,0 +1,14 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, Section 3.5.
+characteristic:
+  identifier: org.bluetooth.characteristic.track_title
+  name: Track Title
+  description: |-
+    The Track Title characteristic exposes the title of the current track. The characteristic value shall be a UTF-8 string.
+    If the media player has no current track or the track title is unavailable, the Track Title characteristic value shall be a zero-length string.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Track Title
+      type: utf8s
+      size: variable
+      description: UTF-8 string

@@ -1,0 +1,21 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Core Specification 6.3, Vol 3, Part C, 12.5 Resolvable Private Address Only characteristic (Table 12.8).
+characteristic:
+  identifier: org.bluetooth.characteristic.resolvable_private_address_only
+  name: Resolvable Private Address Only
+  description: |-
+    The Resolvable Private Address Only characteristic defines whether the device will only use Resolvable Private Addresses (RPAs) as local addresses.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Resolvable Private Address Only
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.resolvable_private_address_only/field/resolvable_private_address_only}.
+  fields:
+    - name: Resolvable Private Address Only
+      description: The values of this field are defined below.
+      values:
+        - value: "0"
+          description: only Resolvable Private Addresses will be used as local addresses after bonding
+        - value: 1–255
+          description: Reserved for Future Use

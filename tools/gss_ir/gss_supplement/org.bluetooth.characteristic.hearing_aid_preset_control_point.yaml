@@ -1,0 +1,196 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Hearing Access Service 1.0.1, Section 3.2.
+characteristic:
+  identifier: org.bluetooth.characteristic.hearing_aid_preset_control_point
+  name: Hearing Aid Preset Control Point
+  description: |-
+    A procedure is triggered by writing, notifying, or indicating a value of the Hearing Aid Preset Control Point characteristic that includes an opcode specifying the operation. The procedure might require a parameter that is valid within the context of that opcode, as shown in Table 3.3.
+    One or more notifications or indications of the Hearing Aid Preset Control Point characteristic can follow the response depending on the operation requested by the client.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Opcode
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.hearing_aid_preset_control_point/field/opcode}
+    - field: StartIndex
+      type: uint8
+      size: "1"
+      description: |-
+        Allowed range is: 0x01 to 0xFF.
+        Present if Opcode is 0x01
+    - field: NumPresets
+      type: uint8
+      size: "1"
+      description: |-
+        Allowed range is: 0x01 to 0xFF.
+        Present if Opcode is 0x01
+    - field: ChangeId
+      type: uint8
+      size: "1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.hearing_aid_preset_control_point/field/change_id}.
+        Present if Opcode is 0x03
+    - field: isLast
+      type: uint8
+      size: "1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.hearing_aid_preset_control_point/field/is_last}.
+        Present if Opcode is 0x02 or 0x03
+    - field: PrevIndex
+      type: uint8
+      size: "1"
+      description: |-
+        Index field value of the previous preset record in the list of preset records. A value of 0x00 indicates the preset record is at the top of the list.
+        Present if Opcode is 0x03 and ChangeId is 0x00
+    - field: Index
+      type: uint8
+      size: "1"
+      description: |-
+        Allowed range is: 0x01 to 0xFF.
+        Present if Opcode is 0x04 or 0x05 or 0x08
+        Present if Opcode is 0x03 and ChangeId is 0x01
+        Present if Opcode is 0x03 and ChangeId is 0x02
+        Present if Opcode is 0x03 and ChangeId is 0x03
+        Present if Opcode is 0x02
+        Present if Opcode is 0x03 and ChangeId is 0x00
+    - field: Properties
+      type: boolean[8]
+      size: "1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.hearing_aid_preset_control_point/field/properties}.
+        Present if Opcode is 0x02
+        Present if Opcode is 0x03 and ChangeId is 0x00
+    - field: Name
+      type: utf8s
+      size: variable
+      description: |-
+        UTF-8 string
+        Allowed range is: 1 to 40 octets.
+        Present if Opcode is 0x04
+        Present if Opcode is 0x02
+        Present if Opcode is 0x03 and ChangeId is 0x00
+  fields:
+    - name: Opcode
+      description: The values of this field are defined below.
+      section_title: Hearing Aid Preset Control Point operation requirements
+      table_caption: Requirements for the Hearing Aid Preset Control Point operations
+      values:
+        - op_code_value: "0x00"
+          operation: RFU
+          parameters: "–"
+          reference: "–"
+          sent_by: "–"
+          description: "–"
+          support: "–"
+        - op_code_value: "0x01"
+          operation: Read Presets Request
+          parameters: StartIndex, NumPresets
+          reference: Section 3.2.2.1
+          sent_by: Client
+          description: Request to read NumPresets presets from the Server, starting with the first preset record with an Index greater than or equal to StartIndex.
+          support: M
+        - op_code_value: "0x02"
+          operation: Read Preset Response
+          parameters: isLast, PresetRecord
+          reference: Section 3.2.2.1
+          sent_by: Server
+          description: Response to a Read Presets Request.
+          support: M
+        - op_code_value: "0x03"
+          operation: Preset Changed
+          parameters: ChangeId, isLast, additional parameters depend on ChangeId
+          reference: Section 3.2.2.2
+          sent_by: Server
+          description: Used by the server to inform clients of changes to a preset record.
+          support: C.2
+        - op_code_value: "0x04"
+          operation: Write Preset Name
+          parameters: Index, Name
+          reference: Section 3.2.2.3
+          sent_by: Client
+          description: Write the Name field of a writable preset record identified by the Index field.
+          support: C.1
+        - op_code_value: "0x05"
+          operation: Set Active Preset
+          parameters: Index
+          reference: Section 3.2.2.4
+          sent_by: Client
+          description: Set the preset record identified by the Index field as the active preset.
+          support: M
+        - op_code_value: "0x06"
+          operation: Set Next Preset
+          parameters: None
+          reference: Section 3.2.2.5
+          sent_by: Client
+          description: Set the next preset record in the server’s list of preset records as the active preset.
+          support: M
+        - op_code_value: "0x07"
+          operation: Set Previous Preset
+          parameters: None
+          reference: Section 3.2.2.6
+          sent_by: Client
+          description: Set the previous preset record in the server’s list of preset records as the active preset.
+          support: M
+        - op_code_value: "0x08"
+          operation: Set Active Preset –Synchronized Locally
+          parameters: Index
+          reference: Section 3.2.2.7
+          sent_by: Client
+          description: Set the preset record identified by the Index field as the active preset. The server must relay this change to the other member of the Binaural Hearing Aid Set, as specified in Section 3.2.2.7 .
+          support: C.3
+        - op_code_value: "0x09"
+          operation: Set Next Preset – Synchronized Locally
+          parameters: None
+          reference: Section 3.2.2.8
+          sent_by: Client
+          description: Set the next preset record in the server’s list of preset records as the active preset. The server must relay this change to the other member of the Binaural Hearing Aid Set, as specified in Section 3.2.2.8 .
+          support: C.3
+        - op_code_value: "0x0A"
+          operation: Set Previous Preset – Synchronized Locally
+          parameters: None
+          reference: Section 3.2.2.9
+          sent_by: Client
+          description: Set the previous preset record in the server’s list of preset records as the active preset. The server must relay this change to the other member of the Binaural Hearing Aid Set, as specified in Section 3.2.2.9 .
+          support: C.3
+        - op_code_value: 0x0B–0xFF
+          operation: RFU
+          parameters: "–"
+          reference: "–"
+          sent_by: "–"
+          description: "–"
+          support: "–"
+    - name: ChangeId
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Generic Update
+        - value: "0x01"
+          description: Preset Record Deleted
+        - value: "0x02"
+          description: Preset Record Available
+        - value: "0x03"
+          description: Preset Record Unavailable
+        - value: 0x04–0xFF
+          description: RFU
+    - name: isLast
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Not the last notification or indication in a multi-part procedure.
+        - value: "0x01"
+          description: Last notification or indication in a multi-part procedure.
+    - name: Properties
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Writable
+            0b0 = The name of the preset cannot be written by the client
+            0b1 = The name of the preset can be written by the client
+        - bit: "1"
+          description: |-
+            isAvailable
+            0b0 = The preset is unavailable
+            0b1 = The preset is available
+        - bit: 2–7
+          description: RFU

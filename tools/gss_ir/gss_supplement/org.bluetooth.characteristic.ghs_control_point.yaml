@@ -1,0 +1,37 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Generic Health Sensor Service 1.0, Section 3.5.1 GHS Control Point format (Tables 3.34–3.35).
+characteristic:
+  identifier: org.bluetooth.characteristic.ghs_control_point
+  name: GHS Control Point
+  description: |-
+    The GHS Control Point is used to start and stop the sending of live and temporarily stored observations to a client via indications or notifications of the Live Health Observations characteristic during a connection.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Op Code
+      type: uint8
+      size: "1"
+      description: |-
+        The code for the control point command or the response (see Table 3.35 ).
+        See \autoref{sec:org.bluetooth.characteristic.ghs_control_point/field/op_code}.
+  fields:
+    - name: Op Code
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Reserved for Future Use
+        - value: "0x01"
+          description: |-
+            Start sending live observations
+            Command to start sending live observations
+        - value: "0x02"
+          description: |-
+            Stop sending live observations
+            Command to stop sending live observations
+        - value: 0x03–0x7F
+          description: Reserved for Future Use
+        - value: "0x80"
+          description: |-
+            Success
+            Response to indicate a command was successful
+        - value: 0x81–0xFF
+          description: Reserved for Future Use

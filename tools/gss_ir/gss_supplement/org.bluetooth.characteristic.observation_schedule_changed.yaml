@@ -1,0 +1,36 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Generic Health Sensor Service 1.0, 3.6.1 Observation Schedule Changed format (Table 3.36; IEEE FLOAT, Section 1.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.observation_schedule_changed
+  name: Observation Schedule Changed
+  description: |-
+    The Observation Schedule Changed characteristic shall only be present when the Service includes at least one Observation Schedule descriptor that can change. Observation schedule changes can be made by a client writing to an Observation Schedule descriptor or by a user via the user interface of the device or by some other means.
+    When the Observation Schedule Changed characteristic is configured for indications, then the server shall inform connected clients of a change in an Observation Schedule descriptor by sending an indication of the Observation Schedule Changed characteristic with the same Observation Type, Measurement Period, and Update Interval value as the Observation Schedule descriptor.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Observation Type
+      type: uint32
+      size: "4"
+      description: |-
+        Base Unit: org.bluetooth.unit.unitless
+        MDC code.
+        The Observation Type field contains a 4-byte MDC code from IEEE 11073-10101 that uniquely defines the type of the observation.
+    - field: Measurement Period
+      type: medfloat32
+      size: "4"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The measurement period in seconds.
+        When the value is 0, the measurement period is unspecified.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+    - field: Update Interval
+      type: medfloat32
+      size: "4"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The measurement interval in seconds.
+        When the value is 0, the update interval is unspecified.
+        This interval may be shorter than the Measurement Period if, for example, multiple averaging periods are overlapped to provide a rolling average.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.

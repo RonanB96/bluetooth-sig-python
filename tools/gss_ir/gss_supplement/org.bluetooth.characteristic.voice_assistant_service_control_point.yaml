@@ -1,0 +1,78 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Voice Assistant Service 1.0, Section 3.3.1 (Tables 3.4–3.6).
+characteristic:
+  identifier: org.bluetooth.characteristic.voice_assistant_service_control_point
+  name: Voice Assistant Service Control Point
+  description: |-
+    The VAS Control Point characteristic is used by the client to configure and control the VA.
+    The VAS Control Point characteristic varies in length, depending on which opcode is used. The first octet is an enumerated value known as the opcode. The parameter fields that follow the opcode have different definitions and purposes based on the opcode. The format and content are described Figure 3.1, Table 3.4, and Table 3.5.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Opcode
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.voice_assistant_service_control_point/field/opcode}
+    - field: Response Code Value
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.voice_assistant_service_control_point/field/response_code_value}.
+        Present when the characteristic value is a Response (Table 3.5) with Opcode Name Response Code.
+  fields:
+    - name: Opcode
+      description: The values of this field are defined below.
+      section_title: VAS Control Point characteristic opcodes and parameters
+      table_caption: VAS Control Point characteristic opcodes and parameters
+      values:
+        - opcode: Initialize VA Session
+          opcode_value: "0x00"
+          parameter: None
+          description: Client requests to initialize the VA to its initial state.
+        - opcode: Start VA Session
+          opcode_value: "0x01"
+          parameter: None
+          description: Client requests to start a VA session.
+        - opcode: Stop VA Session
+          opcode_value: "0x02"
+          parameter: None
+          description: Client requests to stop a VA session.
+        - opcode: RFU
+          opcode_value: 0x03–0xFF
+          parameter: RFU
+          description: RFU
+    - name: Opcode
+      description: The values of this field are defined below.
+      section_title: VAS Control Point responses
+      table_caption: VAS Control Point responses
+      values:
+        - opcode: Response Code
+          opcode_value: "0x00"
+          parameter: Response Code Value
+          description: See \autoref{sec:org.bluetooth.characteristic.voice_assistant_service_control_point/field/response_code_value}.
+        - opcode: RFU
+          opcode_value: 0x01–0xFF
+          parameter: RFU
+          description: RFU
+    - name: Response Code Value
+      description: The values of this field are defined below.
+      section_title: Response Code Values associated with opcode 0x00
+      table_caption: Response Code Values associated with opcode 0x00
+      values:
+        - response_code_value: "0x00"
+          definition: RFU
+          description: RFU
+        - response_code_value: "0x01"
+          definition: Success
+          description: Response for a successful operation
+        - response_code_value: "0x02"
+          definition: Opcode Not Supported
+          description: Response if an unsupported opcode is received
+        - response_code_value: "0x03"
+          definition: Operation Failed
+          description: Response for an unsuccessful operation
+        - response_code_value: "0x04"
+          definition: Invalid Session State
+          description: Response if an opcode is written while the VA is in a Session State that cannot accept it (e.g., Start VA Session Opcode written in the Session Unavailable state)
+        - response_code_value: 0x05–0xFF
+          definition: RFU
+          description: RFU

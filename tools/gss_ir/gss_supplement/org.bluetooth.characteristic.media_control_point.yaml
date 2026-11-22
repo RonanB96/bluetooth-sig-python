@@ -1,0 +1,118 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, Section 3.18 (Tables 3.6–3.8).
+characteristic:
+  identifier: org.bluetooth.characteristic.media_control_point
+  name: Media Control Point
+  description: |-
+    The Media Control Point characteristic is defined as an 8-bit enumerated value, known as the opcode, followed by zero or more parameter octets. The opcodes are defined in Table 3.6.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Opcode
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.media_control_point/field/opcode}.
+    - field: Offset
+      type: sint32
+      size: "0 or 4"
+      description: |-
+        32-bit signed integer parameter called the “offset”.
+        Present if Opcode is 0x10
+    - field: n
+      type: sint32
+      size: "0 or 4"
+      description: |-
+        32-bit signed integer parameter called “n”.
+        Present if Opcode is 0x24 or 0x34 or 0x44
+  fields:
+    - name: Opcode
+      description: The values of this field are defined below.
+      table_caption: Media Control Point characteristic values
+      values:
+        - opcode: "0x01"
+          name: Play
+          requirement: C.1
+          description: Start playing the current track.
+        - opcode: "0x02"
+          name: Pause
+          requirement: C.1
+          description: Pause playing the current track.
+        - opcode: "0x03"
+          name: Fast Rewind
+          requirement: C.1
+          description: Fast rewind the current track.
+        - opcode: "0x04"
+          name: Fast Forward
+          requirement: C.1
+          description: Fast forward the current track.
+        - opcode: "0x05"
+          name: Stop
+          requirement: C.1
+          description: Stop current activity and return to the paused state and set the current track position to the start of the current track.
+        - opcode: "0x10"
+          name: Move Relative
+          requirement: C.1
+          description: Set a new current track position relative to the current track position.
+        - opcode: "0x20"
+          name: Previous Segment
+          requirement: C.1
+          description: Set the current track position to the starting position of the previous segment of the current track.
+        - opcode: "0x21"
+          name: Next Segment
+          requirement: C.1
+          description: Set the current track position to the starting position of the next segment of the current track.
+        - opcode: "0x22"
+          name: First Segment
+          requirement: C.1
+          description: Set the current track position to the starting position of the first segment of the current track.
+        - opcode: "0x23"
+          name: Last Segment
+          requirement: C.1
+          description: Set the current track position to the starting position of the last segment of the current track.
+        - opcode: "0x24"
+          name: Goto Segment
+          requirement: C.1
+          description: Set the current track position to the starting position of the n th segment of the current track.
+        - opcode: "0x30"
+          name: Previous Track
+          requirement: C.1
+          description: Set the current track to the previous track based on the playing order.
+        - opcode: "0x31"
+          name: Next Track
+          requirement: C.1
+          description: Set the current track to the next track based on the playing order.
+        - opcode: "0x32"
+          name: First Track
+          requirement: C.1
+          description: Set the current track to the first track based on the playing order.
+        - opcode: "0x33"
+          name: Last Track
+          requirement: C.1
+          description: Set the current track to the last track based on the playing order.
+        - opcode: "0x34"
+          name: Goto Track
+          requirement: C.1
+          description: Set the current track to the n th track based on the playing order.
+        - opcode: "0x40"
+          name: Previous Group
+          requirement: C.1
+          description: Set the current group to the previous group in the sequence of groups.
+        - opcode: "0x41"
+          name: Next Group
+          requirement: C.1
+          description: Set the current group to the next group in the sequence of groups.
+        - opcode: "0x42"
+          name: First Group
+          requirement: C.1
+          description: Set the current group to the first group in the sequence of groups.
+        - opcode: "0x43"
+          name: Last Group
+          requirement: C.1
+          description: Set the current group to the last group in the sequence of groups.
+        - opcode: "0x44"
+          name: Goto Group
+          requirement: C.1
+          description: Set the current group to the n th group in the sequence of groups.
+        - opcode: All other values
+          name: RFU
+          requirement: –
+          description: Reserved for Future Use

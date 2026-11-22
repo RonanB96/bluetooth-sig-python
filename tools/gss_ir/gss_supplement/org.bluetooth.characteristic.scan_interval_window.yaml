@@ -1,0 +1,26 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Scan Parameters Service 1.0, Section 2.4.2; Core Specification 6.3, Volume 4, Part E, Section 7.8.12.
+characteristic:
+  identifier: org.bluetooth.characteristic.scan_interval_window
+  name: Scan Interval Window
+  description: |-
+    The Scan Interval Window characteristic is used to store the scan parameters of the Client.
+    The format and values of these fields are the same as the HCI LE Create Connection Command’s LE_Scan_Interval and LE_Scan_Window parameters as defined in [1] Volume 2, Part E, Section 7.8.12.
+    The default values for LE_Scan_Interval and LE_Scan_Window may be recommended by higher-layer profiles.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: LE_Scan_Interval
+      type: uint16
+      size: "2"
+      description: |-
+        Time = N × 0.625 ms
+        Allowed range is: 0x0004 to 0x4000.
+        Time Range: 2.5 ms to 10.24 s
+    - field: LE_Scan_Window
+      type: uint16
+      size: "2"
+      description: |-
+        Time = N × 0.625 ms
+        Allowed range is: 0x0004 to 0x4000.
+        Time Range: 2.5 ms to 10.24 s
+        LE_Scan_Window shall be less than or equal to LE_Scan_Interval

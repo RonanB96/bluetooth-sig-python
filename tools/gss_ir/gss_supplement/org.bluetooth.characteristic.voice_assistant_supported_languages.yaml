@@ -1,0 +1,14 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Voice Assistant Service 1.0, Section 3.8.1.
+characteristic:
+  identifier: org.bluetooth.characteristic.voice_assistant_supported_languages
+  name: Voice Assistant Supported Languages
+  description: |-
+    The Voice Assistant Support Languages characteristic is provided by the VA to allow the client to discover the spoken languages that are recognized by the VA.
+    The characteristic is a UTF-8 encoded string. The format is a comma-separated list of languages, each element in the list is an ISO 639-3 value (see [4]).
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Voice Assistant Supported Languages
+      type: utf8s
+      size: variable
+      description: UTF-8 string

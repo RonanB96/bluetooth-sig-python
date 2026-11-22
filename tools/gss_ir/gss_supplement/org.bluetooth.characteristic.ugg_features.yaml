@@ -1,0 +1,34 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Gaming Audio Profile 1.0.1, 4.7.2 UGG Features (Tables 4.4–4.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.ugg_features
+  name: UGG Features
+  description: |-
+    The UGG Features characteristic exposes the UGG features supported by the GMA Server.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Features
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.ugg_features/field/features}.
+  fields:
+    - name: Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            UGG Multiplex feature support
+            0 = Not supported
+            1 = Supported
+        - bit: "1"
+          description: |-
+            UGG 96 kbps Source feature support
+            0 = Not supported
+            1 = Supported
+        - bit: "2"
+          description: |-
+            UGG Multisink feature support
+            0 = Not supported
+            1 = Supported
+        - bit: 3–7
+          description: RFU

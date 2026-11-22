@@ -1,0 +1,172 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Device Time Service 1.0, Section 3.2 (Tables 3.4–3.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.device_time_parameters
+  name: Device Time Parameters
+  description: |-
+    The DT Parameters characteristic is used to reveal the Server’s capabilities and behavioral thresholds.
+    The DT Parameters characteristic is 2 to 12 octets depending on the supported features.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: E2E_CRC
+      type: uint16
+      size: 0 or 2
+      description: |-
+        CRC calculated over all data fields except for the E2E_CRC field itself.
+        Present if E2E-CRC Supported bit in Device Time Feature characteristic is set to 1
+    - field: RTC_Resolution
+      type: uint16
+      size: "2"
+      description: |-
+        Unit is 1/65,536 Second.
+        The RTC_Resolution field describes the RTC resolution in fractions of a second.
+        A value of 0 means RTC_Resolution is an unknown number of fractions of a second.
+    - field: Max_RTC_Drift_Limit
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit is Seconds.
+        Present if RTC Drift Tracking Supported bit in Device Time Feature characteristic is set to 1
+    - field: Max_Days_Until_Sync_Loss
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit is Days.
+        Present if RTC Drift Tracking Supported bit in Device Time Feature characteristic is set to 1
+    - field: Non_Logged_Time_Adjustment_Limit
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit is Seconds.
+        A value of 0 means log all Time_Update events.
+        Present if Time Change Logging Supported bit in Device Time Feature characteristic is set to 1
+    - field: Displayed_Formats
+      type: struct
+      size: 0 or 2
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.device_time_parameters/field/displayed_formats}.
+        A value of 0xFFFF means Displayed Date and Time Formats not supported.
+        Present if Displayed Formats Supported bit in Device Time Feature characteristic is set to 1
+  fields:
+    - name: Displayed_Formats
+      description: The structure of this field is defined below.
+      size_in_bits: true
+      values:
+        - field: Displayed Date Format
+          data_type: uint8
+          size: "8"
+          description: See \autoref{sec:org.bluetooth.characteristic.device_time_parameters/subfield/displayed_date_format}
+        - field: Displayed Date Field Separator
+          data_type: uint4
+          size: "4"
+          description: See \autoref{sec:org.bluetooth.characteristic.device_time_parameters/subfield/displayed_date_field_separator}
+        - field: Displayed Time Format
+          data_type: uint4
+          size: "4"
+          description: See \autoref{sec:org.bluetooth.characteristic.device_time_parameters/subfield/displayed_time_format}
+      subfields:
+        - name: Displayed Date Format
+          description: The values of this field are defined below.
+          values:
+            - value: "0x00"
+              description: Graphic date representation
+            - value: "0x01"
+              description: MM.DD.YY (“12.31.16”)
+            - value: "0x02"
+              description: MM.DD.YYYY (“12.31.2016”)
+            - value: "0x03"
+              description: MM.DD (“12.31”)
+            - value: "0x04"
+              description: DD.MM.YYYY ("31.12.2016")
+            - value: "0x05"
+              description: DD.MM.YY ("31.12.16")
+            - value: "0x06"
+              description: DD.MM ("31.12")
+            - value: "0x07"
+              description: YYYY.MM.DD (“2016.12.31”)
+            - value: "0x08"
+              description: YY.MM.DD (“16.12.31”)
+            - value: "0x09"
+              description: YYYY.DD.MM (“2016.31.12”)
+            - value: "0x0A"
+              description: YY.DD.MM (“16.31.12”)
+            - value: "0x0B"
+              description: Reserved for Future Use
+            - value: "0x0C"
+              description: Reserved for Future Use
+            - value: "0x0D"
+              description: mmm.DD.YYYY (“Dec.31.2016”)
+            - value: "0x0E"
+              description: mmm.DD.YY (“Dec.31.16”)
+            - value: "0x0F"
+              description: mmm.DD (“Dec.31”)
+            - value: "0x10"
+              description: DD.mmm (“31.Dec”)
+            - value: "0x11"
+              description: DD.mmm.YY (“31.Dec.16”)
+            - value: "0x12"
+              description: DD.mmm.YYYY (“31.Dec.2016”)
+            - value: "0x13"
+              description: dd.DD or ddd.DD (“Sa.31” or “Sat.31”)
+            - value: "0x14"
+              description: dd.DD.mmm or ddd.DD.mmm (“Sa.31.Dez” or “Sat.31.Dec”)
+            - value: 0x15–0xFD
+              description: Reserved for Future Use
+            - value: "0xFE"
+              description: Date not displayed
+            - value: "0xFF"
+              description: Displayed format not defined
+        - name: Displayed Date Field Separator
+          description: The values of this field are defined below.
+          values:
+            - value: "0b0000"
+              description: No separator (“31Dec2016”)
+            - value: "0b1000"
+              description: Space (“31 Dec 2016”)
+            - value: "0b0001"
+              description: Slash (“31/Dec/2016”)
+            - value: "0b0010"
+              description: Hyphen (“31-Dec-2016”)
+            - value: "0b0011"
+              description: Period (“31.Dec.2016”)
+            - value: "0b0100"
+              description: Comma (“31,Dec,2016”)
+            - value: "0b1010"
+              description: Displayed separator not defined
+            - value: "0b1110"
+              description: Date not displayed
+        - name: Displayed Time Format
+          description: The values of this field are defined below.
+          values:
+            - value: "0b0101"
+              description: 12h fixed length, no seconds, with AM/PM indicator (“09:05 AM”, “10:15 PM”)
+            - value: "0b0111"
+              description: 12h fixed length with seconds, with AM/PM indicator (“09:05:42 AM”, “10:15:26 PM”)
+            - value: "0b0100"
+              description: 12h fixed length, no seconds, no AM/PM indicator (“09:05”, “10:15”)
+            - value: "0b0110"
+              description: 12h fixed length with seconds, no AM/PM indicator (“09:05:42”, “10:15:26”)
+            - value: "0b0001"
+              description: 12h variable length, no seconds, with AM/PM indicator (“9:05 AM”, “10:15 PM”)
+            - value: "0b0011"
+              description: 12h variable length with seconds, with AM/PM indicator (“9:05:42 AM”, “10:15:26 PM”)
+            - value: "0b0000"
+              description: 12h variable length, no seconds, no AM/PM indicator (“9:05”, “10:15”)
+            - value: "0b0010"
+              description: 12h variable length with seconds, no AM/PM indicator (“9:05:42”, “10:15:26”)
+            - value: "0b1100"
+              description: 24h fixed length, no seconds (“09:05”, “22:15”)
+            - value: "0b1110"
+              description: 24h fixed length with seconds (“09:05:42”, “22:15:26”)
+            - value: "0b1000"
+              description: 24h variable length, no seconds (“9:05”, “22:15”)
+            - value: "0b1010"
+              description: 24h variable length with seconds (“9:05:42”, “22:15:26”)
+            - value: "0b1001"
+              description: Analog display, no seconds
+            - value: "0b1101"
+              description: Analog display with seconds
+            - value: "0b1011"
+              description: Displayed format not defined
+            - value: "0b1111"
+              description: Time not displayed

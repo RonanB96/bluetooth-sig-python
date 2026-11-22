@@ -1,0 +1,15 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HTTP Proxy Service 1.0, 3.3 HTTP Entity Body Characteristic.
+characteristic:
+  identifier: org.bluetooth.characteristic.http_entity_body
+  name: HTTP Entity Body
+  description: |-
+    The HTTP Entity Body characteristic contains the contents of the message-body after any Transfer-Encoding has been applied.
+    The HTTP Entity Body characteristic shall contain the HTTP entity body used in the HTTP request as a UTF-8 string (utf8s), up to the maximum characteristic length defined.
+    Current version of the spec supports HTTP request with HTTP Entity Body up to 512 octets in length.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: HTTP Entity Body
+      type: utf8s
+      size: variable
+      description: UTF-8 string

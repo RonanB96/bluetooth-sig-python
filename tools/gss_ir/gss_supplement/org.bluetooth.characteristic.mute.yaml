@@ -1,0 +1,26 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Microphone Control Service 1.0, 3.1 Mute (Table 3.2).
+characteristic:
+  identifier: org.bluetooth.characteristic.mute
+  name: Mute
+  description: |-
+    The Mute characteristic shall be set to a value that reflects the current mute state of the audio to which this service applies.
+    The Mute characteristic value represents the server’s audio state, where a value of Not Muted represents unmuted audio, a value of Muted represents muted audio, and a value of Disabled represents that mute commands are disabled (for example, via a local privacy switch or other means) and the microphone is muted.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Mute
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.mute/field/mute}.
+  fields:
+    - name: Mute
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Not Muted
+        - value: "0x01"
+          description: Muted
+        - value: "0x02"
+          description: Disabled
+        - value: 0x03–0xFF
+          description: RFU

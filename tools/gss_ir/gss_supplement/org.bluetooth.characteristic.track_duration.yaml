@@ -1,0 +1,16 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, Section 3.6.
+characteristic:
+  identifier: org.bluetooth.characteristic.track_duration
+  name: Track Duration
+  description: |-
+    The Track Duration characteristic exposes the length of the current track in 0.01-second resolution as a 32-bit signed integer.
+    If the media player has no current track or the duration of the current track is unknown, the Track Duration characteristic value shall be 0xFFFFFFFF. Otherwise, the duration of the track shall be zero or greater.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Track Duration
+      type: sint32
+      size: "4"
+      description: |-
+        Unit is second with a resolution of 0.01 second.
+        A value of 0xFFFFFFFF represents "no current track or the duration of the current track is unknown".

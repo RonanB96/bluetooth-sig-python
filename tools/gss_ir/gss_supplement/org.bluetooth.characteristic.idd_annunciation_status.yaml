@@ -1,0 +1,254 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Insulin Delivery Service 1.0.2, 4.3 IDD Annunciation Status (Tables 4.7–4.10).
+characteristic:
+  identifier: org.bluetooth.characteristic.idd_annunciation_status
+  name: IDD Annunciation Status
+  description: |-
+    The IDD Annunciation Status characteristic is a variable length structure comprising of a Flags field, the annunciation information, optional up to five auxiliary information fields describing annunciation details, and is closed by an optional E2E-Counter field and E2E-CRC field.
+    The IDD Annunciation Status characteristic shall provide the active annunciation (i.e., any unconfirmed) as determined by the Server Application (e.g., with highest priority). If there is no unconfirmed annunciation or there has not been an annunciation yet, bit 0 of the Flags field shall be set to 0 (i.e., no subsequent fields are attached).
+    Reserved for Future Use (RFU) bits in the Flags field shall be set to 0.
+    The presence of the AuxInfo fields depends on the Flags field value.
+    The minimum length of the IDD Annunciation Status record is 1 octet and the maximum length is 19 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Flags
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.idd_annunciation_status/field/flags}.
+    - field: Annunciation Instance ID
+      type: uint16
+      size: 0 or 2
+      description: |-
+        The Annunciation Instance ID field represents a unique identifier as a uint16 data type created by the Server application for all annunciations that occur in the course of time.
+        Present if bit 0 of Flags field is set to 1
+    - field: Annunciation Type
+      type: uint16
+      size: 0 or 2
+      description: |-
+        The Annunciation Type field describes the kind of annunciation in the scope of the Server application as a uint16 data type.
+        See \autoref{sec:org.bluetooth.characteristic.idd_annunciation_status/field/annunciation_type}.
+        Present if bit 0 of Flags field is set to 1
+    - field: Annunciation Status
+      type: uint8
+      size: 0 or 1
+      description: |-
+        The Annunciation Status field represents the current status of an annunciation.
+        See \autoref{sec:org.bluetooth.characteristic.idd_annunciation_status/field/annunciation_status}.
+        Present if bit 0 of Flags field is set to 1
+    - field: AuxInfo1
+      type: uint8[2]
+      size: 0 or 2
+      description: |-
+        There are up to 5 optional auxiliary information fields to describe details of an annunciation (e.g., to display additional information to the user, such as the remaining amount of insulin in case of a low reservoir level).
+        The data type of the AuxInfo fields is a binary object with a size of 2 octets. The underlying data and data format of these fields are defined by the Server application.
+        Present if bit 1 of Flags field is set to 1
+    - field: AuxInfo2
+      type: uint8[2]
+      size: 0 or 2
+      description: |-
+        The data type of the AuxInfo fields is a binary object with a size of 2 octets. The underlying data and data format of these fields are defined by the Server application.
+        Present if bit 2 of Flags field is set to 1
+    - field: AuxInfo3
+      type: uint8[2]
+      size: 0 or 2
+      description: |-
+        The data type of the AuxInfo fields is a binary object with a size of 2 octets. The underlying data and data format of these fields are defined by the Server application.
+        Present if bit 3 of Flags field is set to 1
+    - field: AuxInfo4
+      type: uint8[2]
+      size: 0 or 2
+      description: |-
+        The data type of the AuxInfo fields is a binary object with a size of 2 octets. The underlying data and data format of these fields are defined by the Server application.
+        Present if bit 4 of Flags field is set to 1
+    - field: AuxInfo5
+      type: uint8[2]
+      size: 0 or 2
+      description: |-
+        The data type of the AuxInfo fields is a binary object with a size of 2 octets. The underlying data and data format of these fields are defined by the Server application.
+        Present if bit 5 of Flags field is set to 1
+    - field: E2E-Counter
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+    - field: E2E-CRC
+      type: uint16
+      size: 0 or 2
+      description: |-
+        CRC calculated over all fields of the characteristic payload, including the E2E-Counter field, except for the E2E-CRC field itself.
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+  fields:
+    - name: Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Annunciation Present
+            0 = False
+            1 = True
+            If this bit is set, the fields Annunciation Instance ID, Annunciation Type, and Annunciation Status are present (i.e., there is a currently active or already confirmed annunciation). This bit shall not be set if there has not been an annunciation yet.
+        - bit: "1"
+          description: |-
+            AuxInfo1 Present
+            0 = False
+            1 = True
+            If this bit is set, the AuxInfo1 field is present.
+        - bit: "2"
+          description: |-
+            AuxInfo2 Present
+            0 = False
+            1 = True
+            If this bit is set, the AuxInfo2 field is present.
+        - bit: "3"
+          description: |-
+            AuxInfo3 Present
+            0 = False
+            1 = True
+            If this bit is set, the AuxInfo3 field is present.
+        - bit: "4"
+          description: |-
+            AuxInfo4 Present
+            0 = False
+            1 = True
+            If this bit is set, the AuxInfo4 field is present.
+        - bit: "5"
+          description: |-
+            AuxInfo5 Present
+            0 = False
+            1 = True
+            If this bit is set, the AuxInfo5 field is present.
+        - bit: 6–7
+          description: Reserved for Future Use
+    - name: Annunciation Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x000F"
+          description: |-
+            System Issue
+            A general device fault or system error occurred (e.g., electronical or software error).
+        - value: "0x0033"
+          description: |-
+            Mechanical Issue
+            A mechanical error occurred.
+        - value: "0x003C"
+          description: |-
+            Occlusion Detected
+            An occlusion occurred (e.g., clogging of infusion set).
+        - value: "0x0055"
+          description: |-
+            Reservoir Issue
+            An error related to the replacement or functioning of the reservoir occurred.
+        - value: "0x005A"
+          description: |-
+            Reservoir Empty
+            The reservoir is empty.
+        - value: "0x0066"
+          description: |-
+            Reservoir Low
+            The reservoir fill level reached a defined low threshold.
+        - value: "0x0069"
+          description: |-
+            Priming Issue
+            There is a priming issue after replacement of reservoir and/or infusion set (e.g., infusion set has not been primed).
+        - value: "0x0096"
+          description: |-
+            Infusion Set Incomplete
+            The physical connection between infusion set (including tubing and/or cannula) and the Insulin Delivery Device is incomplete.
+        - value: "0x0099"
+          description: |-
+            Infusion Set Detached
+            The infusion set (including tubing and/or cannula) is not attached to the body.
+        - value: "0x00A5"
+          description: |-
+            Power Source Insufficient
+            The Insulin Delivery Device has insufficient power to charge the device (i.e., the device cannot properly function).
+        - value: "0x00AA"
+          description: |-
+            Battery Empty
+            The Insulin Delivery Device has no operational runtime left. The user shall be informed.
+        - value: "0x00C3"
+          description: |-
+            Battery Low
+            The Insulin Delivery Device has a low operational runtime (e.g., the battery charge level reached a defined low threshold, the battery is depleted, or the battery voltage is less than full strength). The user shall be informed.
+        - value: "0x00CC"
+          description: |-
+            Battery Medium
+            The Insulin Delivery Device has a medium operational runtime. This annunciation should be reported at half of the operational runtime.
+        - value: "0x00F0"
+          description: |-
+            Battery Full
+            The Insulin Delivery Device has a full operational runtime. This annunciation should be reported at full operational runtime.
+        - value: "0x00FF"
+          description: |-
+            Temperature out of range
+            The temperature is outside of the normal operating range.
+        - value: "0x0303"
+          description: |-
+            Air pressure out of range
+            The air pressure is outside of the normal operating range (e.g., altitude).
+        - value: "0x030C"
+          description: |-
+            Bolus Canceled
+            A running bolus was canceled (e.g., Insulin Delivery Device changed from run to standby mode).
+        - value: "0x0330"
+          description: |-
+            TBR Over
+            The temporary basal rate expired (i.e., the programmed duration is over).
+        - value: "0x033F"
+          description: |-
+            TBR Canceled
+            The temporary basal rate canceled (e.g., device changed from run to standby mode).
+        - value: "0x0356"
+          description: |-
+            Max Delivery
+            The delivery reached a defined high threshold based on maximum bolus and maximum basal rates.
+        - value: "0x0359"
+          description: |-
+            Date Time Issue
+            The date time of the device was never set or has been lost (e.g., due to a battery replacement).
+        - value: "0x0365"
+          description: |-
+            Temperature
+            The Insulin Delivery Device reports a temperature measurement.
+        - value: 0xF000–0xFFF0
+          description: |-
+            Manufacturer Reserved Hamming Code Value Range 1
+            All Hamming codes values in the range of 0xF000 and 0xFFF0 are manufacturer reserved. All non-Hamming codes values within this range are prohibited.
+            The Manufacturer Reserved range of Annunciation Types Values shall be used by manufacturers of Insulin Delivery Devices to define custom annunciations in addition to the already defined values. This value range is based on the private range for code blocks or partitions. All non-Hamming codes values within this range are prohibited.
+        - value: All not already defined Hamming code values within 0x0000 and 0xFFFF
+          description: |-
+            RFU
+            All values in this table which are not defined above and do match a Hamming code value in the range of 0x0000 and 0xFFFF are reserved for future use.
+        - value: All other values
+          description: |-
+            Prohibited
+            All values not defined above are prohibited.
+    - name: Annunciation Status
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: |-
+            Undetermined
+            The status of the annunciation is undetermined.
+        - value: "0x33"
+          description: |-
+            Pending
+            The annunciation is currently pending and requires a user action for snoozing or confirmation.
+        - value: "0x3C"
+          description: |-
+            Snoozed
+            The annunciation was noticed by the user and is set to pop up again at a short time later (i.e., a snoozed annunciation is still active). The time span shall be defined by the Server application.
+        - value: "0x55"
+          description: |-
+            Confirmed
+            The annunciation was confirmed by the user (i.e., a confirmed annunciation is not active anymore).
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: |-
+            RFU
+            All values in this table which are not defined above and do match a Hamming code value in the range of 0x00 and 0xFF are reserved for future use.
+        - value: All other values
+          description: |-
+            Prohibited
+            All values not defined above are prohibited.

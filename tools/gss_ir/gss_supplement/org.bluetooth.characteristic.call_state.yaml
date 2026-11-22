@@ -1,0 +1,83 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Telephone Bearer Service 1.0, Section 3.11 (Tables 3.5–3.7).
+characteristic:
+  identifier: org.bluetooth.characteristic.call_state
+  name: Call State
+  description: |-
+    The Call State characteristic returns an array of members, each 3 octets, and represents an abstraction of the different states that telephone calls are in. The format of the characteristic is described in Table 3.5.
+    Each telephone call is identified by a Call_Index value that is unique per service. The Call_Index octet is a number chosen by the server to identify an active call. The Call_Index value exposed in this Call_State characteristic is used throughout this service to identify calls.
+    Each telephone call is in one of the listed states. Table 3.6 lists the states and provides a short description of each.
+    Each telephone call has a Call_Flags field. Table 3.7 lists the definitions of bits of this field.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Call Index
+      type: uint8
+      size: "1"
+      description: |-
+        Each telephone call is identified by a Call_Index value that is unique per service.
+        The Call_Index octet is a number chosen by the server to identify an active call.
+        When the service instantiates, the Call_Index shall be a number from 1 to 255.
+        The Call_Index of 0 is reserved.
+        The sequence of fields from Call Index through Call Flags is repeated for each call in the array.
+    - field: State
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.call_state/field/state}.
+    - field: Call Flags
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.call_state/field/call_flags}.
+  fields:
+    - name: State
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: |-
+            Incoming
+            A remote party is calling (incoming call).
+        - value: "0x01"
+          description: |-
+            Dialing
+            The process to call the remote party has started on the server, but the remote party is not being alerted (outgoing call).
+        - value: "0x02"
+          description: |-
+            Alerting
+            A remote party is being alerted (outgoing call).
+        - value: "0x03"
+          description: |-
+            Active
+            The call is in an active conversation.
+        - value: "0x04"
+          description: |-
+            Locally Held
+            The call is connected but held locally. “Locally Held” implies that either the server or the client can affect the state.
+        - value: "0x05"
+          description: |-
+            Remotely Held
+            The call is connected but held remotely. “Remotely Held” means that the state is controlled by the remote party of a call.
+        - value: "0x06"
+          description: |-
+            Locally and Remotely Held
+            The call is connected but held both locally and remotely.
+        - value: 0x07–0xFF
+          description: RFU
+    - name: Call Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Incoming/Outgoing
+            0 = Call is an incoming call
+            1 = Call is an outgoing call
+        - bit: "1"
+          description: |-
+            Information withheld by server
+            0 = Not withheld
+            1 = Withheld
+        - bit: "2"
+          description: |-
+            Information withheld by network
+            0 = Provided by network
+            1 = Withheld by network
+        - bit: 3–7
+          description: Reserved for Future Use

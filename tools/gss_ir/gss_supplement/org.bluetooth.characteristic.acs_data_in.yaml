@@ -1,0 +1,47 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Authorization Control Service 1.0, Section 4.3 ACS Data In (Tables 4.2–4.3, 4.8–4.10).
+characteristic:
+  identifier: org.bluetooth.characteristic.acs_data_in
+  name: ACS Data In
+  description: |-
+    The ACS Data In characteristic is used by the AC Client to send secure write or secure read requests to ACS-protected GATT resources. A secure read request uses the Protected_Resource_Handle contained in the Secure_Data field structure to read the resource protected by ACS that has a Read property. A secure write request uses the Protected_Resource_Handle and the Request_Or_Response contained in the Secure_Data field structure. Each secure request sent via the ACS Data In characteristic shall have one or more secure responses sent via one of the ACS Data Out characteristics.
+    The Payload field may be segmented as described in Section 4.1.1. When the information security configuration includes security controls (for example Nonce or MAC) before a protected resource request or response type control, their octets are included in the Payload field before the Protected_Resource_Handle field, in the order defined by the information security configuration descriptor.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Segmentation_Header
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.acs_data_in/field/segmentation_header}.
+    - field: Information_Security_Configuration_ID
+      type: uint16
+      size: "2"
+      description: |-
+        The ID of the information security configuration that describes the order and the type of security controls used within the Secure_Data field of the Payload field.
+    - field: Protected_Resource_Handle
+      type: uint16
+      size: "2"
+      description: |-
+        The protected resource to which the secure request is intended.
+        Present in the Secure_Data field when the information security control is a protected resource request or response type listed in Section 4.3.1.2.2.
+    - field: Request_Or_Response
+      type: struct
+      size: 0 or variable
+      description: |-
+        The secure write request for, or the secure response from, the protected resource. A secure write request or secure response consists of the payload for the protected resource and applicable information security controls as defined by the information security configuration descriptor (see Section 4.4.3.7).
+        Present if the value of the Request_Or_Response field is a secure write request to the protected resource value or a secure response from the protected resource. For a secure read request, the Request_Or_Response field is Excluded.
+  fields:
+    - name: Segmentation_Header
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            First Segment
+            If this bit is set to a value of 1, this segment of the segmented payload is the first segment.
+        - bit: "1"
+          description: |-
+            Last Segment
+            If this bit is set to a value of 1, this segment of the segmented payload is the last segment.
+        - bit: 2–7
+          description: |-
+            Rolling Segment Counter
+            These bits represent an unsigned integer value between 0 to 63 and count segments. The Rolling Segment Counter is incremented by one continuously with each segment. If the Rolling Segment Counter is equal to 63, it rolls over to 0 when it is next incremented.

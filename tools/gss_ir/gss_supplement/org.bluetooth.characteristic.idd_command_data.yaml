@@ -1,0 +1,311 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Insulin Delivery Service 1.0.2, Section 3.8 (Tables 3.11–3.20, 4.93).
+characteristic:
+  identifier: org.bluetooth.characteristic.idd_command_data
+  name: IDD Command Data
+  description: |-
+    The IDD Command Data characteristic is composed of response records from executed procedures of the IDD Command Control Point.
+    If a CP procedure of the IDD Command Control Point responds with more than one record, the IDD Command Data characteristic can be notified with each of those records.
+    The minimum length of the IDD Command Data record is 2 octets and the maximum length is 20 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Response Op Code
+      type: uint16
+      size: "2"
+      description: |-
+        The Response Op Code field contains the corresponding response Op Code of the executed procedure on the IDD Command Control Point.
+        See \autoref{sec:org.bluetooth.characteristic.idd_command_data/field/response_op_code}.
+    - field: Flags
+      type: boolean[8]
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_command_data/field/read_profile_template_response_operand_flags}.
+        Present if Response Op Code is 0x0FC3, 0x12D1, 0x1414, or 0x1441
+    - field: Basal Rate Profile Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The basal rate profile template number of the read basal rate profile.
+        Present if Response Op Code is 0x0FC3
+    - field: ISF Profile Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The ISF profile template number of the read ISF profile.
+        Present if Response Op Code is 0x12D1
+    - field: I2CHO Ratio Profile Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The I:CHO ratio profile template number of the read I:CHO ratio profile.
+        Present if Response Op Code is 0x1414
+    - field: Target Glucose Range Profile Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The target glucose range profile template number of the read target glucose range profile.
+        Present if Response Op Code is 0x1441
+    - field: First Time Block Number Index
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The index of the first sent time block of this Operand within the entire profile (i.e., the index of the second time block shall be calculated by adding a value of 1 to this field).
+        Present if Response Op Code is 0x0FC3, 0x12D1, 0x1414, or 0x1441
+    - field: First Duration
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Duration of the first time block in minutes.
+        Present if Response Op Code is 0x0FC3, 0x12D1, 0x1414, or 0x1441
+    - field: First Rate
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Rate of the first time block in IU/h.
+        Unit is IU/h.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Response Op Code is 0x0FC3
+    - field: First ISF
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Insulin sensitivity factor of the first time block in mg/dL.
+        Unit is mg/dL.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Response Op Code is 0x12D1
+    - field: First I2CHO Ratio
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Insulin-to-carbohydrate ratio of the first time block in grams.
+        Unit is grams.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Response Op Code is 0x1414
+    - field: First Lower Target Glucose Limit
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Lower target glucose limit of the first time block in mg/dL.
+        Unit is mg/dL.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Response Op Code is 0x1441
+    - field: First Upper Target Glucose Limit
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Upper target glucose limit of the first time block in mg/dL.
+        Unit is mg/dL.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Response Op Code is 0x1441
+    - field: Second Duration
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Duration of the second time block in minutes.
+        Present if Response Op Code is 0x0FC3, 0x12D1, 0x1414, or 0x1441
+        Present if bit 0 of Flags field is set to 1
+    - field: Second Rate
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Rate of the second time block in IU/h.
+        Unit is IU/h.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Response Op Code is 0x0FC3
+        Present if bit 0 of Flags field is set to 1
+    - field: Second ISF
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Insulin sensitivity factor of the second time block in mg/dL.
+        Unit is mg/dL.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Response Op Code is 0x12D1
+        Present if bit 0 of Flags field is set to 1
+    - field: Second I2CHO Ratio
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Insulin-to-carbohydrate ratio of the second time block in grams.
+        Unit is grams.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Response Op Code is 0x1414
+        Present if bit 0 of Flags field is set to 1
+    - field: Second Lower Target Glucose Limit
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Lower target glucose limit of the second time block in mg/dL.
+        Unit is mg/dL.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Response Op Code is 0x1441
+        Present if bit 0 of Flags field is set to 1
+    - field: Second Upper Target Glucose Limit
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Upper target glucose limit of the second time block in mg/dL.
+        Unit is mg/dL.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Response Op Code is 0x1441
+        Present if bit 0 of Flags field is set to 1
+    - field: Third Duration
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Duration of the third time block in minutes.
+        Present if Response Op Code is 0x0FC3, 0x12D1, or 0x1414
+        Present if bit 1 of Flags field is set to 1
+    - field: Third Rate
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Rate of the third time block in IU/h.
+        Unit is IU/h.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Response Op Code is 0x0FC3
+        Present if bit 1 of Flags field is set to 1
+    - field: Third ISF
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Insulin sensitivity factor of the third time block in mg/dL.
+        Unit is mg/dL.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Response Op Code is 0x12D1
+        Present if bit 1 of Flags field is set to 1
+    - field: Third I2CHO Ratio
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Insulin-to-carbohydrate ratio of the third time block in grams.
+        Unit is grams.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware’s inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Response Op Code is 0x1414
+        Present if bit 1 of Flags field is set to 1
+    - field: Template Type
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The template type of the reported template status and details record.
+        See \autoref{sec:org.bluetooth.characteristic.idd_command_data/field/template_type}.
+        Present if Response Op Code is 0x1212
+    - field: Starting Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The template number of the first template of the template type identified in the Template Type field.
+        Present if Response Op Code is 0x1212
+    - field: Number of Templates
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The total number of templates for the reported template type supported by the Server Application.
+        Present if Response Op Code is 0x1212
+    - field: Max Number of Supported Time Blocks
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The maximum number of time blocks of the requested template type that is supported by the Server Application.
+        Shall be set to 0 if the Template Type field value is not a Profile Template type; otherwise this field shall not be set to 0.
+        Present if Response Op Code is 0x1212
+    - field: Configurable and Configured Flags
+      type: struct
+      size: 1 to 11
+      description: |-
+        Array of 2 bit values where the first bit is the configurable status of the template and the second bit is the configured status of the template.
+        If the configurable bit, bit 0, is set to 1 (= True), then this template is configurable and can be configured by the Collector Application.
+        If the configured bit, bit 1, is set to 1 (= True), then this template is configured and does contain data.
+        The total number of elements in this array is the value of the Number of Templates field.
+        A padding of bits (set to 0) shall be appended if the number of elements of the Configurable and Configured Flags field does not fill a whole number of octets.
+        Present if Response Op Code is 0x1212
+    - field: E2E-Counter
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+    - field: E2E-CRC
+      type: uint16
+      size: 0 or 2
+      description: |-
+        CRC calculated over all fields of the characteristic payload, including the E2E-Counter field, except for the E2E-CRC field itself.
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+  fields:
+    - name: Response Op Code
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0FC3"
+          description: Read Basal Rate Profile Template Response
+        - value: "0x1212"
+          description: Get Template Status and Details Response
+        - value: "0x12D1"
+          description: Read ISF Profile Template Response
+        - value: "0x1414"
+          description: Read I2CHO Ratio Profile Template Response
+        - value: "0x1441"
+          description: Read Target Glucose Range Profile Template Response
+    - name: Read Profile Template Response Operand Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Second Time Block Present
+            0 = False
+            1 = True
+            If this bit is set, the fields Second Duration and Second Rate, Second ISF, Second I2CHO Ratio, or Second Duration, Second Lower Target Glucose Limit, and Second Upper Target Glucose Limit are present, depending on Response Op Code.
+        - bit: "1"
+          description: |-
+            Third Time Block Present
+            0 = False
+            1 = True
+            If this bit is set, the fields Third Duration and Third Rate, Third ISF, or Third I2CHO Ratio are present, depending on Response Op Code.
+            If Response Op Code is 0x1441, bit 1 is RFU.
+        - bit: 2–7
+          description: Reserved for Future Use
+    - name: Template Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined
+        - value: "0x33"
+          description: Basal Rate Profile Template
+        - value: "0x3C"
+          description: TBR Template
+        - value: "0x55"
+          description: Bolus Template
+        - value: "0x5A"
+          description: ISF Profile Template
+        - value: "0x66"
+          description: I2CHO Ratio Profile Template
+        - value: "0x96"
+          description: Target Glucose Range Profile Template
+        - value: "All not already defined Hamming code values within 0x00 and 0xFF"
+          description: Reserved for Future Use
+        - value: "All other values"
+          description: Prohibited

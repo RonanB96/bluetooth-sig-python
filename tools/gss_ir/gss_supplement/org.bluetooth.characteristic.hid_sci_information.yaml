@@ -1,0 +1,41 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HID Service Specification 1.1, Section 2.12 (Table 2.18); Core Specification 6.3 Vol 4 Part E §7.8.156.
+characteristic:
+  identifier: org.bluetooth.characteristic.hid_sci_information
+  name: HID SCI Information
+  description: |-
+    The HID SCI Information characteristic is used to hold the value representing the HID Device’s HID SCI attributes. The HID SCI Information characteristic value shall be static for the lifetime of the bond between the HID Host and HID Device and can therefore be cached by the HID Host.
+    The HID SCI Information characteristic returns ranges of rounded connInterval values (RCV) and extended connInterval values (ECV) in groups. Each field has the same definition as the corresponding return parameter of the LE Read Minimum Supported Connection Interval command.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Minimum Supported Connection Interval
+      type: uint8
+      size: "1"
+      description: |-
+        Unit is 125 µs.
+        Allowed range is: 0x03 to 0x3C (375 µs to 7.5 ms).
+    - field: Num Groups
+      type: uint8
+      size: "1"
+      description: |-
+        Number of groups.
+        Allowed range is: 0x00 to 0xFF.
+        The sequence of fields from Group Min through Group Stride is repeated Num Groups times.
+    - field: Group Min
+      type: uint16
+      size: "2"
+      description: |-
+        Unit is 125 µs.
+        Allowed range is: 0x0003 to 0x7D00 (375 µs to 4 s).
+    - field: Group Max
+      type: uint16
+      size: "2"
+      description: |-
+        Unit is 125 µs.
+        Allowed range is: 0x0003 to 0x7D00 (375 µs to 4 s).
+    - field: Group Stride
+      type: uint16
+      size: "2"
+      description: |-
+        Unit is 125 µs.
+        Allowed range is: 0x0001 to 0x7D00 (125 µs to 4 s).

@@ -1,0 +1,13 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, Section 3.1.
+characteristic:
+  identifier: org.bluetooth.characteristic.media_player_name
+  name: Media Player Name
+  description: |-
+    The Media Player Name characteristic exposes the name of the media player application that is providing media tracks. The characteristic value shall be a UTF-8 string.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Media Player Name
+      type: utf8s
+      size: variable
+      description: UTF-8 string

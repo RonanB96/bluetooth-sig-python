@@ -1,0 +1,20 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Telephone Bearer Service 1.0, Section 3.15.
+characteristic:
+  identifier: org.bluetooth.characteristic.incoming_call
+  name: Incoming Call
+  description: |-
+    The Incoming Call characteristic returns the Call Index and URI of the incoming caller. The URI of the incoming call is comprised of the URI scheme followed by the Caller ID of the call as a UTF-8 string. The format of the characteristic is shown in Table 3.15.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Call Index
+      type: uint8
+      size: "1"
+      description: |-
+        Each telephone call is identified by a Call_Index value that is unique per service.
+        When the service instantiates, the Call_Index shall be a number from 1 to 255.
+        The Call_Index of 0 is reserved.
+    - field: URI
+      type: utf8s
+      size: variable
+      description: UTF-8 string

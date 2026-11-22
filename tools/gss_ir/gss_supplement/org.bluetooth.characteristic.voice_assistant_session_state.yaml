@@ -1,0 +1,37 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Voice Assistant Service 1.0, Section 3.6 (Tables 3.8 and 3.9).
+characteristic:
+  identifier: org.bluetooth.characteristic.voice_assistant_session_state
+  name: Voice Assistant Session State
+  description: |-
+    The Voice Assistant Session State characteristic exposes the current VA Session State that is maintained by the VAS Server (see Table 3.9).
+    The Voice Assistant Session State characteristic conveys the Session State of the VA.
+    The characteristic consists of one octet with the format shown in Table 3.8.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: VA Session State
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.voice_assistant_session_state/field/va_session_state}.
+  fields:
+    - name: VA Session State
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: |-
+            Session Reset
+            When the VA is reset but not initialized and not ready, typically after a connection is established.
+        - value: "0x01"
+          description: |-
+            Session Unavailable
+            When the VA is not available.
+        - value: "0x02"
+          description: |-
+            Session Ready
+            When the VA has been initialized by the client and is now ready for the Start VA Session and Stop VA Session VAS Control Point operations.
+        - value: "0x03"
+          description: |-
+            Session Active
+            When the VA has entered a state of engaging with the user.
+        - value: 0x04–0xFF
+          description: RFU

@@ -1,0 +1,28 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Ranging Service 1.0, Section 3.1 RAS Features (Tables 3.2–3.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.ras_features
+  name: RAS Features
+  description: |-
+    The RAS Features characteristic is used to describe the supported features of the RAS Server.
+    The RAS Server shall support the RAS Features characteristic that describes the supported features of the RAS Server. When read, the RAS Features characteristic returns a value that is used by the client to determine the supported features of the RAS Server.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: RAS Features
+      type: boolean[32]
+      size: "4"
+      description: See \autoref{sec:org.bluetooth.characteristic.ras_features/field/ras_features}.
+  fields:
+    - name: RAS Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Real-time Ranging Data
+        - bit: "1"
+          description: Retrieve Lost Ranging Data Segments
+        - bit: "2"
+          description: Abort Operation
+        - bit: "3"
+          description: Filter Ranging Data
+        - bit: 4–31
+          description: RFU

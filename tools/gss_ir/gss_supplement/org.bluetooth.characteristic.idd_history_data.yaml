@@ -1,0 +1,1231 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Insulin Delivery Service 1.0.2, Section 4.9 IDD History Data (Tables 4.94–4.138).
+characteristic:
+  identifier: org.bluetooth.characteristic.idd_history_data
+  name: IDD History Data
+  description: |-
+    The IDD History Data characteristic is composed of response records from executed procedures of the IDD Record Access Control Point.
+    If a CP procedure of the IDD Record Access Control Point responds with more than one record, the IDD History Data characteristic can be notified with each of those records.
+    The IDD History Data characteristic is a variable length structure comprising of an Event Type field, a Sequence Number field, a Relative Offset field, an Event Data field corresponding to the Event Type field, and an optional E2E-CRC field.
+    The minimum length of the IDD History Data record is 8 octets and the maximum length is 20 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Event Type
+      type: uint16
+      size: "2"
+      description: |-
+        The Event Type field contains the type of event that belongs to a history record.
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/event_type}.
+    - field: Sequence Number
+      type: uint32
+      size: "4"
+      description: |-
+        The Sequence Number field contains a unique number for each event to enable storing of events during the entire lifetime of the Insulin Delivery Device.
+        The Sequence Number is an unsigned 32-bit integer, which shall be assigned to each IDD History Data characteristic value to maintain the chronological order of the history records in the Server history database. The initial default value shall be 0.
+        The Sequence Number shall be incremented by 1 for each successive IDD History Data characteristic value. The maximum value for Sequence Number permitted is 0xFFFFFFFF.
+    - field: Relative Offset
+      type: uint16
+      size: "2"
+      description: |-
+        The Relative Offset field contains the elapsed time in seconds since the last recorded Reference Time event.
+        If the Relative Offset is 0x0000, the date time was set for the very first time or has been lost.
+        Unit is seconds.
+    - field: Recording Reason
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The Recording Reason field specifies the reason why the Reference Time event or Reference Time Base Offset event was recorded.
+        Present if Event Type is 0x000F, 0x0033
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/recording_reason}.
+    - field: Date Time
+      type: struct
+      size: "0 or 7"
+      description: |-
+        The Date Time field is in the same format and units as the Date Time characteristic as defined in [2].
+        Refer to the Date Time characteristic in \autoref{sec:org.bluetooth.characteristic.date_time}.
+        Present if Event Type is 0x000F
+    - field: Time Zone
+      type: struct
+      size: "0 or 1"
+      description: |-
+        The Time Zone field is in the same format and units as the Time Zone characteristic as defined in [2].
+        Refer to the Time Zone characteristic in \autoref{sec:org.bluetooth.characteristic.time_zone}.
+        Present if Event Type is 0x000F
+    - field: DST Offset
+      type: struct
+      size: "0 or 1"
+      description: |-
+        The DST Offset field is in the same format and units as the DST Offset characteristic as defined in [2].
+        Refer to the DST Offset characteristic in \autoref{sec:org.bluetooth.characteristic.dst_offset}.
+        Present if Event Type is 0x000F
+    - field: Base Time
+      type: struct
+      size: "0 or 7"
+      description: |-
+        The Base Time field is in the same format and units as the Date Time characteristic as defined in [2].
+        Refer to the Date Time characteristic in \autoref{sec:org.bluetooth.characteristic.date_time}.
+        Present if Event Type is 0x0033
+    - field: Time Offset
+      type: sint16
+      size: "0 or 2"
+      description: |-
+        The Time Offset field is in the same format and units as the Time Offset field of the Glucose Measurement characteristic as defined in [2].
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/time_offset}.
+        Present if Event Type is 0x0033
+    - field: Recommended Fast Amount Meal
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x003C
+    - field: Recommended Fast Amount Correction
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x003C
+    - field: Recommended Extended Amount Meal
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x003C
+    - field: Recommended Extended Amount Correction
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x003C
+    - field: Confirmed Fast Amount Meal
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x0055
+    - field: Confirmed Fast Amount Correction
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x0055
+    - field: Confirmed Extended Amount Meal
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x0055
+    - field: Confirmed Extended Amount Correction
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x0055
+    - field: Bolus ID
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        The Bolus ID field represents a unique identifier as a uint16 data type created by the Server Application for a programmed bolus.
+        Present if Event Type is 0x005A
+    - field: Bolus Type
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/bolus_type}.
+        Present if Event Type is 0x005A
+    - field: Programmed Bolus Fast Amount
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        The Programmed Bolus Fast Amount field shall be set to 0 if Bolus Type is set to "Extended".
+        Present if Event Type is 0x005A
+    - field: Programmed Bolus Extended Amount
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        The Programmed Bolus Extended Amount field shall be set to 0 if Bolus Type is set to "Fast".
+        Present if Event Type is 0x005A
+    - field: Programmed Bolus Duration
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit is minutes.
+        The Programmed Bolus Duration field shall be set to 0 if Bolus Type is set to "Fast".
+        Present if Event Type is 0x005A
+    - field: Bolus ID
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        The Bolus ID field represents a unique identifier as a uint16 data type created by the Server Application for a programmed bolus.
+        Present if Event Type is 0x0069
+    - field: Bolus Type
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/bolus_type}.
+        Present if Event Type is 0x0069
+    - field: Delivered Bolus Fast Amount
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        The Delivered Bolus Fast Amount field shall be set to 0 if Bolus Type is set to "Extended".
+        Present if Event Type is 0x0069
+    - field: Delivered Bolus Extended Amount
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        The Delivered Bolus Extended Amount field shall be set to 0 if Bolus Type is set to "Fast".
+        Present if Event Type is 0x0069
+    - field: Effective Bolus Duration
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit is minutes.
+        The Effective Bolus Duration field shall be set to 0 if Bolus Type is set to "Fast".
+        Present if Event Type is 0x0069
+    - field: Flags
+      type: boolean[8]
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/bolus_programmed_part_2_event_flags}.
+        Present if Event Type is 0x0066
+    - field: Bolus Delay Time
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit is minutes.
+        Present if Event Type is 0x0066 and bit 0 of Flags field is set to 1, otherwise excluded.
+    - field: Bolus Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Present if Event Type is 0x0066 and bit 1 of Flags field is set to 1, otherwise excluded.
+        Present if Event Type is 0x03C0
+    - field: Bolus Activation Type
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Present if Event Type is 0x0066 and bit 2 of Flags field is set to 1, otherwise excluded.
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/bolus_activation_type}.
+    - field: Flags
+      type: boolean[8]
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/bolus_delivered_part_2_event_flags}.
+        Present if Event Type is 0x0096
+    - field: Bolus Start Time Offset
+      type: uint32
+      size: "0 or 4"
+      description: |-
+        The Bolus Start Time Offset field describes the start time of the bolus delivery in relative time since the timestamp of the corresponding Bolus Programmed Part 1 of 2 event in seconds (i.e., the Bolus ID fields of these events have the same value).
+        Unit is seconds.
+        Present if Event Type is 0x0096
+    - field: Bolus Activation Type
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Present if Event Type is 0x0096 and bit 0 of Flags field is set to 1, otherwise excluded.
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/bolus_activation_type}.
+    - field: Bolus End Reason
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Present if Event Type is 0x0096 and bit 1 of Flags field is set to 1, otherwise excluded.
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/bolus_end_reason}.
+    - field: Annunciation Instance ID
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        The Annunciation Instance ID field represents a unique identifier as a uint16 data type created by the Server application for all annunciations that occur in the course of time.
+        Present if Event Type is 0x033F
+        An annunciation corresponding to this event occurred and this field represents the unique identifier of that annunciation.
+        Present if Event Type is 0x0096 and bit 2 of Flags field is set to 1, otherwise excluded.
+        Present if Event Type is 0x00AA and bit 1 of Flags field is set to 1, otherwise excluded.
+        Present if Event Type is 0x039A and bit 0 of Flags field is set to 1, otherwise excluded.
+    - field: Flags
+      type: boolean[8]
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/delivered_basal_rate_changed_event_flags}.
+        Present if Event Type is 0x0099
+    - field: Old Basal Rate Value
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        The Old Basal Rate Value field contains the previous basal rate before the change that triggered the recording of the Delivered Basal Rate Changed event.
+        Unit is IU/h (international unit per hour).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x0099
+    - field: New Basal Rate Value
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        The New Basal Rate Value field contains the new basal rate to which the previous one was changed.
+        Unit is IU/h (international unit per hour).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x0099
+    - field: Basal Delivery Context
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Present if Event Type is 0x0099 and bit 0 of Flags field is set to 1, otherwise excluded.
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/basal_delivery_context}.
+    - field: Flags
+      type: boolean[8]
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/tbr_adjustment_started_event_flags}.
+        Present if Event Type is 0x00A5, 0x00C3
+    - field: TBR Type
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/tbr_type}.
+        Present if Event Type is 0x00A5, 0x00C3, 0x03F3
+    - field: TBR Adjustment Value
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        If the TBR is absolute (i.e., TBR Type is set to "Absolute"), the TBR Adjustment Value field contains the temporary basal rate as the absolute value in IU/h. If the TBR is relative (i.e., TBR Type is set to "Relative"), the TBR Adjustment Value field contains a dimensionless scaling factor.
+        Unit is IU/h or None.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x00A5, 0x00C3, 0x03F3
+    - field: TBR Duration Programmed
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit is minutes.
+        Present if Event Type is 0x00A5, 0x00C3
+    - field: TBR Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Present if Event Type is 0x00A5 and bit 0 of Flags field is set to 1, otherwise excluded.
+        Present if Event Type is 0x00C3 and bit 0 of Flags field is set to 1, otherwise excluded.
+    - field: Flags
+      type: boolean[8]
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/tbr_adjustment_ended_event_flags}.
+        Present if Event Type is 0x00AA
+    - field: Last Set TBR Type
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/tbr_type}.
+        Present if Event Type is 0x00AA
+    - field: Effective TBR Duration
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        The Effective TBR Duration field contains the effective duration of the TBR since its start (i.e., since the time stamp of the corresponding TBR Adjustment Started event) until its termination if the programmed duration is over, the TBR is canceled by the user, or it is aborted due to an error.
+        Unit is minutes.
+        Present if Event Type is 0x00AA
+    - field: TBR End Reason
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/tbr_end_reason}.
+        Present if Event Type is 0x00AA
+    - field: Last Set TBR Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Present if Event Type is 0x00AA and bit 0 of Flags field is set to 1, otherwise excluded.
+    - field: Elapsed TBR Duration Since Last Change or Start
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        The Elapsed Time Since Last TBR Change or Start field contains the elapsed time of the TBR from its last change (i.e., since the time stamp of the previous TBR Adjustment Changed event), or if there was no previous change, from its start (i.e., since the time stamp of the corresponding TBR Adjustment Started event) until this change.
+        Unit is minutes.
+        Present if Event Type is 0x00C3
+    - field: Profile Template Type
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/profile_template_type}.
+        Present if Event Type is 0x00CC
+    - field: Old Profile Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        If a profile template was not activated previously, the value of the Old Profile Template Number is set to 0.
+        Present if Event Type is 0x00CC
+    - field: New Profile Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Present if Event Type is 0x00CC
+    - field: Basal Rate Profile Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Present if Event Type is 0x00F0
+    - field: Time Block Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The Time Block Number field is set to a value in the range of 1 till the maximum number of supported time blocks of the profile template.
+        Present if Event Type is 0x00F0, 0x0359, 0x0365, 0x036A
+    - field: Duration
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit is minutes.
+        Present if Event Type is 0x00F0, 0x0359, 0x0365, 0x036A
+    - field: Rate
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU/h (international unit per hour).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x00F0
+    - field: ISF Profile Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Present if Event Type is 0x0359
+    - field: ISF
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is mg/dL.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x0359
+    - field: I2CHO Ratio Profile Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Present if Event Type is 0x0365
+    - field: I2CHO Ratio
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is grams.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x0365
+    - field: Target Glucose Range Profile Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Present if Event Type is 0x036A
+    - field: Lower Target Glucose Limit
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is mg/dL.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x036A
+    - field: Upper Target Glucose Limit
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is mg/dL.
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x036A
+    - field: Flags
+      type: boolean[8]
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/total_daily_insulin_delivery_event_flags}.
+        Present if Event Type is 0x00FF
+    - field: Total Daily Insulin Sum of Bolus Delivered
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        The Total Daily Insulin Sum of Bolus Delivered field shall be set to 0 if the Insulin Delivery Device does not support a basal rate (Bit 1 is not set in Flags field of IDD Features).
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x00FF
+    - field: Total Daily Insulin Sum of Basal Delivered
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        The Total Daily Insulin Sum of Basal Delivered field shall be set to 0 if the Insulin Delivery Device does not support boluses (Bits 5, 6 and 7 are not set in Flags field of IDD Features).
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x00FF
+    - field: Year
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        The Year field is in the same format and has the same units as the Year field of the Date Time characteristic, as defined in [2].
+        Present if Event Type is 0x00FF
+    - field: Month
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The Month field is in the same format and has the same units as the Month field of the Date Time characteristic, as defined in [2].
+        Present if Event Type is 0x00FF
+    - field: Day
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The Day field is in the same format and has the same units as the Day field of the Date Time characteristic, as defined in [2].
+        Present if Event Type is 0x00FF
+    - field: Old Therapy Control State
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/therapy_control_state}.
+        Present if Event Type is 0x0303
+    - field: New Therapy Control State
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/therapy_control_state}.
+        Present if Event Type is 0x0303
+    - field: Old Operational State
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/operational_state}.
+        Present if Event Type is 0x030C
+    - field: New Operational State
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/operational_state}.
+        Present if Event Type is 0x030C
+    - field: Reservoir Remaining Amount
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        The Reservoir Remaining Amount field describes the remaining insulin amount in the reservoir at the time this event was recorded.
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x0330
+    - field: Flags
+      type: boolean[8]
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/annunciation_status_changed_part_1_event_flags}.
+        Present if Event Type is 0x033F
+    - field: Annunciation Type
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/annunciation_type}.
+        Present if Event Type is 0x033F
+    - field: Annunciation Status
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The Annunciation Status field represents the work status of an annunciation.
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/annunciation_status}.
+        Present if Event Type is 0x033F
+    - field: AuxInfo1
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        The AuxInfo1 field is a Binary Object auxiliary information field of an annunciation that describe details of the annunciation.
+        Present if Event Type is 0x033F and bit 0 of Flags field is set to 1, otherwise excluded.
+    - field: AuxInfo2
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        The AuxInfo2 field is a Binary Object auxiliary information field of an annunciation that describe details of the annunciation.
+        Present if Event Type is 0x033F and bit 1 of Flags field is set to 1, otherwise excluded.
+    - field: Flags
+      type: boolean[8]
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/annunciation_status_changed_part_2_event_flags}.
+        Present if Event Type is 0x0356
+    - field: AuxInfo3
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        The AuxInfo3 field is a Binary Object auxiliary information field of an annunciation that describe details of the annunciation.
+        Present if Event Type is 0x0356 and bit 0 of Flags field is set to 1, otherwise excluded.
+    - field: AuxInfo4
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        The AuxInfo4 field is a Binary Object auxiliary information field of an annunciation that describe details of the annunciation.
+        Present if Event Type is 0x0356 and bit 1 of Flags field is set to 1, otherwise excluded.
+    - field: AuxInfo5
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        The AuxInfo5 field is a Binary Object auxiliary information field of an annunciation that describe details of the annunciation.
+        Present if Event Type is 0x0356 and bit 2 of Flags field is set to 1, otherwise excluded.
+    - field: Programmed Amount
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        The Programmed Amount field contains the programmed amount of the priming in IU.
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x0395
+    - field: Flags
+      type: boolean[8]
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/priming_done_event_flags}.
+        Present if Event Type is 0x039A
+    - field: Delivered Amount
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        The Delivered Amount field contains the delivered amount of the programmed amount since the start of the priming in IU.
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x039A
+    - field: Reason of Termination
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        The Reason of Termination field specifies the reason why the Priming Done event was recorded.
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/reason_of_termination}.
+        Present if Event Type is 0x039A
+    - field: Bolus Type
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/bolus_type}.
+        Present if Event Type is 0x03C0
+    - field: Bolus Fast Amount
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        The Bolus Fast Amount field shall be set to 0 if Bolus Type is set to "Extended".
+        Present if Event Type is 0x03C0
+    - field: Bolus Extended Amount
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        The Bolus Extended Amount field shall be set to 0 if Bolus Type is set to "Fast".
+        Present if Event Type is 0x03C0
+    - field: Bolus Duration
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit is minutes.
+        The Bolus Duration field shall be set to 0 if Bolus Type is set to "Fast".
+        Present if Event Type is 0x03C0
+    - field: Flags
+      type: boolean[8]
+      size: "0 or 1"
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.idd_history_data/field/bolus_template_changed_part_2_event_flags}.
+        Present if Event Type is 0x03CF
+    - field: Bolus Delay Time
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit is minutes.
+        Present if Event Type is 0x03CF and bit 0 of Flags field is set to 1, otherwise excluded.
+    - field: TBR Template Number
+      type: uint8
+      size: "0 or 1"
+      description: |-
+        Present if Event Type is 0x03F3
+    - field: TBR Duration
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        Unit is minutes.
+        Present if Event Type is 0x03F3
+    - field: Old Max Bolus Amount
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x03FC
+    - field: New Max Bolus Amount
+      type: medfloat16
+      size: "0 or 2"
+      description: |-
+        Unit is IU (international unit).
+        Allowed values are 0 and all positive real numbers.
+        The special value NRes is used to report a value outside the available range and resolution, possibly resulting from an overflow or underflow situation.
+        The special value NaN is used to report an invalid result from a computation step or to indicate missing data due to the hardware's inability to provide a valid measurement, perhaps from sensor perturbation.
+        Present if Event Type is 0x03FC
+    - field: E2E-CRC
+      type: uint16
+      size: "0 or 2"
+      description: |-
+        CRC calculated over all fields of the characteristic payload except for the E2E-CRC field itself.
+        Present if E2E-Protection Supported bit in Flags field of IDD Features characteristic is set to 1, otherwise excluded.
+        A conditional E2E-Counter field is not included in the IDD History Data characteristic because the Sequence Number field contains an ascending counter for the event records.
+  fields:
+    - name: Event Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x000F"
+          description: Reference Time
+        - value: "0x0033"
+          description: Reference Time Base Offset
+        - value: "0x003C"
+          description: Bolus Calculated Part 1 of 2
+        - value: "0x0055"
+          description: Bolus Calculated Part 2 of 2
+        - value: "0x005A"
+          description: Bolus Programmed Part 1 of 2
+        - value: "0x0066"
+          description: Bolus Programmed Part 2 of 2
+        - value: "0x0069"
+          description: Bolus Delivered Part 1 of 2
+        - value: "0x0096"
+          description: Bolus Delivered Part 2 of 2
+        - value: "0x0099"
+          description: Delivered Basal Rate Changed
+        - value: "0x00A5"
+          description: TBR Adjustment Started
+        - value: "0x00AA"
+          description: TBR Adjustment Ended
+        - value: "0x00C3"
+          description: TBR Adjustment Changed
+        - value: "0x00CC"
+          description: Profile Template Activated
+        - value: "0x00F0"
+          description: Basal Rate Profile Template Time Block Changed
+        - value: "0x00FF"
+          description: Total Daily Insulin Delivery
+        - value: "0x0303"
+          description: Therapy Control State Changed
+        - value: "0x030C"
+          description: Operational State Changed
+        - value: "0x0330"
+          description: Reservoir Remaining Amount Changed
+        - value: "0x033F"
+          description: Annunciation Status Changed Part 1 of 2
+        - value: "0x0356"
+          description: Annunciation Status Changed Part 2 of 2
+        - value: "0x0359"
+          description: ISF Profile Template Time Block Changed
+        - value: "0x0365"
+          description: I2CHO Ratio Profile Template Time Block Changed
+        - value: "0x036A"
+          description: Target Glucose Range Profile Template Time Block Changed
+        - value: "0x0395"
+          description: Priming Started
+        - value: "0x039A"
+          description: Priming Done
+        - value: "0x03A6"
+          description: Data Corruption
+        - value: "0x03A9"
+          description: Pointer Event
+        - value: "0x03C0"
+          description: Bolus Template Changed Part 1 of 2
+        - value: "0x03CF"
+          description: Bolus Template Changed Part 2 of 2
+        - value: "0x03F3"
+          description: TBR Template Changed
+        - value: "0x03FC"
+          description: Max Bolus Amount Changed
+        - value: 0xF000–0xFFF0
+          description: Manufacturer Reserved Hamming Code Value Range
+        - value: All not already defined Hamming code values within 0x0000 and 0xFFFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Recording Reason
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined — The reason is undetermined.
+        - value: "0x33"
+          description: Set Date Time
+        - value: "0x3C"
+          description: Periodic Recording
+        - value: "0x55"
+          description: Date Time Loss
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Time Offset
+      description: See \autoref{sec:org.bluetooth.characteristic.glucose_measurement/field/time_offset}.
+    - name: Bolus Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined
+        - value: "0x33"
+          description: Fast
+        - value: "0x3C"
+          description: Extended
+        - value: "0x55"
+          description: Multiwave
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Bolus Activation Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined — The activation type is undetermined.
+        - value: "0x33"
+          description: Manual Bolus — The bolus was defined by the user.
+        - value: "0x3C"
+          description: Recommended Bolus — The bolus was recommended by a calculation algorithm (e.g., a bolus calculator) and confirmed by the user.
+        - value: "0x55"
+          description: Manually Changed Recommended Bolus — The user changed a recommended bolus.
+        - value: "0x5A"
+          description: Commanded Bolus — The bolus was activated without user interaction (e.g., by an APDS).
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Bolus End Reason
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined — The reason why the bolus ended is undetermined.
+        - value: "0x33"
+          description: Programmed Amount Delivered — The programmed amount was delivered completely.
+        - value: "0x3C"
+          description: Canceled — The bolus was canceled by an interaction (e.g., by the user via a remote control or the device itself).
+        - value: "0x55"
+          description: Error Abort — The bolus was aborted due to an error.
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: TBR Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined
+        - value: "0x33"
+          description: Absolute
+        - value: "0x3C"
+          description: Relative
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Basal Delivery Context
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined — The basal delivery context is undetermined.
+        - value: "0x33"
+          description: Device Based — The current basal rate was set directly on the Insulin Delivery Device.
+        - value: "0x3C"
+          description: Remote Control — The current basal rate was set via a remote control (i.e., an external device).
+        - value: "0x55"
+          description: Artificial Pancreas (AP) Controller — The current basal rate was set by an AP Controller as part of an Artificial Pancreas Device System (APDS).
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: TBR End Reason
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined — The reason why the TBR ended is undetermined.
+        - value: "0x33"
+          description: Programmed Duration Over — The programmed duration of the TBR is over.
+        - value: "0x3C"
+          description: Canceled — The TBR was canceled by an interaction.
+        - value: "0x55"
+          description: Error Abort — The TBR was aborted due to an error.
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Profile Template Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined
+        - value: "0x33"
+          description: Basal Rate Profile Template
+        - value: "0x3C"
+          description: ISF Profile Template
+        - value: "0x55"
+          description: I2CHO Ratio Profile Template
+        - value: "0x5A"
+          description: Target Glucose Range Profile Template
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Therapy Control State
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined
+        - value: "0x33"
+          description: Stop
+        - value: "0x3C"
+          description: Pause
+        - value: "0x55"
+          description: Run
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Operational State
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined
+        - value: "0x33"
+          description: Off
+        - value: "0x3C"
+          description: Standby
+        - value: "0x55"
+          description: Preparing
+        - value: "0x5A"
+          description: Priming
+        - value: "0x66"
+          description: Waiting
+        - value: "0x96"
+          description: Ready
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Annunciation Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x000F"
+          description: System Issue
+        - value: "0x0033"
+          description: Mechanical Issue
+        - value: "0x003C"
+          description: Occlusion Detected
+        - value: "0x0055"
+          description: Reservoir Issue
+        - value: "0x005A"
+          description: Reservoir Empty
+        - value: "0x0066"
+          description: Reservoir Low
+        - value: "0x0069"
+          description: Priming Issue
+        - value: "0x0096"
+          description: Infusion Set Incomplete
+        - value: "0x0099"
+          description: Infusion Set Detached
+        - value: "0x00A5"
+          description: Power Source Insufficient
+        - value: "0x00AA"
+          description: Battery Empty
+        - value: "0x00C3"
+          description: Battery Low
+        - value: "0x00CC"
+          description: Battery Medium
+        - value: "0x00F0"
+          description: Battery Full
+        - value: "0x00FF"
+          description: Temperature out of range
+        - value: "0x0303"
+          description: Air pressure out of range
+        - value: "0x030C"
+          description: Bolus Canceled
+        - value: "0x0330"
+          description: TBR Over
+        - value: "0x033F"
+          description: TBR Canceled
+        - value: "0x0356"
+          description: Max Delivery
+        - value: "0x0359"
+          description: Date Time Issue
+        - value: "0x0365"
+          description: Temperature
+        - value: "0xF000–0xFFF0"
+          description: Manufacturer Reserved Hamming Code Value Range
+        - value: All not already defined Hamming code values within 0x0000 and 0xFFFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Annunciation Status
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined
+        - value: "0x33"
+          description: Pending
+        - value: "0x3C"
+          description: Snoozed
+        - value: "0x55"
+          description: Confirmed
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Reason of Termination
+      description: The values of this field are defined below.
+      values:
+        - value: "0x0F"
+          description: Undetermined — The termination reason of the priming is undetermined.
+        - value: "0x33"
+          description: Aborted by User
+        - value: "0x3C"
+          description: Programmed Amount Reached
+        - value: "0x55"
+          description: Error Abort
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          description: RFU
+        - value: All other values
+          description: Prohibited
+    - name: Bolus Programmed Part 2 Event Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Bolus Delay Time Present
+            If this bit is set, the Bolus Delay Time field is present.
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            Bolus Template Number Present
+            If this bit is set, the Bolus Template Number field is present.
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            Bolus Activation Type Present
+            If this bit is set, the Bolus Activation Type field is present.
+            0 = False
+            1 = True
+        - bit: "3"
+          description: |-
+            Bolus Delivery Reason Correction
+            If this bit is set, the reason for the bolus is the correction of a high blood glucose level.
+            0 = False
+            1 = True
+        - bit: "4"
+          description: |-
+            Bolus Delivery Reason Meal
+            If this bit is set, the reason for the bolus is to cover the intake of food.
+            0 = False
+            1 = True
+        - bit: 5–7
+          description: Reserved for Future Use
+    - name: Bolus Delivered Part 2 Event Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Bolus Activation Type Present
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            Bolus End Reason Present
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            Annunciation Instance ID Present
+            0 = False
+            1 = True
+        - bit: 3–7
+          description: Reserved for Future Use
+    - name: Delivered Basal Rate Changed Event Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Basal Delivery Context Present
+            0 = False
+            1 = True
+        - bit: 1–7
+          description: Reserved for Future Use
+    - name: TBR Adjustment Started Event Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            TBR Template Number Present
+            0 = False
+            1 = True
+        - bit: 1–7
+          description: Reserved for Future Use
+    - name: TBR Adjustment Ended Event Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Last Set TBR Template Number Present
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            Annunciation Instance ID Present
+            0 = False
+            1 = True
+        - bit: 2–7
+          description: Reserved for Future Use
+    - name: Total Daily Insulin Delivery Event Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Date Time Changed Warning
+            If this bit is set, the date time of the Insulin Delivery Device will have changed since the last recorded Total Daily Insulin Delivery Event.
+            0 = False
+            1 = True
+        - bit: 1–7
+          description: Reserved for Future Use
+    - name: Annunciation Status Changed Part 1 Event Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            AuxInfo1 Present
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            AuxInfo2 Present
+            0 = False
+            1 = True
+        - bit: 2–7
+          description: Reserved for Future Use
+    - name: Annunciation Status Changed Part 2 Event Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            AuxInfo3 Present
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            AuxInfo4 Present
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            AuxInfo5 Present
+            0 = False
+            1 = True
+        - bit: 3–7
+          description: Reserved for Future Use
+    - name: Priming Done Event Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Annunciation Instance ID Present
+            0 = False
+            1 = True
+        - bit: 1–7
+          description: Reserved for Future Use
+    - name: Bolus Template Changed Part 2 Event Flags
+      description: |-
+        The bits of this field are defined below.
+        0 = False and 1 = True
+      values:
+        - bit: "0"
+          description: |-
+            Bolus Delay Time Present
+            If this bit is set, the Bolus Delay Time field is present.
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            Bolus Delivery Reason Correction
+            If this bit is set, the reason for the bolus is the correction of a high blood glucose level.
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            Bolus Delivery Reason Meal
+            If this bit is set, the reason for the bolus is to cover the intake of food.
+            0 = False
+            1 = True
+        - bit: 3–7
+          description: Reserved for Future Use

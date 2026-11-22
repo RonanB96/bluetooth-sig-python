@@ -1,0 +1,51 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Device Time Service 1.0, 3.1 Device Time Feature characteristic (Tables 3.2–3.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.device_time_feature
+  name: Device Time Feature
+  description: |-
+    The DT Feature characteristic is used to describe the supported features of the Server.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: E2E_CRC
+      type: uint16
+      size: "2"
+      description: |-
+        CRC calculated over all data fields except for the E2E_CRC field itself.
+        A value of 0xFFFF represents "E2E-CRC feature is not supported".
+    - field: DT_Features
+      type: boolean[16]
+      size: "2"
+      description: See \autoref{sec:org.bluetooth.characteristic.device_time_feature/field/dt_features}.
+  fields:
+    - name: DT_Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: E2E-CRC
+        - bit: "1"
+          description: Time Change Logging
+        - bit: "2"
+          description: Base Time Second-Fractions
+        - bit: "3"
+          description: Time or Date Displayed to User
+        - bit: "4"
+          description: Displayed Formats
+        - bit: "5"
+          description: Displayed Formats Changeable
+        - bit: "6"
+          description: Separate User Timeline
+        - bit: "7"
+          description: Authorization Required
+        - bit: "8"
+          description: RTC Drift Tracking
+        - bit: "9"
+          description: Epoch Year 1900
+        - bit: "10"
+          description: Epoch Year 2000
+        - bit: "11"
+          description: Propose Non-Logged Time Adjustment Limit
+        - bit: "12"
+          description: Retrieve Active Time Adjustments
+        - bit: 13–15
+          description: Reserved for Future Use

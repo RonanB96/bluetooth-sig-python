@@ -1,0 +1,30 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Telephone Bearer Service 1.0, 3.13 Call Control Point Optional Opcodes (Table 3.12).
+characteristic:
+  identifier: org.bluetooth.characteristic.call_control_point_optional_opcodes
+  name: Call Control Point Optional Opcodes
+  description: |-
+    The Call Control Point Optional Opcodes characteristic is 2 octets long and describes the optional opcodes of the Call Control Point. The bits are defined in Table 3.12. If the optional opcode is supported by the server, the associated bit shall be set to 1; otherwise, the bit shall be set to 0. RFU bits in the Call Control Point Optional Opcodes characteristic shall be set to 0.
+    When read, the Call Control Point Optional Opcodes characteristic returns a value that is used by a client to determine which optional Call Control Point opcodes are supported by the server. The bits of the Call Control Point Optional Opcodes characteristic are static during a connection.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Call Control Point Optional Opcodes
+      type: boolean[16]
+      size: "2"
+      description: See \autoref{sec:org.bluetooth.characteristic.call_control_point_optional_opcodes/field/call_control_point_optional_opcodes}.
+  fields:
+    - name: Call Control Point Optional Opcodes
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Local Hold
+            0 = Local Hold and Local Retrieve Call Control Point Opcodes not supported
+            1 = Local Hold and Local Retrieve Call Control Point Opcodes supported
+        - bit: "1"
+          description: |-
+            Join
+            0 = Join Call Control Point Opcode not supported
+            1 = Join Call Control Point Opcode supported
+        - bit: 2–15
+          description: Reserved for Future Use

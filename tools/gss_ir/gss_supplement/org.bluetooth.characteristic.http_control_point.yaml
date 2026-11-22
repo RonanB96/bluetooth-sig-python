@@ -1,0 +1,43 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HTTP Proxy Service 1.0, 3.4 HTTP Control Point Characteristic, Table 3.2.
+characteristic:
+  identifier: org.bluetooth.characteristic.http_control_point
+  name: HTTP Control Point
+  description: |-
+    The HTTP Control Point is used to initiate a request to send an HTTP request message from the device containing the HTTP Proxy Service, acting as an HTTP Client, and an HTTP Server.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: HTTP Control Point
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.http_control_point/field/http_control_point}.
+  fields:
+    - name: HTTP Control Point
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Reserved for Future Use
+        - value: "0x01"
+          description: HTTP GET Request
+        - value: "0x02"
+          description: HTTP HEAD Request
+        - value: "0x03"
+          description: HTTP POST Request
+        - value: "0x04"
+          description: HTTP PUT Request
+        - value: "0x05"
+          description: HTTP DELETE Request
+        - value: "0x06"
+          description: HTTPS GET Request
+        - value: "0x07"
+          description: HTTPS HEAD Request
+        - value: "0x08"
+          description: HTTPS POST Request
+        - value: "0x09"
+          description: HTTPS PUT Request
+        - value: "0x0A"
+          description: HTTPS DELETE Request
+        - value: "0x0B"
+          description: HTTP Request Cancel
+        - value: 0x0C–0xFF
+          description: Reserved for Future Use

@@ -1,0 +1,23 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HID Service Specification 1.1, 2.4 Protocol Mode characteristic, Table 2.2.
+characteristic:
+  identifier: org.bluetooth.characteristic.protocol_mode
+  name: Protocol Mode
+  description: |-
+    The Protocol Mode characteristic is used to expose the current protocol mode of the HID Service with which it is associated, or to set the desired protocol mode of the HID Service.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Protocol Mode
+      type: uint8
+      size: "1"
+      description: The current protocol mode of the HID Service.
+  fields:
+    - name: Protocol Mode
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Boot Protocol Mode
+        - value: "0x01"
+          description: Report Protocol Mode
+        - value: 0x02–0xFF
+          description: Reserved for Future Use

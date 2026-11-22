@@ -1,0 +1,16 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Telephone Bearer Service 1.0, Section 3.4.
+characteristic:
+  identifier: org.bluetooth.characteristic.bearer_uri_schemes_supported_list
+  name: Bearer URI Schemes Supported List
+  description: |-
+    The Bearer URI Schemes Supported List characteristic returns the schemes that are supported by this telephone bearer.
+    The characteristic shall be a comma-delimited list of supported schemes expressed as a UTF-8 string. Examples of common URI schemes can be found in [3]. An example characteristic value is the UTF-8 string "tel,sip,skype".
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Bearer URI Schemes Supported List
+      type: utf8s
+      size: variable
+      description: |-
+        UTF-8 string
+        Comma-delimited list of supported URI schemes.

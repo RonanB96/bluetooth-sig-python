@@ -1,0 +1,18 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Telephone Bearer Service 1.0, Section 3.5.
+characteristic:
+  identifier: org.bluetooth.characteristic.bearer_signal_strength
+  name: Bearer Signal Strength
+  description: |-
+    The Bearer Signal Strength characteristic is 1 octet, returns the level of the signal of the telephone bearer, and can hold a value from 0 to 100, or 255. Values 101 to 254 are RFU. A value of 0 indicates that there is no service, a value of 100 indicates the maximum signal strength, and a value of 255 indicates that the signal strength is unavailable or has no meaning for this particular bearer. The meaning of the values between 1 to 99 is left up to the implementation.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Bearer Signal Strength
+      type: uint8
+      size: "1"
+      description: |-
+        0: No service
+        1–99: Signal strength level; meaning is left up to the implementation
+        100: Maximum signal strength
+        101–254: RFU
+        255: Signal strength is unavailable or has no meaning for this particular bearer

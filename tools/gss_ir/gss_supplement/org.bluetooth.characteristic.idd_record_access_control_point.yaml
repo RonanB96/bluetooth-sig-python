@@ -1,0 +1,192 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Insulin Delivery Service 1.0.2, Section 3.9 (Tables 3.21–3.27).
+characteristic:
+  identifier: org.bluetooth.characteristic.idd_record_access_control_point
+  name: IDD Record Access Control Point
+  description: |-
+    The IDD Record Access Control Point (IDD RACP) is based on the Record Access Control Point (RACP) and is defined in [6]. The IDD RACP is used for basic management and access of the history database of the Server including historical data of the insulin therapy, device state changes, and annunciations.
+    In comparison to the RACP, the values of the IDD RACP Op Codes (see Section 3.9.3.1), Operators (see Section 3.9.3.2), and the Response Code of Success (see Section 3.9.3.3) are defined with Hamming distances to cover the aspect of functional safety, which must be implemented by Sensor and Collector Applications for Insulin Delivery Devices (see Section 5). Furthermore, the IDD RACP enables E2E-Protection (see Section 1.9) by additional E2E-Counter and E2E-CRC fields that are attached if the device supports E2E-Protection.
+    If the Client executes a procedure on the IDD Record Access Control Point, the Server shall send the requested information by notifications of the IDD History Data characteristic (see Section 3.10) and shall indicate the IDD Record Access Control Point to confirm the end of executed procedure.
+    If the device supports E2E-Protection (E2E-Protection Supported bit is set in Flags field of IDD Features), an E2E-Counter field and an E2E-CRC field shall be included in the IDD Record Access Control Point characteristic.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Op Code
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.idd_record_access_control_point/field/op_code}.
+    - field: Operator
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.idd_record_access_control_point/field/operator}.
+    - field: Operand
+      type: struct
+      size: 0 to 9
+      description: |-
+        Mandatory depending on Operator, otherwise excluded.
+        See \autoref{sec:org.bluetooth.characteristic.idd_record_access_control_point/field/op_code}, \autoref{sec:org.bluetooth.characteristic.idd_record_access_control_point/field/operator}, and \autoref{sec:org.bluetooth.characteristic.idd_record_access_control_point/field/operand}.
+        Byte order for filter parameters is LSO…MSO.
+    - field: E2E-Counter
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+    - field: E2E-CRC
+      type: uint16
+      size: 0 or 2
+      description: |-
+        CRC calculated over all fields of the characteristic payload, including the E2E-Counter field, except for the E2E-CRC field itself.
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+  fields:
+    - name: Op Code
+      description: The Op Code values and associated Operator and Operand values are defined below.
+      table_caption: IDD RACP Op Codes
+      values:
+        - op_code_value: "0x0F"
+          definition: Response Code
+          operator: Null (value of 0x0F from Table 3.26 )
+          operand: Request Op Code, Response Code Value (see Table 3.27 )
+          description: Response to corresponding Op Code.
+        - op_code_value: "0x33"
+          definition: Report Stored Records
+          operator: An appropriate value from Table 3.26
+          operand: Filter parameters (as appropriate to Operator and this service)
+          description: Gets the selected set of stored history records based on the filter criteria specified in the Operator and Operand. The response to this control point is Response Code.
+        - op_code_value: "0x3C"
+          definition: Delete Stored Records
+          operator: An appropriate value from Table 3.26
+          operand: Filter parameters (as appropriate to Operator and this service)
+          description: Deletes the specified history records based on Operator and Operand values. The response to this control point is Response Code.
+        - op_code_value: "0x55"
+          definition: Abort Operation
+          operator: Null (value of 0x0F from Table 3.26 )
+          operand: Not included
+          description: Stops any IDD RACP procedures currently in progress. The response to this control point is Response Code.
+        - op_code_value: "0x5A"
+          definition: Report Number of Stored Records
+          operator: An appropriate value from Table 3.26
+          operand: Filter parameters (as appropriate to Operator and this service)
+          description: Calculates and responds with a history record count based on filter criteria and Operator and Operand values. The normal response to this control point is Report Number Of Stored Records Response . For error conditions, the response is Response Code .
+        - op_code_value: "0x66"
+          definition: Number of Stored Records Response
+          operator: Null (value of 0x0F from Table 3.26 )
+          operand: Number of Records (Field size defined by this service)
+          description: This is the normal response to Report Number Of Stored Records .
+        - op_code_value: All not already defined Hamming code values within 0x00 and 0xFF
+          definition: RFU
+          operator: N/A
+          operand: N/A
+          description: All values in this table which are not defined above and do match a Hamming code value in the range of 0x00 and 0xFF are reserved for future use.
+        - op_code_value: All other values
+          definition: Prohibited
+          operator: N/A
+          operand: N/A
+          description: All values not defined above are prohibited.
+    - name: Operator
+      description: The values of this field are defined below.
+      table_caption: IDD RACP Operators
+      values:
+        - value: "0x0F"
+          definition: Null
+          description: Value used for Op Codes that do not have an Operator.
+        - value: "0x33"
+          definition: All records
+          description: All stored history records.
+        - value: "0x3C"
+          definition: Less than or equal to
+          description: History records less than or equal to specified Operand.
+        - value: "0x55"
+          definition: Greater than or equal to
+          description: History records greater than or equal to specified Operand.
+        - value: "0x5A"
+          definition: Within range of (inclusive)
+          description: Inclusive range of history records specified by Operand.
+        - value: "0x66"
+          definition: First record
+          description: Oldest history record.
+        - value: "0x69"
+          definition: Last record
+          description: Most recent history record.
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          definition: RFU
+          description: All values in this table which are not defined above and do match a Hamming code value in the range of 0x00 and 0xFF are reserved for future use.
+        - value: All other values
+          definition: Prohibited
+          description: All values not defined above are prohibited.
+    - name: Operand
+      description: |-
+        The format and content of the Operand field depends on the Op Code and Operator (see Table 3.22 and Table 3.23 ).
+        Present if Op Code is 0x0F
+        Present if Op Code is 0x66
+        Present if Operator is 0x3C
+        Present if Operator is 0x55
+        Present if Operator is 0x5A
+        For Op Code 0x0F (Response Code), the Operand comprises Request Op Code (uint8) followed by Response Code Value (uint8); size is 2 octets.
+        For Op Code 0x66 (Number of Stored Records Response), the Operand is the number of records as uint32; size is 4 octets.
+        For filter parameters, the Filter Type (uint8, see Table 3.24 ) is the least significant octet of the Operand, followed by Sequence Number filter parameter values as uint32 in LSO…MSO byte order.
+        For Operator 0x3C (Less than or equal to) or 0x55 (Greater than or equal to), the Operand is Filter Type followed by one uint32 filter parameter; size is 5 octets.
+        For Operator 0x5A (Within range of (inclusive)), the Operand is Filter Type followed by minimum uint32 and maximum uint32; size is 9 octets.
+        For Operator 0x33 (All records), 0x66 (First record), or 0x69 (Last record), no Operand is used; size is 0 octets.
+    - name: Filter Type
+      description: The values of this field are defined below.
+      table_caption: IDD RACP Filter Types
+      values:
+        - value: "0x0F"
+          description: |-
+            Sequence Number
+            The history records are filtered based on their Sequence Number
+        - value: "0x33"
+          description: |-
+            Sequence Number filtered by Reference Time Event
+            The history records are filtered based on their Sequence Number and on both Event Types Reference Time Event and Reference Time Base Offset Event
+        - value: "0x3C"
+          description: |-
+            Sequence Number filtered by Non-Reference Time Event
+            The history records are filtered based on their Sequence Number and on all Event Types that are not Reference Time Event and not Reference Time Base Offset Event
+        - value: All not already defined Hamming code values within 0x00 and 0xFF
+          definition: RFU
+          description: All values in this table which are not defined above and do match a Hamming code value in the range of 0x00 and 0xFF are reserved for future use.
+        - value: All other values
+          definition: Prohibited
+          description: All values not defined above are prohibited.
+    - name: Response Code Values
+      description: The Response Code Values associated with the IDD Record Access Control Point are defined below.
+      section_title: Response Code Values
+      table_caption: IDD RACP Response Code Values
+      values:
+        - response_code_value: "0x02"
+          definition: Op Code not supported
+          description: Error response if unsupported Op Code is received (e.g., Op Code from RFU range).
+        - response_code_value: "0x03"
+          definition: Invalid Operator
+          description: Error response if Operator received does not meet the requirements of the service (e.g., Null was expected, Operator from Prohibited range).
+        - response_code_value: "0x04"
+          definition: Operator not supported
+          description: Error response if unsupported Operator is received (e.g., Operator from RFU range).
+        - response_code_value: "0x05"
+          definition: Invalid Operand
+          description: Error response if Operand received does not meet the requirements of the service (e.g., Operand from Prohibited range).
+        - response_code_value: "0x06"
+          definition: No records found
+          description: |-
+            Error response if a request for reporting records resulted in no records meeting the criteria. When using Op Code 0x04 (Report number of stored records), Op Code 0x05 (Number of stored records response) is used with 0 as the Operand to report that zero records are found.
+        - response_code_value: "0x07"
+          definition: Abort unsuccessful
+          description: Error response if request for Abort is unsuccessful.
+        - response_code_value: "0x08"
+          definition: Procedure not completed
+          description: Error response if procedure cannot be completed for any reason that is not covered by another error response in this table.
+        - response_code_value: "0x09"
+          definition: Operand not supported
+          description: Error response if unsupported Operand is received (e.g., Operand from RFU range).
+        - response_code_value: "0x0A"
+          definition: Procedure not applicable
+          description: Error response if the procedure cannot be executed because it is not applicable in the current Server Application context.
+        - response_code_value: "0xF0"
+          definition: Success
+          description: Normal response for successful procedure in Insulin Delivery Service.
+        - response_code_value: All not already defined values with a Hamming distance of 4 bits to 0xF0
+          definition: RFU
+          description: All not already defined values with a Hamming distance of 4 bits to Response Code Value of Success = 0xF0 are reserved for future use.
+        - response_code_value: All other values
+          definition: Prohibited
+          description: Values not having a Hamming distance of 4 bits to Response Code Value of Success = 0xF0 shall not be defined and are prohibited.

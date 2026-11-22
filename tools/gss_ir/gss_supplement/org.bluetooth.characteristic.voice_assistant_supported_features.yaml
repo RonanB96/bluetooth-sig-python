@@ -1,0 +1,26 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Voice Assistant Service 1.0, Section 3.9 (Tables 3.12 and 3.13).
+characteristic:
+  identifier: org.bluetooth.characteristic.voice_assistant_supported_features
+  name: Voice Assistant Supported Features
+  description: |-
+    The Voice Assistant Supported Features characteristic is a bitmap that indicates the capabilities and features supported by the VA.
+    The Voice Assistant Supported Features characteristic returns its associated value when read by a client using the GATT Read Characteristic Value sub-procedure.
+    The Session Flags Enabled bit indicates to the client that the Voice Assistant Session Flag characteristic is enabled, i.e., the bit fields are valid. The Voice Assistant Session Flag characteristic shall not be notified or changed when the Session Flags Enabled bit is not set.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: VA Supported Features
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.voice_assistant_supported_features/field/va_supported_features}.
+  fields:
+    - name: VA Supported Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Session Flags Enabled
+            0 = VA Session flag values are not enabled (i.e., they do not convey valid information about the VA Session)
+            1 = VA Session flag values are enabled (i.e., they convey valid information about the VA Session)
+        - bit: 1–7
+          description: RFU

@@ -1,0 +1,76 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Fitness Machine Service 1.0.1, 4.10 Training Status (Tables 4.11–4.13).
+characteristic:
+  identifier: org.bluetooth.characteristic.training_status
+  name: Training Status
+  description: |-
+    The Training Status characteristic shall be used by the Server to send the training status information to the Client. Included in the characteristic value is a Flags field (for showing the presence of optional fields), a Training Status field, and depending upon the contents of the Flags field, also a Training Status String.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Flags
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.training_status/field/flags}.
+    - field: Training Status
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.training_status/field/training_status}.
+    - field: Training Status String
+      type: utf8s
+      size: variable
+      description: |-
+        UTF-8 string
+        Present if bit 0 of Flags field is set to 1
+  fields:
+    - name: Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Training Status String present
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            Extended String present
+            0 = False
+            1 = True
+        - bit: 2–7
+          description: Reserved for Future Use
+    - name: Training Status
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Other
+        - value: "0x01"
+          description: Idle
+        - value: "0x02"
+          description: Warming Up
+        - value: "0x03"
+          description: Low Intensity Interval
+        - value: "0x04"
+          description: High Intensity Interval
+        - value: "0x05"
+          description: Recovery Interval
+        - value: "0x06"
+          description: Isometric
+        - value: "0x07"
+          description: Heart Rate Control
+        - value: "0x08"
+          description: Fitness Test
+        - value: "0x09"
+          description: Speed Outside of Control Region - Low (increase speed to return to controllable region)
+        - value: "0x0A"
+          description: Speed Outside of Control Region - High (decrease speed to return to controllable region)
+        - value: "0x0B"
+          description: Cool Down
+        - value: "0x0C"
+          description: Watt Control
+        - value: "0x0D"
+          description: Manual Mode (Quick Start)
+        - value: "0x0E"
+          description: Pre-Workout
+        - value: "0x0F"
+          description: Post-Workout
+        - value: 0x10–0xFF
+          description: Reserved for Future Use

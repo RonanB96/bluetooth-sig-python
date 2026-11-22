@@ -1,0 +1,64 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Indoor Positioning Service 1.0, Section 3.8 (Table 3.4).
+characteristic:
+  identifier: org.bluetooth.characteristic.uncertainty
+  name: Uncertainty
+  description: |-
+    The Uncertainty Characteristic consists of several values. The meaning of each bit is described in Table 3.4.
+    The format of the characteristic is an unsigned integer of size 8 bits.
+    The structure of this characteristic is defined below.
+  size_in_bits: true
+  structure:
+    - field: Stationary
+      type: uint1
+      size: "1"
+      description: |-
+        This bit indicates whether the device broadcasting the location information has a stationary location or is mobile.
+        See \autoref{sec:org.bluetooth.characteristic.uncertainty/field/stationary}.
+    - field: Update Time
+      type: uint3
+      size: "3"
+      description: |-
+        This value (x) encodes the time (t) elapsed since the last update of the device's position, measured in seconds, where t = round(e^{1.35^x}).
+        x = 0 indicates 3 seconds or less.
+        x = 7 indicates 3541 seconds or more.
+        The Server shall ignore any value set by a client and update the value by mapping the elapsed time to the nearest encoded value.
+        Round shall be performed according to [4].
+        Note: If stationary is set, a client can ignore this value.
+    - field: Precision
+      type: uint3
+      size: "3"
+      description: |-
+        This value (y) represents a scale, which maps the precision of the location information in the Server.
+        See \autoref{sec:org.bluetooth.characteristic.uncertainty/field/precision}.
+    - field: Reserved for Future Use
+      type: uint1
+      size: "1"
+      description: Reserved for Future Use (RFU)
+  fields:
+    - name: Stationary
+      description: The values of this field are defined below.
+      values:
+        - value: "0"
+          description: stationary
+        - value: "1"
+          description: mobile
+    - name: Precision
+      description: The values of this field are defined below.
+      values:
+        - value: "0"
+          description: "<0.1m, Ideal"
+        - value: "1"
+          description: 0.1-1m, Excellent
+        - value: "2"
+          description: 1-2m, Good
+        - value: "3"
+          description: 2-5m, Moderate
+        - value: "4"
+          description: 5-10m, Fair
+        - value: "5"
+          description: 10-50m, Poor
+        - value: "6"
+          description: ">50m, Very Poor"
+        - value: "7"
+          description: N/A, RFU

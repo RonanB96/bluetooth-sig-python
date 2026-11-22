@@ -1,0 +1,79 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Industrial Measurement Device Service 1.0, Section 3.2 (Tables 3.14–3.15; Section 3.1.2.1.2 Table 3.5).
+characteristic:
+  identifier: org.bluetooth.characteristic.imd_status
+  name: IMD Status
+  description: |-
+    The status of an IMD Measurement characteristic is considered changed if a limit specified in either the Manufacturer Limits descriptor or in the Process Tolerances descriptor has been reached. If there is at least one IMD Measurement characteristic the status of which can change, the IMD Server may expose a single instance of the IMD Status characteristic.
+    The format of the IMD Status characteristic when notified is specified in Table 3.14.
+    If a Red Limit is exceeded, then both the Yellow Exceeded bit and the Red Limit exceeded bit will be set. This applies to the high and low limits and to the Manufacturer-defined and User-defined limits.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Status
+      type: boolean[16]
+      size: "2"
+      description: |-
+        Measured value status (see Section 3.2.1.1).
+        See \autoref{sec:org.bluetooth.characteristic.imd_status/field/status}.
+    - field: UUID
+      type: uint16
+      size: "2"
+      description: |-
+        UUID of the IMD Measurement characteristic that caused the status change (see Section 3.1).
+    - field: Sampling Function
+      type: uint8
+      size: "1"
+      description: |-
+        Sampling function of the IMD Measurement characteristic that caused the status change (see Section 3.1.2.1.2).
+        See \autoref{sec:org.bluetooth.characteristic.imd_status/field/sampling_function}.
+        If the IMD Measurement Description descriptor for the IMD Measurement characteristic that resulted in the status change is not present, or if the Sampling Function field in the IMD Measurement Description descriptor is not present, then the IMD Server shall set the Sampling Function field in the notification to the default value (0x01 Instantaneous).
+    - field: Description
+      type: uint16
+      size: "2"
+      description: |-
+        Description of the IMD Measurement characteristic that caused the status change (see Section 3.1.2.1.5).
+        The assigned numbers for this field are enumerated in the Bluetooth SIG GATT Characteristic Presentation Format Description table in \RefRef{assigned_numbers}.
+        If the IMD Measurement Description descriptor for the IMD Measurement characteristic that resulted in the status change is not present, or if the Description field in the corresponding IMD Measurement Description descriptor is not present, then the IMD Server shall set the Description field in the notification to the default value (0x0000 unknown).
+  fields:
+    - name: Status
+      description: |-
+        The Status field identifies the status of the IMD when the measurement was taken as defined in Table 3.15. The status values are represented in a bit field.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: User-defined low Red Limit of the process tolerance value exceeded
+        - bit: "1"
+          description: User-defined low Yellow Limit of the process tolerance value exceeded
+        - bit: "2"
+          description: User-defined high Yellow Limit of the process tolerance value exceeded
+        - bit: "3"
+          description: User-defined high Red Limit of the process tolerance value exceeded
+        - bit: "4"
+          description: Manufacturer-defined low Red Limit exceeded
+        - bit: "5"
+          description: Manufacturer-defined low Yellow Limit exceeded
+        - bit: "6"
+          description: Manufacturer-defined high Yellow Limit exceeded
+        - bit: "7"
+          description: Manufacturer-defined high Red Limit exceeded
+        - bit: 8–15
+          description: Reserved for Future Use
+    - name: Sampling Function
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Unspecified
+        - value: "0x01"
+          description: Instantaneous
+        - value: "0x02"
+          description: Arithmetic mean since the beginning of the work cycle
+        - value: "0x03"
+          description: Root Mean Square (RMS) value since the beginning of the work cycle
+        - value: "0x04"
+          description: Maximum value in the current work cycle
+        - value: "0x05"
+          description: Minimum value in the current work cycle
+        - value: "0x06"
+          description: Moving average
+        - value: 0x07–0xFF
+          description: Reserved for Future Use

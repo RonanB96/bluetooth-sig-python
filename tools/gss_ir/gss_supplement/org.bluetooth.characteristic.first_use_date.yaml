@@ -1,0 +1,15 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Industrial Measurement Device Service 1.0, Section 3.4 (Table 3.17).
+characteristic:
+  identifier: org.bluetooth.characteristic.first_use_date
+  name: First Use Date
+  description: |-
+    The First Use Date characteristic is set by the device when the first work cycle is started.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: First Use Date
+      type: uint16
+      size: "2"
+      description: |-
+        Date of first use in days since 2000-01-01.
+        A value of 0x0000 represents "value is not yet set".

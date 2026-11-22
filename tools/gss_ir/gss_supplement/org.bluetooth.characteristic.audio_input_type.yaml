@@ -1,0 +1,40 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Audio Input Control Service 1.0.1, Section 3.3. Value codes: Assigned Numbers §6.12.2.
+# Section 3.3 and Assigned Numbers §6.12.2 do not state an octet size.
+# The uint8 size is taken from Zephyr struct bt_aics_server field type (uint8_t) and read_type,
+# subsys/bluetooth/audio/aics_internal.h and subsys/bluetooth/audio/aics.c.
+# Zephyr rejects a type above BT_AICS_INPUT_TYPE_AMBIENT (0x07). Those codes match Assigned Numbers §6.12.2.
+# T-Coil 0x08 is not in that Assigned Numbers table and is not used.
+characteristic:
+  identifier: org.bluetooth.characteristic.audio_input_type
+  name: Audio Input Type
+  description: |-
+    The Audio Input Type characteristic shall be set to a value that reflects the source of audio for the audio input described by this Audio Input Control Service. Examples of Audio Input Type values are Local, Isochronous Stream, Analog Connector, and Digital Connector. The Characteristic User Description may optionally further describe the Audio Input Type with values such as Microphone, HDMI, etc. The Audio Input Type characteristic value is defined in the Bluetooth SIG Assigned Numbers [3].
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Audio Input Type
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.audio_input_type/field/audio_input_type}.
+  fields:
+    - name: Audio Input Type
+      description: The values of this field are defined below.
+      values:
+        - value: "0x00"
+          description: Unspecified
+        - value: "0x01"
+          description: Bluetooth
+        - value: "0x02"
+          description: Microphone
+        - value: "0x03"
+          description: Analog
+        - value: "0x04"
+          description: Digital
+        - value: "0x05"
+          description: Radio
+        - value: "0x06"
+          description: Streaming
+        - value: "0x07"
+          description: Ambient
+        - value: 0x08–0xFF
+          description: Reserved for Future Use

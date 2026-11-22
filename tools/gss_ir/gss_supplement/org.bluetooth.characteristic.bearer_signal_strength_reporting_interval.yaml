@@ -1,0 +1,16 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Telephone Bearer Service 1.0, Section 3.6.
+characteristic:
+  identifier: org.bluetooth.characteristic.bearer_signal_strength_reporting_interval
+  name: Bearer Signal Strength Reporting Interval
+  description: |-
+    The Bearer Signal Strength Reporting Interval characteristic is 1 octet and returns the reporting interval expressed in seconds. The valid range of values for the Reporting Interval is 0 to 255. If the interval is set to 0, the signal strength is reported as soon as the signal strength changes. The server should set a default value of 0 to preclude any unwanted signal strength notifications to the client. No reporting occurs unless the Bearer Signal Strength characteristic is configured for notification.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Reporting Interval
+      type: uint8
+      size: "1"
+      description: |-
+        Reporting interval expressed in seconds.
+        Allowed range is: 0 to 255.
+        A value of 0 represents reporting the signal strength as soon as the signal strength changes.

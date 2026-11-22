@@ -1,0 +1,10 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, Section 3.4.
+characteristic:
+  identifier: org.bluetooth.characteristic.track_changed
+  name: Track Changed
+  description: |-
+    The Track Changed characteristic is used to notify the client when the current track is changed. The Track Changed characteristic is an empty characteristic (size equal to zero).
+    Any characteristic that will change in the transition between the current track and the next track shall be updated before notifying the Track Changed characteristic.
+    The structure of this characteristic is defined below.
+  structure: []

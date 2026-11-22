@@ -1,0 +1,24 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Published Audio Capabilities Service 1.0.2, Section 3.5 (Table 3.6).
+characteristic:
+  identifier: org.bluetooth.characteristic.available_audio_contexts
+  name: Available Audio Contexts
+  description: |-
+    The Available Audio Contexts characteristic exposes the availability of the server for reception and/or transmission of unicast audio data only, associated with specific Context Types.
+    The determination of whether the server considers itself available is left to the implementation, unless defined by higher-layer specifications.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Available Sink Contexts
+      type: uint16
+      size: "2"
+      description: |-
+        Bitmask of audio data Context Type values available for reception.
+        0x0000 = server is not available to receive audio for any Context Type value.
+        Context Type values are defined in Bluetooth Assigned Numbers \RefRef{assigned_numbers}.
+    - field: Available Source Contexts
+      type: uint16
+      size: "2"
+      description: |-
+        Bitmask of audio data Context Type values available for transmission.
+        0x0000 = server is not available to transmit audio for any Context Type values.
+        Context Type values are defined in Bluetooth Assigned Numbers \RefRef{assigned_numbers}.

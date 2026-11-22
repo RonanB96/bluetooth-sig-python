@@ -1,0 +1,53 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Audio Input Control Service 1.0.1, 3.1 Audio Input State (Table 3.2), 2.2.1.2 Mute field, and 2.2.1.3 Gain_Mode field.
+characteristic:
+  identifier: org.bluetooth.characteristic.audio_input_state
+  name: Audio Input State
+  description: |-
+    The Audio Input State characteristic shall be used to reflect the state of the audio gain and mute of the input to which this service applies.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Gain_Setting
+      type: sint8
+      size: "1"
+      description: |-
+        Reflects the current gain of the audio input signal to which this service applies.
+        A single increment or decrement of the Gain_Setting field value is equal to the Gain_Setting_Units field value of the Gain Setting Properties characteristic.
+        A Gain_Setting value of 0 should result in no change to the input’s original amplitude.
+        The Gain_Setting value shall be less than or equal to the Gain_Setting_Maximum field and greater than or equal to the Gain_Setting_Minimum field of the Gain Setting Properties characteristic value.
+    - field: Mute
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.audio_input_state/field/mute}.
+    - field: Gain_Mode
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.audio_input_state/field/gain_mode}.
+    - field: Change_Counter
+      type: uint8
+      size: "1"
+      description: |-
+        Incremented by 1 when the Gain_Setting, Mute, or Gain_Mode field value changes.
+        Allowed range is 0 to 255.
+        When the Change_Counter field value reaches 255, its next increment shall be 0.
+  fields:
+    - name: Mute
+      description: The values of this field are defined below.
+      values:
+        - value: "0"
+          description: Not Muted
+        - value: "1"
+          description: Muted
+        - value: "2"
+          description: Disabled
+    - name: Gain_Mode
+      description: The values of this field are defined below.
+      values:
+        - value: "0"
+          description: Manual Only
+        - value: "1"
+          description: Automatic Only
+        - value: "2"
+          description: Manual
+        - value: "3"
+          description: Automatic

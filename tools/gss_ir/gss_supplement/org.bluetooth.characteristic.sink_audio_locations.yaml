@@ -1,0 +1,17 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Published Audio Capabilities Service 1.0.2, Section 3.2 (Table 3.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.sink_audio_locations
+  name: Sink Audio Locations
+  description: |-
+    The Sink Audio Locations characteristic is used to expose the supported Audio Locations when the server supports reception of audio data.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Sink Audio Locations
+      type: uint32
+      size: "4"
+      description: |-
+        Device-wide bitmap of supported Audio Location values for all PAC records where the server supports reception of audio data.
+        Audio Location values are defined in Bluetooth SIG Assigned Numbers \RefRef{assigned_numbers}.
+        A value of 0x00000000 indicates that the server supports receiving only mono audio (no specified Audio Location).
+        For all other values, the identified locations and mono are supported.

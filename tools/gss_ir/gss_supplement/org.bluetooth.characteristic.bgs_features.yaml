@@ -1,0 +1,24 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Gaming Audio Profile 1.0.1, 4.7.4 BGS Features (Tables 4.8–4.9).
+characteristic:
+  identifier: org.bluetooth.characteristic.bgs_features
+  name: BGS Features
+  description: |-
+    The BGS Features characteristic exposes the BGS features supported by the GMA Server.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Features
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.bgs_features/field/features}.
+  fields:
+    - name: Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            BGS 96 kbps feature support
+            0 = Not supported
+            1 = Supported
+        - bit: 1–7
+          description: RFU

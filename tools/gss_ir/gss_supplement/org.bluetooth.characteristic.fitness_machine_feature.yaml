@@ -1,0 +1,199 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Fitness Machine Service 1.0.1, 4.3 Fitness Machine Feature (Tables 4.2–4.4).
+characteristic:
+  identifier: org.bluetooth.characteristic.fitness_machine_feature
+  name: Fitness Machine Feature
+  description: |-
+    The Fitness Machine Feature characteristic shall be used to describe the supported features of the Server.
+    The Fitness Machine Feature characteristic exposes which optional features are supported by the Server implementation.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Fitness Machine Features
+      type: boolean[32]
+      size: "4"
+      description: See \autoref{sec:org.bluetooth.characteristic.fitness_machine_feature/field/fitness_machine_features}.
+    - field: Target Setting Features
+      type: boolean[32]
+      size: "4"
+      description: See \autoref{sec:org.bluetooth.characteristic.fitness_machine_feature/field/target_setting_features}.
+  fields:
+    - name: Fitness Machine Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Average Speed Supported
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            Cadence Supported
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            Total Distance Supported
+            0 = False
+            1 = True
+        - bit: "3"
+          description: |-
+            Inclination Supported
+            0 = False
+            1 = True
+        - bit: "4"
+          description: |-
+            Elevation Gain Supported
+            0 = False
+            1 = True
+        - bit: "5"
+          description: |-
+            Pace Supported
+            0 = False
+            1 = True
+        - bit: "6"
+          description: |-
+            Step Count Supported
+            0 = False
+            1 = True
+        - bit: "7"
+          description: |-
+            Resistance Level Supported
+            0 = False
+            1 = True
+        - bit: "8"
+          description: |-
+            Stride Count Supported
+            0 = False
+            1 = True
+        - bit: "9"
+          description: |-
+            Expended Energy Supported
+            0 = False
+            1 = True
+        - bit: "10"
+          description: |-
+            Heart Rate Measurement Supported
+            0 = False
+            1 = True
+        - bit: "11"
+          description: |-
+            Metabolic Equivalent Supported
+            0 = False
+            1 = True
+        - bit: "12"
+          description: |-
+            Elapsed Time Supported
+            0 = False
+            1 = True
+        - bit: "13"
+          description: |-
+            Remaining Time Supported
+            0 = False
+            1 = True
+        - bit: "14"
+          description: |-
+            Power Measurement Supported
+            0 = False
+            1 = True
+        - bit: "15"
+          description: |-
+            Force on Belt and Power Output Supported
+            0 = False
+            1 = True
+        - bit: "16"
+          description: |-
+            User Data Retention Supported
+            0 = False
+            1 = True
+        - bit: 17–31
+          description: Reserved for Future Use
+    - name: Target Setting Features
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Speed Target Setting Supported
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            Inclination Target Setting Supported
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            Resistance Target Setting Supported
+            0 = False
+            1 = True
+        - bit: "3"
+          description: |-
+            Power Target Setting Supported
+            0 = False
+            1 = True
+        - bit: "4"
+          description: |-
+            Heart Rate Target Setting Supported
+            0 = False
+            1 = True
+        - bit: "5"
+          description: |-
+            Targeted Expended Energy Configuration Supported
+            0 = False
+            1 = True
+        - bit: "6"
+          description: |-
+            Targeted Step Number Configuration Supported
+            0 = False
+            1 = True
+        - bit: "7"
+          description: |-
+            Targeted Stride Number Configuration Supported
+            0 = False
+            1 = True
+        - bit: "8"
+          description: |-
+            Targeted Distance Configuration Supported
+            0 = False
+            1 = True
+        - bit: "9"
+          description: |-
+            Targeted Training Time Configuration Supported
+            0 = False
+            1 = True
+        - bit: "10"
+          description: |-
+            Targeted Time in Two Heart Rate Zones Configuration Supported
+            0 = False
+            1 = True
+        - bit: "11"
+          description: |-
+            Targeted Time in Three Heart Rate Zones Configuration Supported
+            0 = False
+            1 = True
+        - bit: "12"
+          description: |-
+            Targeted Time in Five Heart Rate Zones Configuration Supported
+            0 = False
+            1 = True
+        - bit: "13"
+          description: |-
+            Indoor Bike Simulation Parameters Supported
+            0 = False
+            1 = True
+        - bit: "14"
+          description: |-
+            Wheel Circumference Configuration Supported
+            0 = False
+            1 = True
+        - bit: "15"
+          description: |-
+            Spin Down Control Supported
+            0 = False
+            1 = True
+        - bit: "16"
+          description: |-
+            Targeted Cadence Configuration Supported
+            0 = False
+            1 = True
+        - bit: 17–31
+          description: Reserved for Future Use

@@ -1,0 +1,70 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Insulin Delivery Service 1.0.2, 4.1 IDD Status Changed.
+characteristic:
+  identifier: org.bluetooth.characteristic.idd_status_changed
+  name: IDD Status Changed
+  description: |-
+    The IDD Status Changed characteristic contains status changes of the Insulin Delivery Device and the insulin therapy comprising a Flags field, an optional E2E-Counter field, and an optional E2E-CRC field.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Flags
+      type: boolean[16]
+      size: "2"
+      description: See \autoref{sec:org.bluetooth.characteristic.idd_status_changed/field/flags}.
+    - field: E2E-Counter
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+    - field: E2E-CRC
+      type: uint16
+      size: 0 or 2
+      description: |-
+        CRC calculated over all fields of the characteristic payload, including the E2E-Counter field, except for the E2E-CRC field itself.
+        Present if E2E-Protection Supported bit in IDD Features characteristic is set to 1
+  fields:
+    - name: Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Therapy Control State Changed
+            0 = False
+            1 = True
+        - bit: "1"
+          description: |-
+            Operational State Changed
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            Reservoir Status Changed
+            0 = False
+            1 = True
+        - bit: "3"
+          description: |-
+            Annunciation Status Changed
+            0 = False
+            1 = True
+        - bit: "4"
+          description: |-
+            Total Daily Insulin Status Changed
+            0 = False
+            1 = True
+        - bit: "5"
+          description: |-
+            Active Basal Rate Status Changed
+            0 = False
+            1 = True
+        - bit: "6"
+          description: |-
+            Active Bolus Status Changed
+            0 = False
+            1 = True
+        - bit: "7"
+          description: |-
+            History Event Recorded
+            0 = False
+            1 = True
+        - bit: 8–15
+          description: Reserved for Future Use

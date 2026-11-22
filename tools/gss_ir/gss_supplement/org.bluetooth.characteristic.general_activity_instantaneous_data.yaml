@@ -1,0 +1,283 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Physical Activity Monitor Service 1.0, Section 3.2 (Tables 3.4–3.7); Section 2.4.1 (Table 2.1).
+characteristic:
+  identifier: org.bluetooth.characteristic.general_activity_instantaneous_data
+  name: General Activity Instantaneous Data
+  description: |-
+    The General Activity Instantaneous Data characteristic is used to send session/sub-session-related data of an instantaneous nature (as defined in Section 2.2) to the client. The general activity data is related to measurements that may be widely supported across different types of activity monitors.
+    Included in the characteristic value are a Header field and a set of conditional fields, as shown in Table 3.4.
+    The characteristic value is of variable length, ranging up to 38 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Header
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.general_activity_instantaneous_data/field/header}.
+    - field: Flags
+      type: boolean[24]
+      size: 0 or 3
+      description: |-
+        See \autoref{sec:org.bluetooth.characteristic.general_activity_instantaneous_data/field/flags}.
+        Mandatory if no segmentation into multiple notifications is used. Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Session ID
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Session ID field represents the identifier of the physical activity session to which the data is related.
+        Mandatory if no segmentation into multiple notifications is used. Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Sub-session ID
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Sub-session ID field represents the identifier of the physical activity sub-session to which the data is related. The value 0xFFFF is reserved to denote that the data in the characteristic relates to an entire session (i.e., including all its sub-sessions).
+        Mandatory if no segmentation into multiple notifications is used. Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Relative Timestamp
+      type: uint32
+      size: 0 or 4
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Relative Timestamp field represents the time stamp of the data included in the General Activity Instantaneous Data characteristic. The time stamp is represented as the elapsed number of seconds since the start of the physical activity session that is denoted in the Session ID field.
+        Mandatory if no segmentation into multiple notifications is used. Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Sequence Number
+      type: uint32
+      size: 0 or 4
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Sequence Number field represents the data sequence number included in the General Activity Instantaneous Data characteristic.
+        Sequence Number field values are assigned by the server in an implementation-specific manner that facilitates the correct data organization on the client side. Sequence Number field values should be incremented by 1 every time their respective data characteristic is updated and should roll over to 0x00000000 after the maximum value 0xFFFFFFFF is reached.
+        Mandatory if no segmentation into multiple notifications is used. Also mandatory if segmentation into multiple notifications is used, but only included in the first segment.
+    - field: Normal Walking Energy Expenditure per Hour
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Base Unit: org.bluetooth.unit.energy.joule
+        Represented values: M = 1, d = 3, b = 0
+        Unit is 1000 joule
+        The Normal Walking Energy Expenditure per Hour field represents the instantaneous energy expenditure rate of the user for low-intensity physical activity.
+        Present if bit 0 of Flags field is set to 1
+    - field: Intensity Energy Expenditure per Hour
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Base Unit: org.bluetooth.unit.energy.joule
+        Represented values: M = 1, d = 3, b = 0
+        Unit is 1000 joule
+        The Intensity Energy Expenditure per Hour field represents the instantaneous energy expenditure rate of the user for high-intensity physical activity.
+        Present if bit 1 of Flags field is set to 1
+    - field: Total Energy Expenditure per Hour
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Base Unit: org.bluetooth.unit.energy.joule
+        Represented values: M = 1, d = 3, b = 0
+        Unit is 1000 joule
+        The Total Energy Expenditure per Hour field represents the instantaneous total energy expenditure rate of the user.
+        Present if bit 2 of Flags field is set to 1
+    - field: Fat Burned per Hour
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Base Unit: org.bluetooth.unit.mass.kilogram
+        Represented values: M = 1, d = -3, b = 0
+        Unit is 0.001 kg
+        The Fat Burned per Hour field represents the instantaneous fat burn rate of the user.
+        Present if bit 3 of Flags field is set to 1
+    - field: Metabolic Equivalent
+      type: uint8
+      size: 0 or 1
+      description: |-
+        Base Unit: org.bluetooth.unit.metabolic_equivalent
+        Represented values: M = 1, d = -1, b = 0
+        Unit is 0.1 MET (i.e., kcal/kg/hour)
+        The Metabolic Equivalent field represents the instantaneous metabolic equivalent of the user.
+        Present if bit 4 of Flags field is set to 1
+    - field: Speed
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Base Unit: org.bluetooth.unit.velocity.kilometre_per_hour
+        Represented values: M = 1, d = -1, b = 0
+        Unit is 0.1 km/h
+        The Speed field represents the instantaneous speed of the user.
+        Present if bit 5 of Flags field is set to 1
+    - field: Motion Cadence
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Motion Cadence field may represent steps per minute or revolutions per minute, depending on the type of physical activity performed by the user.
+        Present if bit 6 of Flags field is set to 1
+    - field: Elevation
+      type: sint24
+      size: 0 or 3
+      description: |-
+        Base Unit: org.bluetooth.unit.length.metre
+        Represented values: M = 1, d = -2, b = 0
+        Unit is 0.01 m
+        The Elevation field represents the instantaneous elevation of the user above sea level.
+        Present if bit 7 of Flags field is set to 1
+    - field: Activity Count per Minute
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Activity Count per Minute field represents the instantaneous amount of activity or motion of the user in a 1-minute interval.
+        Present if bit 8 of Flags field is set to 1
+    - field: Activity Level
+      type: uint16
+      size: 0 or 2
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Activity Level field represents the instantaneous amount of activity or motion of the user in an implementation-specific measurement interval.
+        Present if bit 9 of Flags field is set to 1
+    - field: Activity Type
+      type: struct
+      size: 0 or 2
+      description: |-
+        The Activity Type field represents the instantaneous activity type of the user.
+        See \autoref{sec:org.bluetooth.characteristic.general_activity_instantaneous_data/field/activity_type}.
+        Present if bit 10 of Flags field is set to 1
+  fields:
+    - name: Header
+      description: |-
+        The Header field and its use are described in Section 2.4.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            First Segment
+            The First Segment bit identifies the first segment of a segmented Data Record.
+        - bit: "1"
+          description: |-
+            Last Segment
+            The Last Segment bit identifies the last segment of a segmented Data Record.
+        - bit: 2–7
+          description: |-
+            Rolling Segment Counter
+            The Rolling Segment Counter bits are used to enable the client to correctly reconstruct a segmented Data Record.
+    - name: Flags
+      description: |-
+        When the server includes a given data field in any of the segments (in case of Data Record segmentation), the associated bit of the Flags field shall be set to 1 (field present); otherwise, the associated bit shall be set to 0 (field not present).
+        If a given bit in the Physical Activity Monitor Features characteristic is set to 0, then the corresponding Flags field bit(s) shall be set to 0 and the associated field(s) shall not be present in the General Activity Instantaneous Data characteristic.
+        If the Physical Activity Monitor Features characteristic denotes server support for the Device Worn feature, then the associated bit of the Flags field shall be set to 1 when the device is worn and shall be set to 0 when the device is not worn.
+        If the Physical Activity Monitor Features characteristic does not denote server support for the Device Worn feature, then the associated bit of the Flags field shall be set to 0.
+        The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Normal Walking Energy Expenditure per Hour Present
+        - bit: "1"
+          description: Intensity Energy Expenditure per Hour Present
+        - bit: "2"
+          description: Total Energy Expenditure per Hour Present
+        - bit: "3"
+          description: Fat Burned per Hour Present
+        - bit: "4"
+          description: Metabolic Equivalent Present
+        - bit: "5"
+          description: Speed Present
+        - bit: "6"
+          description: Motion Cadence Present
+        - bit: "7"
+          description: Elevation Present
+        - bit: "8"
+          description: Activity Count per Minute Present
+        - bit: "9"
+          description: Activity Level Present
+        - bit: "10"
+          description: Activity Type Present
+        - bit: 11–22
+          description: RFU
+        - bit: "23"
+          description: Device Worn
+    - name: Activity Type
+      description: The structure of this field is defined below.
+      values:
+        - field: Monitor-Defined
+          data_type: uint8
+          size: "8"
+          description: |-
+            The Monitor-Defined sub-field represents the activity type detected by the Physical Activity Monitor.
+            See \autoref{sec:org.bluetooth.characteristic.general_activity_instantaneous_data/subfield/monitor-defined}
+        - field: User-Defined
+          data_type: uint8
+          size: "8"
+          description: |-
+            The User-Defined sub-field represents the activity type entered by the user.
+            See \autoref{sec:org.bluetooth.characteristic.general_activity_instantaneous_data/subfield/user-defined}
+      subfields:
+        - name: Monitor-Defined
+          description: The values of this field are defined below.
+          values:
+            - value: "0x00"
+              description: Unspecified
+            - value: "0x01"
+              description: Other
+            - value: "0x02"
+              description: Sit
+            - value: "0x03"
+              description: Lie
+            - value: "0x04"
+              description: Stand
+            - value: "0x05"
+              description: Walk. Includes hiking.
+            - value: "0x06"
+              description: Shuffle
+            - value: "0x07"
+              description: Run. Includes jogging.
+            - value: "0x08"
+              description: Cycle indoor
+            - value: "0x09"
+              description: Cycle outdoor
+            - value: "0x0A"
+              description: Cycle
+            - value: "0x0B"
+              description: Aerobic workout. Continuous, high-paced activity such as dance or kickboxing.
+            - value: "0x0C"
+              description: Elliptical. Activity performed on an elliptical trainer, elliptical glider, or elliptical cross trainer.
+            - value: "0x0D"
+              description: Sports. Continuous, high-paced activity such as tennis, soccer, or basketball.
+            - value: "0x0E"
+              description: Swim
+            - value: 0x0F–0xFE
+              description: RFU
+            - value: "0xFF"
+              description: Unknown. Activity is unknown.
+        - name: User-Defined
+          description: The values of this field are defined below.
+          values:
+            - value: "0x00"
+              description: Unspecified
+            - value: "0x01"
+              description: Other
+            - value: "0x02"
+              description: Sit
+            - value: "0x03"
+              description: Lie
+            - value: "0x04"
+              description: Stand
+            - value: "0x05"
+              description: Walk. Includes hiking.
+            - value: "0x06"
+              description: Shuffle
+            - value: "0x07"
+              description: Run. Includes jogging.
+            - value: "0x08"
+              description: Cycle indoor
+            - value: "0x09"
+              description: Cycle outdoor
+            - value: "0x0A"
+              description: Cycle
+            - value: "0x0B"
+              description: Aerobic workout. Continuous, high-paced activity such as dance or kickboxing.
+            - value: "0x0C"
+              description: Elliptical. Activity performed on an elliptical trainer, elliptical glider, or elliptical cross trainer.
+            - value: "0x0D"
+              description: Sports. Continuous, high-paced activity such as tennis, soccer, or basketball.
+            - value: "0x0E"
+              description: Swim
+            - value: 0x0F–0xFE
+              description: RFU
+            - value: "0xFF"
+              description: Unknown. Activity is unknown.

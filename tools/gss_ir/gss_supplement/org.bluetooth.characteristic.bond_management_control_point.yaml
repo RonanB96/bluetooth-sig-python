@@ -1,0 +1,79 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Bond Management Service 1.0.1, 3.1 Bond Management Control Point, Table 3.2.
+characteristic:
+  identifier: org.bluetooth.characteristic.bond_management_control_point
+  name: Bond Management Control Point
+  description: |-
+    The Bond Management Control Point characteristic is used to enable bond management procedures.
+    Where used, the format of the Authorization Code value is an UTF-8 string of variable size up to a length of 511, where each character represents one digit of the Authorization Code.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Op Code
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.bond_management_control_point/field/op_code_and_parameter}
+    - field: Parameter
+      type: struct
+      size: variable
+      description: See \autoref{sec:org.bluetooth.characteristic.bond_management_control_point/field/op_code_and_parameter}
+  fields:
+    - name: Op Code and Parameter
+      description: The values of these fields are defined below.
+      section_title: Op Code and Parameter fields
+      table_caption: Op Code and Parameter fields
+      values:
+        - op_code_value: "0x00"
+          definition: Reserved for Future Use
+          parameter: N/A
+          parameter_type: N/A
+          description: N/A
+        - op_code_value: "0x01"
+          definition: Delete bond of requesting device (BR/EDR and LE)
+          parameter: Authorization Code (optional)
+          parameter_type: utf8s
+          description: Initiates the procedure to delete bonds of requesting device on BR/EDR and LE transports. The optional Authorization Code is sent as parameter to this op code.
+        - op_code_value: "0x02"
+          definition: Delete bond of requesting device (BR/EDR transport only)
+          parameter: Authorization Code (optional)
+          parameter_type: utf8s
+          description: Initiates the procedure to delete bond of requesting device on BR/EDR transport. The optional Authorization Code is sent as parameter to this op code.
+        - op_code_value: "0x03"
+          definition: Delete bond of requesting device (LE transport only)
+          parameter: Authorization Code (optional)
+          parameter_type: utf8s
+          description: Initiates the procedure to delete bond of requesting device on LE transport. The optional Authorization Code for that is sent as parameter to this op code.
+        - op_code_value: "0x04"
+          definition: Delete all bonds on server (BR/EDR and LE)
+          parameter: Authorization Code (optional)
+          parameter_type: utf8s
+          description: Initiates the procedure to delete all bonds of the device on BR/EDR and LE transport. The optional Authorization Code is sent as parameter to this op code.
+        - op_code_value: "0x05"
+          definition: Delete all bonds on server (BR/EDR transport only)
+          parameter: Authorization Code (optional)
+          parameter_type: utf8s
+          description: Initiates the procedure to delete all bonds of the device on BR/EDR transport. The optional Authorization Code is sent as parameter to this op code.
+        - op_code_value: "0x06"
+          definition: Delete all bonds on server (LE transport only)
+          parameter: Authorization Code (optional)
+          parameter_type: utf8s
+          description: Initiates the procedure to delete all bonds of the device on LE transport. The optional Authorization Code is sent as parameter to this op code.
+        - op_code_value: "0x07"
+          definition: Delete all but the active bond on server (BR/EDR and LE)
+          parameter: Authorization Code (optional)
+          parameter_type: utf8s
+          description: Initiates the procedure to delete all bonds but the requesting device on BR/EDR and LE transport. The optional Authorization Code is sent as parameter to this op code.
+        - op_code_value: "0x08"
+          definition: Delete all but the active bond on server (BR/EDR transport only)
+          parameter: Authorization Code (optional)
+          parameter_type: utf8s
+          description: Initiates the procedure to delete all bonds but the requesting device on BR/EDR transport. The optional Authorization Code is sent as parameter to this op code.
+        - op_code_value: "0x09"
+          definition: Delete all but the active bond on server (LE transport only)
+          parameter: Authorization Code (optional)
+          parameter_type: utf8s
+          description: Initiates the procedure to delete all bonds but the requesting device on LE transport. The optional Authorization Code is sent as parameter to this op code.
+        - op_code_value: 0x0A–0xFF
+          definition: Reserved for Future Use
+          parameter: N/A
+          parameter_type: N/A
+          description: N/A

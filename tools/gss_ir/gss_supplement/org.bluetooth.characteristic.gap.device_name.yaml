@@ -1,0 +1,15 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Core Specification 6.3, Vol 3, Part C, 12.1 Device Name characteristic (Table 12.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.gap.device_name
+  name: Device Name
+  description: |-
+    The Device Name characteristic contains the name of the device as a UTF-8 string.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Device Name
+      type: utf8s
+      size: |-
+        variable
+        0–248
+      description: UTF-8 string of 0 to 248 octets.

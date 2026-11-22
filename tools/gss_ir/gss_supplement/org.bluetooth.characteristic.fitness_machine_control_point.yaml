@@ -1,0 +1,334 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Fitness Machine Service 1.0.1, Section 4.16 Fitness Machine Control Point (Tables 4.14–4.24).
+characteristic:
+  identifier: org.bluetooth.characteristic.fitness_machine_control_point
+  name: Fitness Machine Control Point
+  description: |-
+    The Fitness Machine Control Point characteristic is used to request a specific function to be executed on the Server.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Op Code
+      type: uint8
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.fitness_machine_control_point/field/op_code_and_parameter}
+    - field: Parameter
+      type: struct
+      size: 0 to 18
+      description: See \autoref{sec:org.bluetooth.characteristic.fitness_machine_control_point/field/op_code_and_parameter}
+  fields:
+    - name: Op Code and Parameter
+      description: The values of these fields are defined below.
+      section_title: Fitness Machine Control Point Procedure Requirements
+      table_caption: Fitness Machine Control Point Procedure Requirements
+      values:
+        - op_code_value: "0x00"
+          requirement: M
+          definition: Request Control
+          parameter_value: N/A
+          description: Initiates the procedure to request the control of a fitness machine. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x01"
+          requirement: M
+          definition: Reset, see Section 4.16.2.2
+          parameter_value: N/A
+          description: Initiates the procedure to reset the controllable settings of a fitness machine. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x02"
+          requirement: C.1
+          definition: Set Target Speed, see Section 4.16.2.3
+          parameter_value: Target Speed, UINT16, in km/h with a resolution of 0.01 km/h
+          description: Initiate the procedure to set the target speed of the Server. The desired target speed is sent as parameters to this op code. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x03"
+          requirement: C.2
+          definition: Set Target Inclination, see Section 4.16.2.4
+          parameter_value: Target Inclination, SINT16, in Percent with a resolution of 0.1 %
+          description: Initiate the procedure to set the target inclination of the Server. The desired target inclination is sent as parameters to this op code. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x04"
+          requirement: C.3
+          definition: Set Target Resistance Level, see Section 4.16.2.5
+          parameter_value: Target Resistance Level, UINT8, unitless with a resolution of 0.1.
+          description: Initiate the procedure to set the target resistance level of the Server. The desired target resistance level is sent as parameters to this op code. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x05"
+          requirement: C.4
+          definition: Set Target Power, see Section 4.16.2.6
+          parameter_value: Target Power, SINT16, in Watt with a resolution of 1 W.
+          description: Initiate the procedure to set the target power of the Server. The desired target power is sent as parameters to this op code. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x06"
+          requirement: C.5
+          definition: Set Target Heart Rate, see Section 4.16.2.7
+          parameter_value: Target Heart Rate, UINT8, in BPM with a resolution of 1 BPM.
+          description: Initiate the procedure to set the target heart rate of the Server. The desired target heart rate is sent as parameters to this op code. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x07"
+          requirement: M
+          definition: Start or Resume, see Section 4.16.2.8
+          parameter_value: N/A
+          description: Initiate the procedure to start or resume a training session on the Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x08"
+          requirement: M
+          definition: Stop or Pause, see Section 4.16.2.9
+          parameter_value: Control Information, see Section 4.16.2.9
+          description: Initiate the procedure to stop or pause a training session on the Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x09"
+          requirement: C.6
+          definition: Set Targeted Expended Energy, see Section 4.16.2.10
+          parameter_value: Targeted Expended Energy, UINT16, in Calories with a resolution of 1 Calorie.
+          description: Set the targeted expended energy for a training session on the Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x0A"
+          requirement: C.7
+          definition: Set Targeted Number of Steps, see Section 4.16.2.11
+          parameter_value: Targeted Number of Steps, UINT16, in Steps with a resolution of 1 Step.
+          description: Set the targeted number of steps for a training session on the Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x0B"
+          requirement: C.8
+          definition: Set Targeted Number of Strides, see Section 4.16.2.12
+          parameter_value: Targeted Number of Strides, UINT16, in Stride with a resolution of 1 Stride.
+          description: Set the targeted number of strides for a training session on the Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x0C"
+          requirement: C.9
+          definition: Set Targeted Distance, see Section 4.16.2.13
+          parameter_value: Targeted Distance, UINT24, in Meters with a resolution of 1 Meter.
+          description: Set the targeted distance for a training session on the Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x0D"
+          requirement: C.10
+          definition: Set Targeted Training Time, see Section 4.16.2.14
+          parameter_value: Targeted Training Time, UINT16, in Seconds with a resolution of 1 Second.
+          description: Set the targeted training time for a training session on the Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x0E"
+          requirement: C.11
+          definition: Set Targeted Time in Two Heart Rate Zones, see Section 4.16.2.15
+          parameter_value: Targeted Time Array, see Section 4.16.2.15
+          description: Set the targeted time in two heart rate zones for a training session on the Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x0F"
+          requirement: C.12
+          definition: Set Targeted Time in Three Heart Rate Zones, see Section 4.16.2.16
+          parameter_value: Targeted Time Array, see Section 4.16.2.16
+          description: Set the targeted time in three heart rate zones for a training session on the Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x10"
+          requirement: C.13
+          definition: Set Targeted Time in Five Heart Rate Zones, see Section 4.16.2.17
+          parameter_value: Targeted Time Array, see Section 4.16.2.17
+          description: Set the targeted time in five heart rate zones for a training session on the Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x11"
+          requirement: C.14
+          definition: Set Indoor Bike Simulation Parameters, see Section 4.16.2.18
+          parameter_value: Simulation Parameter Array, see Section 4.16.2.18
+          description: Set the simulation parameters for a training session on the Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x12"
+          requirement: O
+          definition: Set Wheel Circumference, see Section 4.16.2.19
+          parameter_value: Wheel Circumference, UINT16, in Millimeters with resolution of 0.1 Millimeter
+          description: Set the wheel circumference for a training session on the Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x13"
+          requirement: O
+          definition: Spin Down Control, see Section 4.16.2.20
+          parameter_value: Control Parameter, see Section 4.16.2.20
+          description: Control the spin down procedure of a Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: "0x14"
+          requirement: C.15
+          definition: Set Targeted Cadence
+          parameter_value: Targeted Cadence, UINT16, in 1/minute with a resolution of 0.5 1/minute.
+          description: Set the targeted cadence for a training session on the Server. The response to this control point is Op Code 0x80 followed by the appropriate Parameter Value.
+        - op_code_value: 0x15–0x7F
+          requirement: N/A
+          definition: Reserved for Future Use
+          parameter_value: N/A
+          description: N/A
+        - op_code_value: "0x80"
+          requirement: M
+          definition: Response Code, see Section 4.16.2.22
+          parameter_value: See Section 4.16.2.22
+          description: Used to identify the response to this Control Point.
+        - op_code_value: 0x81–0xFF
+          requirement: N/A
+          definition: Reserved for Future Use
+          parameter_value: N/A
+          description: N/A
+    - name: Control Information
+      description: The values of this field are defined below.
+      section_title: Control Information Parameter Value for Stop or Pause Procedure
+      table_caption: Control Information Parameter Value for Stop or Pause Procedure
+      values:
+        - value: "0x00"
+          description: Reserved for Future Use
+        - value: "0x01"
+          description: Stop
+        - value: "0x02"
+          description: Pause
+        - value: 0x03–0xFF
+          description: Reserved for Future Use
+    - name: Targeted Time Array (Two Heart Rate Zones)
+      description: The structure of this field is defined below.
+      section_title: Targeted Time Array Parameter Format for Set Targeted Training Time in Two Heart Rate Zones Procedure
+      table_caption: Targeted Time Array Parameter Format for Set Targeted Training Time in Two Heart Rate Zones Procedure
+      values:
+        - field: Targeted Time in Fat Burn Zone
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is Second.
+        - field: Targeted Time in Fitness Zone
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is Second.
+    - name: Targeted Time Array (Three Heart Rate Zones)
+      description: The structure of this field is defined below.
+      section_title: Targeted Time Array Parameter Format for Set Targeted Training Time in Three Heart Rate Zones Procedure
+      table_caption: Targeted Time Array Parameter Format for Set Targeted Training Time in Three Heart Rate Zones Procedure
+      values:
+        - field: Targeted Time in Light Zone
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is Second.
+        - field: Targeted Time in Moderate Zone
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is Second.
+        - field: Targeted Time in Hard Zone
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is Second.
+    - name: Targeted Time Array (Five Heart Rate Zones)
+      description: The structure of this field is defined below.
+      section_title: Targeted Time Array Parameter Format for Set Targeted Training Time in Five Heart Rate Zones Procedure
+      table_caption: Targeted Time Array Parameter Format for Set Targeted Training Time in Five Heart Rate Zones Procedure
+      values:
+        - field: Targeted Time in Very Light Zone
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is Second.
+        - field: Targeted Time in Light Zone
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is Second.
+        - field: Targeted Time in Moderate Zone
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is Second.
+        - field: Targeted Time in Hard Zone
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is Second.
+        - field: Targeted Time in Maximum Zone
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is Second.
+    - name: Simulation Parameter Array
+      description: The structure of this field is defined below.
+      section_title: Simulation Parameter Array Format for Set Indoor Bike Simulation Parameters Procedure
+      table_caption: Simulation Parameter Array Format for Set Indoor Bike Simulation Parameters Procedure
+      values:
+        - field: Wind Speed
+          type: sint16
+          size: "2"
+          description: |-
+            Unit is Meters Per Second (mps).
+            Resolution is 0.001.
+        - field: Grade
+          type: sint16
+          size: "2"
+          description: |-
+            Unit is Percentage.
+            Resolution is 0.01.
+        - field: Crr (Coefficient of Rolling Resistance)
+          type: uint8
+          size: "1"
+          description: |-
+            Unit is Unitless.
+            Resolution is 0.0001.
+        - field: Cw (Wind Resistance Coefficient)
+          type: uint8
+          size: "1"
+          description: |-
+            Unit is Unitless.
+            Resolution is 0.01.
+    - name: Spin Down Control Parameter
+      description: The values of this field are defined below.
+      section_title: Control Parameter Definition for Spin Down Control Procedure
+      table_caption: Control Parameter Definition for Spin Down Control Procedure
+      values:
+        - value: "0x00"
+          description: Reserved for Future Use
+        - value: "0x01"
+          description: Start
+        - value: "0x02"
+          description: Ignore
+        - value: 0x03–0xFF
+          description: Reserved for Future Use
+    - name: Response Indication Parameter
+      description: The structure of this field is defined below.
+      section_title: Fitness Machine Control Point characteristic – Parameter Value Format of the Response Indication
+      table_caption: Fitness Machine Control Point characteristic – Parameter Value Format of the Response Indication
+      values:
+        - field: Request Op Code
+          type: uint8
+          size: "1"
+          description: The Request Op Code field shall be set to the value of the Op Code representing the requested procedure.
+        - field: Result Code
+          type: uint8
+          size: "1"
+          description: See \autoref{sec:org.bluetooth.characteristic.fitness_machine_control_point/field/result_codes}.
+        - field: Response Parameter
+          type: struct
+          size: 0 to 17
+          description: |-
+            Present if Result Code is 0x01 (Success) and Request Op Code is Spin Down Op Code (0x13).
+            See \autoref{sec:org.bluetooth.characteristic.fitness_machine_control_point/field/spin_down_response_parameter}.
+    - name: Spin Down Response Parameter
+      description: The structure of this field is defined below.
+      section_title: Response Parameter when the Spin Down Procedure succeeds
+      table_caption: Response Parameter when the Spin Down Procedure succeeds
+      values:
+        - field: Target Speed Low
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is km/h with a resolution of 0.01 km/h.
+        - field: Target Speed High
+          type: uint16
+          size: "2"
+          description: |-
+            Unit is km/h with a resolution of 0.01 km/h.
+    - name: Result Codes
+      description: The values of this field are defined below.
+      section_title: Fitness Machine Control Point characteristic – Result Codes
+      table_caption: Fitness Machine Control Point characteristic – Result Codes
+      values:
+        - result_code: "0x00"
+          definition: Reserved for Future Use
+          request_op_code: N/A
+          response_parameter: N/A
+        - result_code: "0x01"
+          definition: Success
+          request_op_code: All Op Codes defined in Table 4.15 except Spin Down Op Code (0x13).
+          response_parameter: None
+        - result_code: "0x01"
+          definition: Success
+          request_op_code: Spin Down Op Code (0x13).
+          response_parameter: See Table 4.22
+        - result_code: "0x02"
+          definition: Op Code not supported
+          request_op_code: All Op Codes defined in Table 4.15 as reserved for future use, or all Op Codes that are not supported by the Server.
+          response_parameter: None
+        - result_code: "0x03"
+          definition: Invalid Parameter
+          request_op_code: All Op Codes defined in Table 4.15
+          response_parameter: None
+        - result_code: "0x04"
+          definition: Operation Failed
+          request_op_code: All Op Codes defined in Table 4.15
+          response_parameter: None
+        - result_code: "0x05"
+          definition: Control Not Permitted
+          request_op_code: All Op Codes defined in Table 4.15
+          response_parameter: None
+        - result_code: 0x06–0xFF
+          definition: Reserved for Future Use
+          request_op_code: N/A
+          response_parameter: N/A

@@ -1,0 +1,15 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Coordinated Set Identification Service 1.1, Section 5.4.
+characteristic:
+  identifier: org.bluetooth.characteristic.rank_characteristic
+  name: Set Member Rank
+  description: |-
+    The Set Member Rank characteristic exposes a numeric value that shall be unique within a Coordinated Set and that allows a client to perform procedures with servers that are part of a Coordinated Set in a defined order (e.g., in order of increasing rank).
+    Allowed values for the Set Member Rank characteristics are positive integer numbers starting from 0x01.
+    The value of the Set Member Rank characteristic exposed by servers that are part of the same Coordinated Set shall be contiguous integers starting from 0x01 to the size of the Coordinated Set.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Set Member Rank
+      type: uint8
+      size: "1"
+      description: 'Allowed range is: 0x01 to the size of the Coordinated Set.'

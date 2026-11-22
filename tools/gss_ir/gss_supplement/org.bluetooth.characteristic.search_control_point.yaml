@@ -1,0 +1,88 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Media Control Service 1.0.1, Section 3.20 (Tables 3.10–3.13).
+characteristic:
+  identifier: org.bluetooth.characteristic.search_control_point
+  name: Search Control Point
+  description: |-
+    The structure of the Search Control Point characteristic is defined as a sequence of search control items. The maximum size of this characteristic value is 64 octets.
+    Each search control item is composed of a Length field, a Type field, and a Parameter field, as shown in Table 3.10.
+    The search control items are concatenated into a single sequence of octets. This sequence of octets can be written into the Search Control Point characteristic to initiate a search operation.
+    The value written to the Search Control Point characteristic is a sequence of zero or more search control items.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Length
+      type: uint8
+      size: "1"
+      description: |-
+        Total length of the Type and Parameter fields.
+        The sequence of fields from Length through Parameter is repeated for each search control item in the sequence of search control items.
+    - field: Type
+      type: uint8
+      size: "1"
+      description: |-
+        Determines the meaning of the Parameter field.
+        See \autoref{sec:org.bluetooth.characteristic.search_control_point/field/type}.
+    - field: Parameter
+      type: utf8s
+      size: variable
+      description: |-
+        UTF-8 string
+        Contains the parameter or parameters as defined by the Type field.
+        Length in octets is Length minus 1.
+        Present if Type is 0x01 or 0x02 or 0x03 or 0x04 or 0x05 or 0x06 or 0x07
+  fields:
+    - name: Type
+      description: The values of this field are defined below.
+      table_caption: Search Control Point item type value parameters
+      values:
+        - type_value: "0x01"
+          name: Track Name
+          parameter: UTF-8 string
+        - type_value: "0x02"
+          name: Artist Name
+          parameter: UTF-8 string
+        - type_value: "0x03"
+          name: Album Name
+          parameter: UTF-8 string
+        - type_value: "0x04"
+          name: Group Name
+          parameter: UTF-8 string
+        - type_value: "0x05"
+          name: Earliest Year
+          parameter: UTF-8 string
+        - type_value: "0x06"
+          name: Latest Year
+          parameter: UTF-8 string
+        - type_value: "0x07"
+          name: Genre
+          parameter: UTF-8 string
+        - type_value: "0x08"
+          name: Only Tracks
+          parameter: None
+        - type_value: "0x09"
+          name: Only Groups
+          parameter: None
+        - type_value: 0x0A–0xFF
+          name: RFU
+          parameter: Reserved for Future Use
+    - name: Search Control Point Notification
+      description: The structure of this field is defined below.
+      section_title: Search Control Point Notification
+      table_caption: Search Control Point Notification format
+      values:
+        - field: Result Code
+          type: uint8
+          size: "1"
+          description: |-
+            Specific code as a result of the search control point write.
+            See \autoref{sec:org.bluetooth.characteristic.search_control_point/field/result_code}.
+    - name: Result Code
+      description: The values of this field are defined below.
+      table_caption: Search Control Point Notification Result Codes
+      values:
+        - value: "0x01"
+          definition: SUCCESS
+          description: Search request was accepted; search has started.
+        - value: "0x02"
+          definition: FAILURE
+          description: Search request was invalid; no search started.

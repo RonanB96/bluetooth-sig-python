@@ -1,0 +1,45 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Tire Pressure Monitoring System Service v1.0, Section 3.2.
+characteristic:
+  identifier: org.bluetooth.characteristic.tire_pressure
+  name: Tire Pressure
+  description: |-
+    The Tire Pressure characteristic represents the absolute air pressure as measured by the TPMS Sensor.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Pressure
+      type: struct
+      size: "2"
+      description: |-
+        The Pressure field is 2 octets long.
+        Special value 0xFFFF indicates that the TPMS Sensor could not perform measurement.
+        See \autoref{sec:org.bluetooth.characteristic.tire_pressure/field/pressure}.
+    - field: Pressure Accuracy
+      type: uint8
+      size: "1"
+      description: |-
+        Base Unit: org.bluetooth.unit.pressure.kilopascal
+        Represented values: M = 1, d = -1, b = 0
+        Unit is 1/2 kilopascal (kPa).
+        Allowed range is: 0 to 127.5.
+        The Pressure Accuracy field represents the accuracy of the pressure value reported in the Pressure field as estimated by the TPMS sensor in 1/2 kPa. The value of the Tire Pressure Accuracy field represents a ± range corresponding to a 1-sigma statistical variation. In other words, the physical pressure is likely to lie within the range between the Pressure field value minus the Pressure Accuracy field value and the Pressure field value plus the Pressure Accuracy field value.
+        If bit 15 of the Pressure field is set, indicating that the pressure measurement might not be accurate, then the Pressure Accuracy field is not defined and may be set to 0xFF or another value determined by an implementer.
+  fields:
+    - name: Pressure
+      description: The structure of this field is defined below.
+      size_in_bits: true
+      values:
+        - field: TPMS Sensor Pressure
+          data_type: uint15
+          size: "15"
+          description: |-
+            Base Unit: org.bluetooth.unit.pressure.kilopascal
+            Represented values: M = 1, d = -4, b = 0
+            Unit is 1/16 kilopascal (kPa).
+            Allowed range is: 0 to 2047.875.
+            A value of 0x7FFF represents measured pressure is 2047.875 kPa or higher.
+        - field: Value might not be accurate
+          data_type: uint1
+          size: "1"
+          description: |-
+            When set to 1, the value might not be accurate because, for example, the pressure value is outside of the TPMS Sensor operating range.

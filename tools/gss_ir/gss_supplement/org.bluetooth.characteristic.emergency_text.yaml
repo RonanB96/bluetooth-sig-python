@@ -1,0 +1,15 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Emergency Configuration Service 1.0, 3.2 Emergency Text.
+characteristic:
+  identifier: org.bluetooth.characteristic.emergency_text
+  name: Emergency Text
+  description: |-
+    The Emergency Text characteristic shall be a variable-length string consisting of 1 to 20 octets with no string termination character. Encoding shall be UTF-8.
+    The actual string content is use case dependent.
+    This characteristic will typically hold information (such as a name or phone number) that is human-readable by someone receiving an emergency signal on their device.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Emergency Text
+      type: utf8s
+      size: variable
+      description: UTF-8 string

@@ -1,0 +1,23 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: HID Service Specification 1.1, Sections 2.6.1 and 2.6.2.
+# The value is the Report Descriptor octets. Section 2.6.1 limits the length to 512 octets and states no minimum.
+# size 0–512 uses 0 as the lower bound so the file does not add a minimum the source omitted.
+# Zephyr read_report_map returns hids.report_map and report_map_len unchanged
+# (subsys/bluetooth/services/hids/hids.c, lines 139–151).
+# BlueZ report_map_read_cb copies the read bytes and passes that buffer to bt_uhid_create
+# (src/shared/hog.c, lines 849–860 and 873–886).
+# Neither handler decodes HID descriptor items.
+characteristic:
+  identifier: org.bluetooth.characteristic.report_map
+  name: Report Map
+  description: |-
+    The Report Map characteristic is used to define formatting information for Input Report, Output Report, and Feature Report data transferred between a HID Device and HID Host.
+    The length of the Report Map characteristic value is limited to 512 octets.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Report Map
+      type: uint8[n]
+      size: 0–512
+      description: |-
+        The Report Map characteristic value contains formatting and other information for Input Report, Output Report and Feature Report data.
+        Each element is one octet of that value.

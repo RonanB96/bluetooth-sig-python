@@ -1,0 +1,13 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Volume Offset Control Service 1.0.1, Section 3.2 Audio Location (Table 3.3).
+characteristic:
+  identifier: org.bluetooth.characteristic.audio_location
+  name: Audio Location
+  description: |-
+    The Audio Location characteristic value is a bitmask that shall be set to a value that reflects the location of an audio output that is associated with the instance of VOCS, such as Left or Right. For example, a server might have both a left and right speaker with which to control the balance. In this example, the server should instantiate VOCS for each speaker. The client may use this value to inform the user about the server audio. The Audio Location characteristic value is defined in the Bluetooth Assigned Numbers \RefRef{assigned_numbers}.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Audio Location
+      type: uint32
+      size: "4"
+      description: The Audio Location value shall be the bitmask value as defined in the Bluetooth SIG Assigned Numbers \RefRef{assigned_numbers}.

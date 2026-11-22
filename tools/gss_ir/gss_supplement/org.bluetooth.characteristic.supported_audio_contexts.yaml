@@ -1,0 +1,24 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Published Audio Capabilities Service 1.0.2, Section 3.6 (Table 3.7).
+characteristic:
+  identifier: org.bluetooth.characteristic.supported_audio_contexts
+  name: Supported Audio Contexts
+  description: |-
+    The Supported Audio Contexts characteristic exposes the server's support for reception and/or transmission of unicast audio data and/or broadcast audio data associated with specific Context Types.
+    The value of the Supported Audio Contexts characteristic allows clients to determine whether the server supports a particular Context Type, which is distinct from the server's availability to receive and/or transmit audio data associated with that Context Type as defined by the value of the Available Audio Contexts characteristic.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Supported_Sink_Contexts
+      type: uint16
+      size: "2"
+      description: |-
+        Bitmask of audio data Context Type values supported for reception.
+        Shall be 0x0000 if the server does not support the Sink PAC characteristic.
+        Context Type values are defined in Bluetooth SIG Assigned Numbers \RefRef{assigned_numbers}.
+    - field: Supported_Source_Contexts
+      type: uint16
+      size: "2"
+      description: |-
+        Bitmask of audio data Context Type values supported for transmission.
+        Shall be 0x0000 if the server does not support the Source PAC characteristic.
+        Context Type values are defined in Bluetooth SIG Assigned Numbers \RefRef{assigned_numbers}.

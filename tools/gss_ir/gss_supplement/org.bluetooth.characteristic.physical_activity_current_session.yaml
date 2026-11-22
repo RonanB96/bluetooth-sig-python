@@ -1,0 +1,60 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Physical Activity Monitor Service 1.0, Section 3.10.
+characteristic:
+  identifier: org.bluetooth.characteristic.physical_activity_current_session
+  name: Physical Activity Current Session
+  description: |-
+    The Physical Activity Current Session characteristic is used to send information about whether a session is currently running and other session-related information.
+    The characteristic value is 17 octets in length.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Flags
+      type: boolean[8]
+      size: "1"
+      description: See \autoref{sec:org.bluetooth.characteristic.physical_activity_current_session/field/flags}.
+    - field: Session ID
+      type: uint16
+      size: "2"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Session ID field represents the identifier of the current physical activity session.
+    - field: Session Start Base Time
+      type: uint32
+      size: "4"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Session Start Base Time field represents the start time stamp of the current physical activity session.
+        The value of the Session Start Base Time field represents the base time of a synchronized time source in seconds since midnight of January 1, 2000 (00:00:00 January 1, 2000).
+    - field: Session Start Time Offset
+      type: sint16
+      size: "2"
+      description: |-
+        Unit: org.bluetooth.unit.time.minute
+        The Session Start Time Offset field represents the offset between the UTC base time (represented by the Session Start Base Time field) and the local time that is known to the device. That is, the time has considered the time zone, Daylight Saving Time (DST), and user time adjustments.
+    - field: Sub-session ID
+      type: uint16
+      size: "2"
+      description: |-
+        Unit: org.bluetooth.unit.unitless
+        The Sub-session ID field represents the identifier of the current physical activity sub-session.
+    - field: Sub-session Start Base Time
+      type: uint32
+      size: "4"
+      description: |-
+        Unit: org.bluetooth.unit.time.second
+        The Sub-session Start Base Time field represents the start time stamp of the current physical activity sub-session.
+        The value of the Sub-session Start Base Time field represents the base time of a synchronized time source in seconds since midnight of January 1, 2000 (00:00:00 January 1, 2000).
+    - field: Sub-session Start Time Offset
+      type: sint16
+      size: "2"
+      description: |-
+        Unit: org.bluetooth.unit.time.minute
+        The Sub-session Start Time Offset field represents the offset between the UTC base time (represented by the Sub-session Start Base Time field) and the local time that is known to the device. That is, the time has considered the time zone, DST, and user time adjustments.
+  fields:
+    - name: Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: Session Running
+        - bit: 1–7
+          description: Reserved for Future Use

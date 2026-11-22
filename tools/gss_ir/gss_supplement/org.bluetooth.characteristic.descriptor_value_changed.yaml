@@ -1,0 +1,54 @@
+# Supplement: the SIG GSS repository has no document for this characteristic.
+# Source: Environmental Sensing Service 1.0.1, 3.2 Descriptor Value Changed Characteristic (Tables 3.14, 3.16).
+characteristic:
+  identifier: org.bluetooth.characteristic.descriptor_value_changed
+  name: Descriptor Value Changed
+  description: |-
+    The Descriptor Value Changed characteristic enables a Server to alert bonded Clients that the value of one or more ESS-related descriptors for a given ESS Characteristic have changed and need to be re-read.
+    Included in the characteristic value are a Flags field (for showing the source of the change and the affected descriptors) and a Characteristic UUID field to show which ESS characteristic is affected.
+    The term gatt_uuid is not a defined Data Type but is either a 16-bit UUID using the uint16 Data Type or a 128-bit UUID using the uint128 Data Type.
+    The structure of this characteristic is defined below.
+  structure:
+    - field: Flags
+      type: boolean[16]
+      size: "2"
+      description: |-
+        Base Unit: org.bluetooth.unit.unitless
+        See \autoref{sec:org.bluetooth.characteristic.descriptor_value_changed/field/flags}.
+    - field: Characteristic UUID
+      type: gatt_uuid
+      size: 2 or 16
+      description: |-
+        Base Unit: org.bluetooth.unit.unitless
+        The Characteristic UUID field shall be set to the value of the UUID for the affected ESS Characteristic.
+  fields:
+    - name: Flags
+      description: The bits of this field are defined below.
+      values:
+        - bit: "0"
+          description: |-
+            Source of Change
+            0 = Server
+            1 = Client
+        - bit: "1"
+          description: |-
+            Change to one or more ES Trigger Setting Descriptors
+            0 = False
+            1 = True
+        - bit: "2"
+          description: |-
+            Change to ES Configuration Descriptor
+            0 = False
+            1 = True
+        - bit: "3"
+          description: |-
+            Change to ES Measurement Descriptor
+            0 = False
+            1 = True
+        - bit: "4"
+          description: |-
+            Change to Characteristic User Description Descriptor
+            0 = False
+            1 = True
+        - bit: 5–15
+          description: Reserved for Future Use
